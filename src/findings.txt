@@ -1,0 +1,3 @@
+let mut text = cursive.find_id::<TextView>("test").unwrap();
+In order to attach to file_explorer from VS: 
+echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope

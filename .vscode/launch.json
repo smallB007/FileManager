@@ -1,0 +1,52 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "attach",
+            "name": "Attach",
+            "program": "${workspaceFolder}/file_explorer"
+        },
+
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable 'file_explorer'",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=file_explorer",
+                    "--package=file_explorer"
+                ],
+                "filter": {
+                    "name": "file_explorer",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'file_explorer'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=file_explorer",
+                    "--package=file_explorer"
+                ],
+                "filter": {
+                    "name": "file_explorer",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
