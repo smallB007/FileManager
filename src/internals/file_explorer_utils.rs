@@ -332,25 +332,6 @@ fn copying_cancelled(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn coffee_break(s: &mut Cursive) {
-    // A little break before things get serious.
-    s.set_autorefresh(false);
-    s.pop_layer();
-    s.add_layer(
-        Dialog::new()
-            .title("Copying finished")
-            .content(TextView::new("Copying finished").center())
-            .dismiss_button("Again??"),
-    );
-}
-
-fn fake_load(n_max: usize, counter: &Counter) {
-    for _ in 0..n_max {
-        thread::sleep(Duration::from_millis(5));
-        // The `counter.tick()` method increases the progress value
-        counter.tick(1);
-    }
-}
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
