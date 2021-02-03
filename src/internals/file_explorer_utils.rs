@@ -322,6 +322,16 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
 use cursive::utils::Counter;
 use std::thread;
 use std::time::Duration;
+fn copying_finished_success(s: &mut Cursive) {
+    s.set_autorefresh(false);
+    s.pop_layer(); //trouble
+    s.add_layer(
+        Dialog::new()
+            .title("Copying finished")
+            .content(TextView::new("Copying finished successfully").center())
+            .dismiss_button("OK"),
+    );
+}
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
     s.pop_layer(); //trouble
@@ -391,7 +401,7 @@ fn cpy(siv: &mut cursive::Cursive) {
                     };
                     fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle).unwrap();
                     // When we're done, send a callback through the channel
-                    cb.send(Box::new(coffee_break)).unwrap();
+                    cb.send(Box::new(copying_finished_success)).unwrap();
                 })
                 .min_width(50)
                 .max_width(50),
