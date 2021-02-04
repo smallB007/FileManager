@@ -322,6 +322,28 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
 use cursive::utils::Counter;
 use std::thread;
 use std::time::Duration;
+fn copying_error(s: &mut Cursive) {
+    s.set_autorefresh(false);
+    s.pop_layer(); //trouble
+    s.add_layer(
+        Dialog::new()
+            .title("Copying error")
+            .content(TextView::new("Copying ERROR").center())
+            .dismiss_button("OK"),
+    );
+}
+fn copying_already_exists(s: &mut Cursive) {
+    s.set_autorefresh(false);//todo repeat
+    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
+        s.pop_layer(); 
+    }
+    s.add_layer(
+        Dialog::new()
+            .title("File exists")
+            .content(TextView::new("Exists").center())
+            .dismiss_button("OK"),
+    );
+}
 fn copying_finished_success(s: &mut Cursive) {
     s.set_autorefresh(false);
     s.pop_layer(); //trouble
@@ -334,7 +356,9 @@ fn copying_finished_success(s: &mut Cursive) {
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
-    s.pop_layer(); //trouble
+    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
+        s.pop_layer(); //trouble
+    }
     s.add_layer(
         Dialog::new()
             .title("User request Cancell")
@@ -345,7 +369,7 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-use fs_extra::dir::copy;
+use fs_extra::dir::{TransitProcessResult, copy};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 fn help(siv: &mut cursive::Cursive) {}
@@ -390,23 +414,77 @@ fn cpy(siv: &mut cursive::Cursive) {
                             Ok(val) => {
                                 if val as usize == fs_extra::dir::TransitProcessResult::Abort as usize {
                                     cb.send(Box::new(copying_cancelled)).unwrap();
-                                    panic!("User cancelled copying. Thread terminated");
+                                    return fs_extra::dir::TransitProcessResult::Abort;
                                 }
                             }
-                            _ => {/*Do nothing, we are only interested in handling Abort*/}
+                            _ => { /*Do nothing, we are only interested in handling Abort*/ }
                         }
                         let percent = (process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_000_f64;
                         counter.tick(percent as usize);
                         fs_extra::dir::TransitProcessResult::ContinueOrAbort
                     };
-                    fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle).unwrap();
-                    // When we're done, send a callback through the channel
-                    cb.send(Box::new(copying_finished_success)).unwrap();
+
+/*pub struct Error {
+    /// Type error
+    pub kind: ErrorKind,
+    message: String,
+}
+
+pub enum ErrorKind {
+    /// An entity was not found.
+    NotFound,
+    /// The operation lacked the necessary privileges to complete.
+    PermissionDenied,
+    /// An entity already exists.
+    AlreadyExists,
+    /// This operation was interrupted.
+    Interrupted,
+    /// Path does not a directory.
+    InvalidFolder,
+    /// Path does not a file.
+    InvalidFile,
+    /// Invalid file name.
+    InvalidFileName,
+    /// Invalid path.
+    InvalidPath,
+    /// Any I/O error.
+    Io(IoError),
+    /// Any StripPrefix error.
+    StripPrefix(StripPrefixError),
+    /// Any OsString error.
+    OsString(OsString),
+    /// Any fs_extra error not part of this list.
+    Other,
+}
+*/
+                match fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle)
+                {
+                 Ok(_)=>{   // When we're done, send a callback through the channel
+                    cb.send(Box::new(copying_finished_success)).unwrap()},
+                 Err(e)=>{
+                 match e.kind{
+                     fs_extra::error::ErrorKind::NotFound => {}
+                     fs_extra::error::ErrorKind::PermissionDenied => {}
+                     fs_extra::error::ErrorKind::AlreadyExists => {cb.send(Box::new(copying_already_exists)).unwrap()}
+                     fs_extra::error::ErrorKind::Interrupted => {}
+                     fs_extra::error::ErrorKind::InvalidFolder => {}
+                     fs_extra::error::ErrorKind::InvalidFile => {}
+                     fs_extra::error::ErrorKind::InvalidFileName => {}
+                     fs_extra::error::ErrorKind::InvalidPath => {}
+                     fs_extra::error::ErrorKind::Io(IoError) => {}
+                     fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
+                     fs_extra::error::ErrorKind::OsString(OsString) => {}
+                     fs_extra::error::ErrorKind::Other => {}
+                 }
+
+                 }
+                }
                 })
                 .min_width(50)
                 .max_width(50),
         )
-        .button("Cancel", cancel_operation),
+        .button("Cancel", |s|{cancel_operation(s)})
+        .with_name("ProgressDlg"),
     );
     siv.set_autorefresh(true);
 }
