@@ -54,10 +54,12 @@ impl ChildButton {
 pub struct Atomic_Dialog {
     // Possibly empty title.
     title: String,
-
+//++artie Possibly emtpy title_2
+    title_bottom: String,
     // Where to put the title position
     //++artie
     title_position: (HAlign, VAlign),
+    title_position_bottom: (HAlign, VAlign),
 
     // The actual inner view.
     content: LastSizeView<BoxedView>,
@@ -121,7 +123,9 @@ impl Atomic_Dialog {
             content: LastSizeView::new(BoxedView::boxed(view)),
             buttons: Vec::new(),
             title: String::new(),
+            title_bottom: String::from("A title bottom"),
             title_position: (HAlign::Center, VAlign::Top),
+            title_position_bottom: (HAlign::Right, VAlign::Bottom),
             focus: DialogFocus::Content,
             padding: Margins::lr(1, 1),
             borders: Margins::lrtb(1, 1, 1, 1),
@@ -298,7 +302,39 @@ impl Atomic_Dialog {
             s.pop_layer();
         })
     }
+    //++artie
+    pub fn title_bottom<S: Into<String>>(self, label: S) -> Self {
+        self.with(|s| s.set_title_bottom(label))
+    }
 
+    /// Sets the title of the dialog.
+    pub fn set_title_bottom<S: Into<String>>(&mut self, label: S) {
+        self.title_bottom = label.into();
+        self.invalidate();
+    }
+    ///++artie
+    pub fn get_title_bottom(&self) -> String {
+        self.title_bottom.clone()
+    }
+
+    /// Sets the horizontal position of the title in the dialog.
+    /// The default position is `HAlign::Center`
+    pub fn title_bottom_position(self, align: HAlign) -> Self {
+        self.with(|s| s.set_title_bottom_position(align))
+    }
+
+    /// Sets the horizontal position of the title in the dialog.
+    /// The default position is `HAlign::Center`
+    pub fn set_title_bottom_position(&mut self, align: HAlign) {
+        self.title_position_bottom = (align, VAlign::Bottom);
+    }
+
+    /// Sets the vertical position of the title in the dialog.
+    /// The default position is `VAlign::Top`
+    pub fn set_title_position_bottom_vert(&mut self, align: VAlign) {
+        self.title_position_bottom.1 = align;
+    }
+//--artie
     /// Sets the title of the dialog.
     ///
     /// If not empty, it will be visible at the top.
@@ -588,6 +624,35 @@ impl Atomic_Dialog {
             printer.with_color(ColorStyle::title_primary(), |p| p.print((x, y), &self.title));
         }
     }
+fn draw_title_bottom(&self, printer: &Printer) {
+        if !self.title_bottom.is_empty() {
+            let len = self.title_bottom.width();
+            let spacing = 3; //minimum distance to borders
+            let spacing_both_ends = 2 * spacing;
+            if len + spacing_both_ends > printer.size.x {
+                return;
+            }
+            //++artie
+            let y = if self.title_position_bottom.1 == VAlign::Bottom {
+                let overhead_bottom = self.padding.bottom + self.borders.bottom;
+                let y = match printer.size.y.checked_sub(overhead_bottom) {
+                    Some(y) => y,
+                    None => 0,
+                };
+                y
+            } else {
+                0
+            };
+            //--artie
+            let x = spacing + self.title_position_bottom.0.get_offset(len, printer.size.x - spacing_both_ends);
+            printer.with_low_border(false, |printer| {
+                printer.print((x - 2, y), "┤ ");
+                printer.print((x + len, y), " ├");
+            });
+
+            printer.with_color(ColorStyle::title_primary(), |p| p.print((x, y), &self.title_bottom));
+        }
+    }
 
     fn check_focus_grab(&mut self, event: &Event) {
         if let Event::Mouse { offset, position, event } = *event {
@@ -636,6 +701,7 @@ impl View for Atomic_Dialog {
         //printer.print_hdelim(Vec2::new(0,20),printer.size.pair().0);
         //--artie
         self.draw_title(printer);
+        self.draw_title_bottom(printer);
     }
 
     fn required_size(&mut self, req: Vec2) -> Vec2 {

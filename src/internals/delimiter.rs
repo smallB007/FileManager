@@ -11,7 +11,7 @@ impl Delimiter {
     pub fn new(title: String) -> Self {
         Delimiter {
             title,
-            title_position: HAlign::Left,
+            title_position: HAlign::Right,
         }
     }
     fn draw_title(&self, printer: &Printer) {
@@ -28,7 +28,7 @@ impl Delimiter {
                 printer.print((x + len, 0), " ├");
             });
 
-            printer.with_color(ColorStyle::title_secondary(), |p| p.print((x, 0), &self.title));
+            printer.with_color(ColorStyle::title_primary(), |p| p.print((x, 0), &self.title));
         }
     }
 }

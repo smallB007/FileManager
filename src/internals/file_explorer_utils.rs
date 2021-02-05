@@ -202,9 +202,9 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
             })
             .unwrap();
         let _value = siv
-            .call_on_name(&(String::from(a_name) + &String::from("InfoItem")), move |a_dlg: &mut Atomic_Dialog| {
-                a_dlg.set_title(current_item.name.clone());
-                a_dlg.set_content(TextView::new(current_item.name.clone()));
+            .call_on_name(&(String::from(a_name) + &String::from("InfoItem")), move |a_dlg: &mut TextView| {
+//                a_dlg.set_title(current_item.name.clone());
+                a_dlg.set_content(current_item.name.clone());
             })
             .unwrap();
 
@@ -493,33 +493,20 @@ fn quit(siv: &mut cursive::Cursive) {
 use super::delimiter::Delimiter;
 pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     let initial_path = String::from("/home/artie/Desktop/Left");
+
     let mut left_table = create_basic_table_core("LeftPanel", &PathBuf::from(initial_path.clone()));
-    /*   let mut items = Vec::new();
-    items.push(ExplorerColumnData {
-        name: format!(".."),
-        size: 0,
-        last_modify_time: SystemTime::now(),
-    });
-    left_table.get_mut().set_items(items);*/
-    let right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
-    let left_main_panel_view = Atomic_Dialog::around(
+    let left_info_item = TextView::new("Hello Dialog!")
+        .with_name("LeftPanelInfoItem");
+    let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(left_table.full_screen())
             .child(Delimiter::new(String::from("Title 1")))
-            .child(TextView::new("Text")),
+            .child(left_info_item),
     )
-    .title(initial_path.clone())
+    .title(initial_path.clone()).padding_lrtb(0,0,0,0)
     .with_name("LeftPanelDlg");
-    let mut left_info_item = Atomic_Dialog::around(TextView::new("Hello Dialog!"))
-        .title("Left")
-        .with_name("LeftPanelInfoItem");
-    left_info_item.get_mut().set_title_position(HAlign::Right);
-    left_info_item.get_mut().set_title_position_vert(VAlign::Bottom);
-    //    left_info_item.set_title_position(HAlign::Left);
-    let left_layout = LinearLayout::vertical()
-        .child(left_main_panel_view)
-        .child(Delimiter::new(String::from("Title so long that I really... 2")))
-        .child(left_info_item);
+
+    let right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
     let right_main_panel_view = Atomic_Dialog::around(right_table.full_screen())
         .title(initial_path.clone())
         .with_name("RightPanelDlg");
