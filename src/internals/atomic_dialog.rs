@@ -56,6 +56,7 @@ pub struct Atomic_Dialog {
     title: String,
 
     // Where to put the title position
+    //++artie
     title_position: (HAlign, VAlign),
 
     // The actual inner view.
@@ -631,7 +632,9 @@ impl View for Atomic_Dialog {
 
         // Print the borders
         printer.print_box(Vec2::new(0, 0), printer.size, false);
-
+        //++artie
+        //printer.print_hdelim(Vec2::new(0,20),printer.size.pair().0);
+        //--artie
         self.draw_title(printer);
     }
 

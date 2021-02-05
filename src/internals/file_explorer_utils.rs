@@ -2,9 +2,7 @@ use cursive::event::*;
 use cursive::menu::MenuTree;
 use cursive::traits::*;
 use cursive::view::Boxable;
-use cursive::views::{Button, LinearLayout, ProgressBar, TextArea};
-use cursive::views::{CircularFocus, Dialog, NamedView, OnEventView, TextView};
-use cursive::views::{DummyView, Panel};
+use cursive::views::*;
 use cursive::{Cursive, CursiveExt};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -333,15 +331,14 @@ fn copying_error(s: &mut Cursive) {
     );
 }
 fn copying_already_exists(s: &mut Cursive) {
-    s.set_autorefresh(false);//todo repeat
+    s.set_autorefresh(false); //todo repeat
     if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
-        s.pop_layer(); 
+        s.pop_layer();
     }
+    //Dialog::around(TextView::new("t")).set_style(theme::ColorStyle::primary());
+    let sw = ShadowView::new(Button::new("Ok", |s| {}));
     s.add_layer(
-        Dialog::new()
-            .title("File exists")
-            .content(TextView::new("Exists").center())
-            .dismiss_button("OK"),
+        LinearLayout::vertical().child(Dialog::new().title("File exists").content(TextView::new("Exists").center())), //            .child(sw),
     );
 }
 fn copying_finished_success(s: &mut Cursive) {
@@ -369,7 +366,7 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-use fs_extra::dir::{TransitProcessResult, copy};
+use fs_extra::dir::{copy, TransitProcessResult};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 fn help(siv: &mut cursive::Cursive) {}
@@ -424,66 +421,64 @@ fn cpy(siv: &mut cursive::Cursive) {
                         fs_extra::dir::TransitProcessResult::ContinueOrAbort
                     };
 
-/*pub struct Error {
-    /// Type error
-    pub kind: ErrorKind,
-    message: String,
-}
+                    /*pub struct Error {
+                        /// Type error
+                        pub kind: ErrorKind,
+                        message: String,
+                    }
 
-pub enum ErrorKind {
-    /// An entity was not found.
-    NotFound,
-    /// The operation lacked the necessary privileges to complete.
-    PermissionDenied,
-    /// An entity already exists.
-    AlreadyExists,
-    /// This operation was interrupted.
-    Interrupted,
-    /// Path does not a directory.
-    InvalidFolder,
-    /// Path does not a file.
-    InvalidFile,
-    /// Invalid file name.
-    InvalidFileName,
-    /// Invalid path.
-    InvalidPath,
-    /// Any I/O error.
-    Io(IoError),
-    /// Any StripPrefix error.
-    StripPrefix(StripPrefixError),
-    /// Any OsString error.
-    OsString(OsString),
-    /// Any fs_extra error not part of this list.
-    Other,
-}
-*/
-                match fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle)
-                {
-                 Ok(_)=>{   // When we're done, send a callback through the channel
-                    cb.send(Box::new(copying_finished_success)).unwrap()},
-                 Err(e)=>{
-                 match e.kind{
-                     fs_extra::error::ErrorKind::NotFound => {}
-                     fs_extra::error::ErrorKind::PermissionDenied => {}
-                     fs_extra::error::ErrorKind::AlreadyExists => {cb.send(Box::new(copying_already_exists)).unwrap()}
-                     fs_extra::error::ErrorKind::Interrupted => {}
-                     fs_extra::error::ErrorKind::InvalidFolder => {}
-                     fs_extra::error::ErrorKind::InvalidFile => {}
-                     fs_extra::error::ErrorKind::InvalidFileName => {}
-                     fs_extra::error::ErrorKind::InvalidPath => {}
-                     fs_extra::error::ErrorKind::Io(IoError) => {}
-                     fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
-                     fs_extra::error::ErrorKind::OsString(OsString) => {}
-                     fs_extra::error::ErrorKind::Other => {}
-                 }
-
-                 }
-                }
+                    pub enum ErrorKind {
+                        /// An entity was not found.
+                        NotFound,
+                        /// The operation lacked the necessary privileges to complete.
+                        PermissionDenied,
+                        /// An entity already exists.
+                        AlreadyExists,
+                        /// This operation was interrupted.
+                        Interrupted,
+                        /// Path does not a directory.
+                        InvalidFolder,
+                        /// Path does not a file.
+                        InvalidFile,
+                        /// Invalid file name.
+                        InvalidFileName,
+                        /// Invalid path.
+                        InvalidPath,
+                        /// Any I/O error.
+                        Io(IoError),
+                        /// Any StripPrefix error.
+                        StripPrefix(StripPrefixError),
+                        /// Any OsString error.
+                        OsString(OsString),
+                        /// Any fs_extra error not part of this list.
+                        Other,
+                    }
+                    */
+                    match fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle) {
+                        Ok(_) => {
+                            // When we're done, send a callback through the channel
+                            cb.send(Box::new(copying_finished_success)).unwrap()
+                        }
+                        Err(e) => match e.kind {
+                            fs_extra::error::ErrorKind::NotFound => {}
+                            fs_extra::error::ErrorKind::PermissionDenied => {}
+                            fs_extra::error::ErrorKind::AlreadyExists => cb.send(Box::new(copying_already_exists)).unwrap(),
+                            fs_extra::error::ErrorKind::Interrupted => {}
+                            fs_extra::error::ErrorKind::InvalidFolder => {}
+                            fs_extra::error::ErrorKind::InvalidFile => {}
+                            fs_extra::error::ErrorKind::InvalidFileName => {}
+                            fs_extra::error::ErrorKind::InvalidPath => {}
+                            fs_extra::error::ErrorKind::Io(IoError) => {}
+                            fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
+                            fs_extra::error::ErrorKind::OsString(OsString) => {}
+                            fs_extra::error::ErrorKind::Other => {}
+                        },
+                    }
                 })
                 .min_width(50)
                 .max_width(50),
         )
-        .button("Cancel", |s|{cancel_operation(s)})
+        .button("Cancel", |s| cancel_operation(s))
         .with_name("ProgressDlg"),
     );
     siv.set_autorefresh(true);
@@ -495,6 +490,7 @@ fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
+use super::delimiter::Delimiter;
 pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     let initial_path = String::from("/home/artie/Desktop/Left");
     let mut left_table = create_basic_table_core("LeftPanel", &PathBuf::from(initial_path.clone()));
@@ -506,16 +502,24 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     });
     left_table.get_mut().set_items(items);*/
     let right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
-    let left_main_panel_view = Atomic_Dialog::around(left_table.full_screen())
-        .title(initial_path.clone())
-        .with_name("LeftPanelDlg");
+    let left_main_panel_view = Atomic_Dialog::around(
+        LinearLayout::vertical()
+            .child(left_table.full_screen())
+            .child(Delimiter::new(String::from("Title 1")))
+            .child(TextView::new("Text")),
+    )
+    .title(initial_path.clone())
+    .with_name("LeftPanelDlg");
     let mut left_info_item = Atomic_Dialog::around(TextView::new("Hello Dialog!"))
         .title("Left")
         .with_name("LeftPanelInfoItem");
     left_info_item.get_mut().set_title_position(HAlign::Right);
     left_info_item.get_mut().set_title_position_vert(VAlign::Bottom);
     //    left_info_item.set_title_position(HAlign::Left);
-    let left_layout = LinearLayout::vertical().child(left_main_panel_view).child(left_info_item);
+    let left_layout = LinearLayout::vertical()
+        .child(left_main_panel_view)
+        .child(Delimiter::new(String::from("Title so long that I really... 2")))
+        .child(left_info_item);
     let right_main_panel_view = Atomic_Dialog::around(right_table.full_screen())
         .title(initial_path.clone())
         .with_name("RightPanelDlg");
