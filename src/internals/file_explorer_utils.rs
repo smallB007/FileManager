@@ -458,7 +458,7 @@ fn copy_engine(siv: &mut Cursive, path_from: String, path_to: String) {
     );
     siv.set_autorefresh(true);
 }
-fn create_cpy_dialog(path_from:String,path_to:String) -> Atomic_Dialog {
+fn create_cpy_dialog(path_from: String, path_to: String) -> Atomic_Dialog {
     let cpy_dialog = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("Copy from:"))
@@ -473,15 +473,13 @@ fn create_cpy_dialog(path_from:String,path_to:String) -> Atomic_Dialog {
             ),
     )
     .button("[ OK ]", |siv| {
-        let selected_path_from = siv.call_on_name("cpy_from_edit_view",move |an_edit_view: &mut EditView|
-            {
-(*an_edit_view.get_content()).clone()
-            }).unwrap();
-        let selected_path_to= siv.call_on_name("cpy_to_edit_view",move |an_edit_view: &mut EditView|
-            {
-                (*an_edit_view.get_content()).clone()
-            }).unwrap();
-        copy_engine(siv, selected_path_from,selected_path_to);
+        let selected_path_from = siv
+            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| (*an_edit_view.get_content()).clone())
+            .unwrap();
+        let selected_path_to = siv
+            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| (*an_edit_view.get_content()).clone())
+            .unwrap();
+        copy_engine(siv, selected_path_from, selected_path_to);
     })
     .button("[ Background ]", quit)
     .button("[ Cancel ]", quit);
@@ -515,14 +513,12 @@ fn cpy(siv: &mut cursive::Cursive) {
     } else {
         ("RightPanel", "LeftPanel")
     };
-    match get_selected_path(siv, from)
-    {
-        Some(selected_path_from)=>
-        {
+    match get_selected_path(siv, from) {
+        Some(selected_path_from) => {
             let selected_path_to = get_current_dir(siv, to);
-            siv.add_layer(create_cpy_dialog(selected_path_from,selected_path_to));
+            siv.add_layer(create_cpy_dialog(selected_path_from, selected_path_to));
         }
-        None=>{siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"))}
+        None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
     }
 }
 fn ren_mov(siv: &mut cursive::Cursive) {}
