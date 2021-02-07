@@ -203,7 +203,7 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
             .unwrap();
         let _value = siv
             .call_on_name(&(String::from(a_name) + &String::from("InfoItem")), move |a_dlg: &mut TextView| {
-//                a_dlg.set_title(current_item.name.clone());
+                //                a_dlg.set_title(current_item.name.clone());
                 a_dlg.set_content(current_item.name.clone());
             })
             .unwrap();
@@ -221,7 +221,7 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
     });
     table.set_selected_row(0);
     table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
-        let current_path = siv
+        let current_dir = siv
             .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
                 //format!("{:?}", a_table.borrow_item(index).unwrap())
                 a_dlg.get_title()
@@ -231,15 +231,15 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
             .call_on_name(a_name, move |a_table: &mut tableViewType| {
                 let selected_item = a_table.borrow_item(index).unwrap().name.clone();
                 let whole_path = match selected_item.as_str() {
-                    ".." => match PathBuf::from(current_path).parent() {
+                    ".." => match PathBuf::from(current_dir).parent() {
                         Some(parent) => PathBuf::from(parent),
                         None => PathBuf::from("NO_PARENT"),
                     },
                     _ => {
-                        if PathBuf::from(current_path.clone() + &selected_item.clone()).is_dir() {
+                        if PathBuf::from(current_dir.clone() + &selected_item.clone()).is_dir() {
                             let mut removed_first_slash: String = selected_item.clone();
                             removed_first_slash.remove(0);
-                            let mut full_path = PathBuf::from(current_path);
+                            let mut full_path = PathBuf::from(current_dir);
                             full_path.push(&removed_first_slash);
                             full_path
                         } else {
@@ -283,7 +283,7 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
 
     named_view_table
 }
-fn get_selected_path(siv: &mut Cursive, a_name: &str) -> PathBuf {
+fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<String> {
     let mut item_from_inx = usize::MAX;
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
         if let Some(inx) = a_table.item() {
@@ -293,23 +293,24 @@ fn get_selected_path(siv: &mut Cursive, a_name: &str) -> PathBuf {
     let selected_path = get_selected_path_from_inx(siv, a_name, item_from_inx);
     selected_path
 }
-fn get_current_dir(siv: &mut Cursive, a_name: &str) -> PathBuf {
-    let current_path = siv
+
+fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
+    let current_dir = siv
         .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
             a_dlg.get_title()
         })
         .unwrap();
-    PathBuf::from(current_path)
+    current_dir
 }
-fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> PathBuf {
+fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<String> {
     /*Todo repeat*/
-    let current_path = get_current_dir(siv, a_name);
+    let current_dir = get_current_dir(siv, a_name);
     let new_path = siv
         .call_on_name(a_name, move |a_table: &mut tableViewType| {
             let selected_item = a_table.borrow_item(index).unwrap().name.clone();
             let whole_path = match selected_item.as_str() {
-                ".." => current_path,
-                _ => current_path.clone().join(PathBuf::from(&selected_item)),
+                ".." => None,
+                _ => Some(current_dir + &selected_item),
             };
             whole_path
         })
@@ -366,52 +367,10 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-fn create_cpy_dialog()->Atomic_Dialog
-{
-    let cpy_dialog = Atomic_Dialog::around(
-        LinearLayout::vertical()
-        .child(TextView::new("Copy from:"))
-        .child(EditView::new().min_width(80).with_name("cpy_from_edit_view"))
-        .child(TextView::new("Copy to:"))
-        .child(EditView::new().min_width(80).with_name("cpy_to_edit_view"))
-        .child(Delimiter::new(""))
-        .child(LinearLayout::horizontal().child(Checkbox::new_with_label("Recursive")).child(Checkbox::new_with_label("Overwrite")))
-        ).button("[ OK ]",quit).button("[ Background ]",quit).button("[ Cancel ]",quit);
-
-    cpy_dialog
-}
-use fs_extra::dir::{copy, TransitProcessResult};
-use std::collections::HashMap;
-use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-fn help(siv: &mut cursive::Cursive) {}
-fn cancel_operation(siv: &mut cursive::Cursive) {
-    let v = GLOBAL_FileManager.get();
-    let tmp = v.lock().unwrap();
-    let mut v = tmp.borrow_mut();
-    v.tx_rx.0.send(fs_extra::dir::TransitProcessResult::Abort).unwrap();
-    v.cancel_current_operation = true;
-}
-fn menu(siv: &mut cursive::Cursive) {}
-fn view(siv: &mut cursive::Cursive) {}
-fn edit(siv: &mut cursive::Cursive) {}
-fn cpy(siv: &mut cursive::Cursive) {
-    let left_panel_last_focus_time = siv
-        .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-        .unwrap();
-
-    let right_panel_last_focus_time = siv
-        .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-        .unwrap();
-    let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
-        ("LeftPanel", "RightPanel")
-    } else {
-        ("RightPanel", "LeftPanel")
-    };
-    let selected_path_from = get_selected_path(siv, from);
-    let selected_path_to = get_current_dir(siv, to);
-   siv.add_layer( create_cpy_dialog());
-    return;
+fn copy_engine(siv: &mut Cursive, path_from: String, path_to: String) {
     // This is the callback channel
+    let selected_path_from = PathBuf::from(path_from);
+    let selected_path_to = PathBuf::from(path_to);
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
@@ -499,6 +458,73 @@ fn cpy(siv: &mut cursive::Cursive) {
     );
     siv.set_autorefresh(true);
 }
+fn create_cpy_dialog(path_from:String,path_to:String) -> Atomic_Dialog {
+    let cpy_dialog = Atomic_Dialog::around(
+        LinearLayout::vertical()
+            .child(TextView::new("Copy from:"))
+            .child(EditView::new().content(path_from).min_width(80).with_name("cpy_from_edit_view"))
+            .child(TextView::new("Copy to:"))
+            .child(EditView::new().content(path_to).min_width(80).with_name("cpy_to_edit_view"))
+            .child(Delimiter::new(""))
+            .child(
+                LinearLayout::horizontal()
+                    .child(Checkbox::new_with_label("Recursive").with_name("recursive_chck_bx"))
+                    .child(Checkbox::new_with_label("Overwrite").with_name("overwrite_chck_bx")),
+            ),
+    )
+    .button("[ OK ]", |siv| {
+        let selected_path_from = siv.call_on_name("cpy_from_edit_view",move |an_edit_view: &mut EditView|
+            {
+(*an_edit_view.get_content()).clone()
+            }).unwrap();
+        let selected_path_to= siv.call_on_name("cpy_to_edit_view",move |an_edit_view: &mut EditView|
+            {
+                (*an_edit_view.get_content()).clone()
+            }).unwrap();
+        copy_engine(siv, selected_path_from,selected_path_to);
+    })
+    .button("[ Background ]", quit)
+    .button("[ Cancel ]", quit);
+
+    cpy_dialog
+}
+use fs_extra::dir::{copy, TransitProcessResult};
+use std::collections::HashMap;
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+fn help(siv: &mut cursive::Cursive) {}
+fn cancel_operation(siv: &mut cursive::Cursive) {
+    let v = GLOBAL_FileManager.get();
+    let tmp = v.lock().unwrap();
+    let mut v = tmp.borrow_mut();
+    v.tx_rx.0.send(fs_extra::dir::TransitProcessResult::Abort).unwrap();
+    v.cancel_current_operation = true;
+}
+fn menu(siv: &mut cursive::Cursive) {}
+fn view(siv: &mut cursive::Cursive) {}
+fn edit(siv: &mut cursive::Cursive) {}
+fn cpy(siv: &mut cursive::Cursive) {
+    let left_panel_last_focus_time = siv
+        .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+        .unwrap();
+
+    let right_panel_last_focus_time = siv
+        .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+        .unwrap();
+    let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
+        ("LeftPanel", "RightPanel")
+    } else {
+        ("RightPanel", "LeftPanel")
+    };
+    match get_selected_path(siv, from)
+    {
+        Some(selected_path_from)=>
+        {
+            let selected_path_to = get_current_dir(siv, to);
+            siv.add_layer(create_cpy_dialog(selected_path_from,selected_path_to));
+        }
+        None=>{siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"))}
+    }
+}
 fn ren_mov(siv: &mut cursive::Cursive) {}
 fn mkdir(siv: &mut cursive::Cursive) {}
 fn del(siv: &mut cursive::Cursive) {}
@@ -511,15 +537,15 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     let initial_path = String::from("/home/artie/Desktop/Left");
 
     let mut left_table = create_basic_table_core("LeftPanel", &PathBuf::from(initial_path.clone()));
-    let left_info_item = TextView::new("Hello Dialog!")
-        .with_name("LeftPanelInfoItem");
+    let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(left_table.full_screen())
             .child(Delimiter::new("Title 1"))
             .child(left_info_item),
     )
-    .title(initial_path.clone()).padding_lrtb(0,0,0,0)
+    .title(initial_path.clone())
+    .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
     let right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));

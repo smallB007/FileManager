@@ -54,7 +54,7 @@ impl ChildButton {
 pub struct Atomic_Dialog {
     // Possibly empty title.
     title: String,
-//++artie Possibly emtpy title_2
+    //++artie Possibly emtpy title_2
     title_bottom: String,
     // Where to put the title position
     //++artie
@@ -334,7 +334,7 @@ impl Atomic_Dialog {
     pub fn set_title_position_bottom_vert(&mut self, align: VAlign) {
         self.title_position_bottom.1 = align;
     }
-//--artie
+    //--artie
     /// Sets the title of the dialog.
     ///
     /// If not empty, it will be visible at the top.
@@ -624,7 +624,7 @@ impl Atomic_Dialog {
             printer.with_color(ColorStyle::title_primary(), |p| p.print((x, y), &self.title));
         }
     }
-fn draw_title_bottom(&self, printer: &Printer) {
+    fn draw_title_bottom(&self, printer: &Printer) {
         if !self.title_bottom.is_empty() {
             let len = self.title_bottom.width();
             let spacing = 3; //minimum distance to borders
