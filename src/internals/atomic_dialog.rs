@@ -36,7 +36,7 @@ impl ChildButton {
         F: 'static + Fn(&mut Cursive),
     {
         ChildButton {
-            button: LastSizeView::new(Button::new(label, cb)),
+            button: LastSizeView::new(Button::new_raw(label, cb)),
             offset: Cell::new(Vec2::zero()),
         }
     }

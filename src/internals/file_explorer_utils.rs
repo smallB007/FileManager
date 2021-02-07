@@ -366,6 +366,20 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
+fn create_cpy_dialog()->Atomic_Dialog
+{
+    let cpy_dialog = Atomic_Dialog::around(
+        LinearLayout::vertical()
+        .child(TextView::new("Copy from:"))
+        .child(EditView::new().min_width(80).with_name("cpy_from_edit_view"))
+        .child(TextView::new("Copy to:"))
+        .child(EditView::new().min_width(80).with_name("cpy_to_edit_view"))
+        .child(Delimiter::new(""))
+        .child(LinearLayout::horizontal().child(Checkbox::new_with_label("Recursive")).child(Checkbox::new_with_label("Overwrite")))
+        ).button("[ OK ]",quit).button("[ Background ]",quit).button("[ Cancel ]",quit);
+
+    cpy_dialog
+}
 use fs_extra::dir::{copy, TransitProcessResult};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -395,13 +409,15 @@ fn cpy(siv: &mut cursive::Cursive) {
     };
     let selected_path_from = get_selected_path(siv, from);
     let selected_path_to = get_current_dir(siv, to);
+   siv.add_layer( create_cpy_dialog());
+    return;
     // This is the callback channel
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
             ProgressBar::new()
                 // We need to know how many ticks represent a full bar.
-                .range(0, selected_path_from.metadata().unwrap().size() as usize)
+                .range(0, selected_path_from.metadata(/*panic if dir*/).unwrap().size() as usize)
                 .with_task(move |counter| {
                     let options = fs_extra::dir::CopyOptions::new();
                     // This closure will be called in a separate thread.
@@ -500,7 +516,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(left_table.full_screen())
-            .child(Delimiter::new(String::from("Title 1")))
+            .child(Delimiter::new("Title 1"))
             .child(left_info_item),
     )
     .title(initial_path.clone()).padding_lrtb(0,0,0,0)

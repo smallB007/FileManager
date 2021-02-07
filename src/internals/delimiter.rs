@@ -8,9 +8,9 @@ pub struct Delimiter {
     title_position: HAlign,
 }
 impl Delimiter {
-    pub fn new(title: String) -> Self {
+    pub fn new(title: &str) -> Self {
         Delimiter {
-            title,
+            title: String::from(title),
             title_position: HAlign::Right,
         }
     }
