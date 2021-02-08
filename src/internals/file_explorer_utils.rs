@@ -504,9 +504,12 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
     )
     .button("[ OK ]", ok_cpy_callback)
     .button("[ Background ]", quit)
-    .button("[ Cancel ]", quit);
-    cpy_dialog.set_focus(DialogFocus::Button(0));
-    cpy_dialog.with_name("cpy_dialog")
+    .button("[ Cancel ]", quit)
+    .with_name("cpy_dialog");
+        let fc = cpy_dialog.get_mut().focus();
+        cpy_dialog.get_mut().set_focus(DialogFocus::Button(1));
+        let fc = cpy_dialog.get_mut().focus();
+        cpy_dialog
     }
 use fs_extra::dir::{copy, TransitProcessResult};
 use std::collections::HashMap;
@@ -615,7 +618,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
         .child(del_layout.full_width())
         .child(pulldn_layout.full_width())
         .child(quit_layout);
-    let left_right_layout = LinearLayout::horizontal().child(left_layout).child(right_layout);
+    let left_right_layout = CircularFocus::new(LinearLayout::horizontal().child(left_layout).child(right_layout),true,true);
     let whole_layout = LinearLayout::vertical().child(left_right_layout).child(buttons_layout);
     siv.add_fullscreen_layer(whole_layout);
     //    siv.run();
