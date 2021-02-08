@@ -358,9 +358,9 @@ fn copying_finished_success(s: &mut Cursive) {
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
-    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
+/*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer(); //trouble
-    }
+    }*/
     s.add_layer(
         Dialog::new()
             .title("User request Cancell")
@@ -459,7 +459,10 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                 .min_width(50)
                 .max_width(50),
         )
-        .button("Cancel", |s| cancel_operation(s))
+        .button("Cancel", |s|{
+            s.pop_layer();
+            cancel_operation(s)
+        })
         .with_name("ProgressDlg"),
     );
     siv.set_autorefresh(true);
