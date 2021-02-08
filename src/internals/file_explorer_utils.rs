@@ -343,7 +343,7 @@ fn copying_already_exists(s: &mut Cursive) {
     //Dialog::around(TextView::new("t")).set_style(theme::ColorStyle::primary());
     let sw = ShadowView::new(Button::new("Ok", |s| {}));
     s.add_layer(
-        LinearLayout::vertical().child(Dialog::new().title("File exists").content(TextView::new("Exists").center())), //            .child(sw),
+        LinearLayout::vertical().child(Dialog::around(TextView::new("File exists").center()).dismiss_button("Ok"))
     );
 }
 fn copying_finished_success(s: &mut Cursive) {
