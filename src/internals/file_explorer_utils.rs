@@ -22,6 +22,7 @@ use crate::internals::atomic_text_view::AtomicTextView;
 use cursive::align::{HAlign, VAlign};
 use cursive::traits::*;
 use cursive::*;
+use std::rc::Rc;
 // This examples shows how to configure and use a menubar at the top of the
 // application.
 
@@ -307,7 +308,10 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
     let current_dir = get_current_dir(siv, a_name);
     let new_path = siv
         .call_on_name(a_name, move |a_table: &mut tableViewType| {
-            let selected_item = a_table.borrow_item(index).unwrap().name.clone();
+            let mut selected_item = a_table.borrow_item(index).unwrap().name.clone();
+            if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
+                selected_item.insert(0, std::path::MAIN_SEPARATOR);
+            }
             let whole_path = match selected_item.as_str() {
                 ".." => None,
                 _ => Some(current_dir + &selected_item),
@@ -367,10 +371,10 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-fn copy_engine(siv: &mut Cursive, path_from: String, path_to: String) {
+fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is_recursive: bool, is_overwrite: bool) {
     // This is the callback channel
-    let selected_path_from = PathBuf::from(path_from);
-    let selected_path_to = PathBuf::from(path_to);
+    let selected_path_from = PathBuf::from((*path_from).clone());
+    let selected_path_to = PathBuf::from((*path_to).clone());
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
@@ -378,7 +382,9 @@ fn copy_engine(siv: &mut Cursive, path_from: String, path_to: String) {
                 // We need to know how many ticks represent a full bar.
                 .range(0, selected_path_from.metadata(/*panic if dir*/).unwrap().size() as usize)
                 .with_task(move |counter| {
-                    let options = fs_extra::dir::CopyOptions::new();
+                    let mut options = fs_extra::dir::CopyOptions::new();
+                    options.overwrite = is_overwrite;
+                    options.copy_inside = is_recursive;
                     // This closure will be called in a separate thread.
                     let handle = |process_info: fs_extra::TransitProcess| {
                         let v = GLOBAL_FileManager.get();
@@ -458,13 +464,32 @@ fn copy_engine(siv: &mut Cursive, path_from: String, path_to: String) {
     );
     siv.set_autorefresh(true);
 }
-fn create_cpy_dialog(path_from: String, path_to: String) -> Atomic_Dialog {
+
+fn ok_cpy_callback(siv: &mut Cursive) {
+    let selected_path_from: Rc<String> = siv
+        .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+        .unwrap();
+
+    let selected_path_to: Rc<String> = siv
+        .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+        .unwrap();
+    let is_recursive = siv
+        .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+        .unwrap();
+    let is_overwrite = siv
+        .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+        .unwrap();
+
+    copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
+}
+
+fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Atomic_Dialog> {
     let cpy_dialog = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("Copy from:"))
-            .child(EditView::new().content(path_from).min_width(80).with_name("cpy_from_edit_view"))
+            .child(EditView::new().content(path_from).with_name("cpy_from_edit_view").min_width(80))
             .child(TextView::new("Copy to:"))
-            .child(EditView::new().content(path_to).min_width(80).with_name("cpy_to_edit_view"))
+            .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(80))
             .child(Delimiter::new(""))
             .child(
                 LinearLayout::horizontal()
@@ -472,17 +497,10 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> Atomic_Dialog {
                     .child(Checkbox::new_with_label("Overwrite").with_name("overwrite_chck_bx")),
             ),
     )
-    .button("[ OK ]", |siv| {
-        let selected_path_from = siv
-            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| (*an_edit_view.get_content()).clone())
-            .unwrap();
-        let selected_path_to = siv
-            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| (*an_edit_view.get_content()).clone())
-            .unwrap();
-        copy_engine(siv, selected_path_from, selected_path_to);
-    })
+    .button("[ OK ]", ok_cpy_callback)
     .button("[ Background ]", quit)
-    .button("[ Cancel ]", quit);
+    .button("[ Cancel ]", quit)
+    .with_name("cpy_dialog");
 
     cpy_dialog
 }
@@ -544,18 +562,18 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
-    let right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
-    let right_main_panel_view = Atomic_Dialog::around(right_table.full_screen())
-        .title(initial_path.clone())
-        .with_name("RightPanelDlg");
-    let mut right_info_item = Atomic_Dialog::around(TextView::new("Hello Dialog!"))
-        .title("Right")
-        .with_name("RightPanelInfoItem");
-    //    right_info_item.set_title_position(HAlign::Left);
-    let right_layout = LinearLayout::vertical().child(right_main_panel_view).child(right_info_item);
-    //    let hm = HashMap::new();
-    //let button_help = Button::new_raw("[ Help ]", help);
-    //    let mut button_help = AtomicTextView::new("[ Help ]");
+    let mut right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
+    let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
+    let right_layout = Atomic_Dialog::around(
+        LinearLayout::vertical()
+            .child(right_table.full_screen())
+            .child(Delimiter::new("Title 2"))
+            .child(right_info_item),
+    )
+    .title(initial_path.clone())
+    .padding_lrtb(0, 0, 0, 0)
+    .with_name("RightPanelDlg");
+
     let button_help = OnEventView::new(TextView::new("[ Help ]"))
         .on_event('w', |s| s.quit())
         .on_event(event::Key::Tab, |s| s.quit());
