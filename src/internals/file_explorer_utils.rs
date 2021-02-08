@@ -479,7 +479,9 @@ fn ok_cpy_callback(siv: &mut Cursive) {
     let is_overwrite = siv
         .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
         .unwrap();
-
+    /*Close our dialog*/
+    siv.pop_layer();
+    
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
 
