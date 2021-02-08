@@ -1,5 +1,5 @@
 use cursive::event::*;
-use cursive::menu::MenuTree;
+use cursive::menu::Tree;
 use cursive::traits::*;
 use cursive::view::Boxable;
 use cursive::views::*;
@@ -37,7 +37,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
         // We add a new "File" tree
         .add_subtree(
             "File",
-            MenuTree::new()
+            Tree::new()
                 // Trees are made of leaves, with are directly actionable...
                 .leaf("New", move |s| {
                     // Here we use the counter to add an entry
@@ -58,7 +58,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
                     "Recent",
                     // The `.with()` method can help when running loops
                     // within builder patterns.
-                    MenuTree::new().with(|tree| {
+                    Tree::new().with(|tree| {
                         for i in 1..100 {
                             // We don't actually do anything here,
                             // but you could!
@@ -77,10 +77,10 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
         )
         .add_subtree(
             "Help",
-            MenuTree::new()
+            Tree::new()
                 .subtree(
                     "Help",
-                    MenuTree::new()
+                    Tree::new()
                         .leaf("General", |s| s.add_layer(Dialog::info("Help message!")))
                         .leaf("Online", |s| {
                             let text = "Google it yourself!\n\
@@ -488,8 +488,8 @@ fn ok_cpy_callback(siv: &mut Cursive) {
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
 
-fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Atomic_Dialog> {
-    let cpy_dialog = Atomic_Dialog::around(
+fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
+    let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("Copy from:"))
             .child(EditView::new().content(path_from).with_name("cpy_from_edit_view").min_width(80))
@@ -498,17 +498,16 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Atomic_Dia
             .child(Delimiter::new(""))
             .child(
                 LinearLayout::horizontal()
-                    .child(Checkbox::new_with_label("Recursive").with_name("recursive_chck_bx"))
-                    .child(Checkbox::new_with_label("Overwrite").with_name("overwrite_chck_bx")),
+                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("recursive_chck_bx")).child(TextView::new("Recursive")))
+                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("overwrite_chck_bx")).child(TextView::new("Overwrite")))
             ),
     )
     .button("[ OK ]", ok_cpy_callback)
     .button("[ Background ]", quit)
-    .button("[ Cancel ]", quit)
-    .with_name("cpy_dialog");
-
-    cpy_dialog
-}
+    .button("[ Cancel ]", quit);
+    cpy_dialog.set_focus(DialogFocus::Button(0));
+    cpy_dialog.with_name("cpy_dialog")
+    }
 use fs_extra::dir::{copy, TransitProcessResult};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
