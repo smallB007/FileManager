@@ -528,7 +528,7 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
     .button("[ Background ]", quit)
     
     .button("[ Cancel ]", quit);
-    cpy_dialog.set_focus(DialogFocus::Button(1));
+    cpy_dialog.set_focus(DialogFocus::Button(0));
 let cpy_dialog = cpy_dialog.with_name("DLG");
     /*
         match cpy_dialog.focus()
