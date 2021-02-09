@@ -1,17 +1,5 @@
-use cursive::{
-    align::*,
-    direction::{Absolute, Direction, Relative},
-    event::{AnyCb, Event, EventResult, Key},
-    //    rect::Rect,
-    theme::ColorStyle,
-    utils::markup::StyledString,
-    view::{IntoBoxedView, Margins, Selector, View, ViewNotFound},
-    views::{BoxedView, Button, DummyView, LastSizeView, TextView},
-    Cursive,
-    Printer,
-    Vec2,
-    With,
-};
+use cursive::{Cursive, Printer, Vec2, With, align::*, direction::{Absolute, Direction, Relative}, event::{AnyCb, Event, EventResult, Key}, theme::{ColorStyle, Palette, PaletteColor}, utils::markup::StyledString, view::{IntoBoxedView, Margins, Selector, View, ViewNotFound}, views::{BoxedView, Button, DummyView, LastSizeView, TextView}};
+
 use std::cell::Cell;
 use std::cmp::max;
 use unicode_width::UnicodeWidthStr;
@@ -586,6 +574,18 @@ impl Atomic_Dialog {
             Some(s) => s,
             None => return,
         };
+        //printer.with_color(theme::ColorStyle::highlight(), |printer| {
+            ///     printer.print((0, 0), "This text is highlighted!");
+            /// });
+            //++artie
+            /* /// Whether views in a StackView should have shadows.
+    pub shadow: bool,
+
+    /// How view borders should be drawn.
+    pub borders: BorderStyle,
+
+    /// What colors should be used through the application?
+    pub palette: Palette,*/
 
         self.content.draw(
             &printer
@@ -692,16 +692,47 @@ impl View for Atomic_Dialog {
             Some(height) => height,
             None => return,
         };
+        /*
+        pub enum PaletteColor {
+    /// Color used for the application background.
+    Background,
+    /// Color used for View shadows.
+    Shadow,
+    /// Color used for View backgrounds.
+    View,
+    /// Primary color used for the text.
+    Primary,
+    /// Secondary color used for the text.
+    Secondary,
+    /// Tertiary color used for the text.
+    Tertiary,
+    /// Primary color used for title text.
+    TitlePrimary,
+    /// Secondary color used for title text.
+    TitleSecondary,
+    /// Color used for highlighting text.
+    Highlight,
+    /// Color used for highlighting inactive text.
+    HighlightInactive,
+    /// Color used for highlighted text
+    HighlightText,
+}
 
-        self.draw_content(printer, buttons_height);
+         ++artie*/
+        let mut thm = cursive::theme::Theme{shadow:false,borders:cursive::theme::BorderStyle::Simple,palette:Palette::default()};
+        //thm.palette.set_basic_color("Tertiary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Green));
+        thm.palette.set_color("Primary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Red));
+        
+       // let printer = printer.theme(&thm);
+        self.draw_content(&printer, buttons_height);
 
         // Print the borders
         printer.print_box(Vec2::new(0, 0), printer.size, false);
         //++artie
         //printer.print_hdelim(Vec2::new(0,20),printer.size.pair().0);
         //--artie
-        self.draw_title(printer);
-        self.draw_title_bottom(printer);
+        self.draw_title(&printer);
+        self.draw_title_bottom(&printer);
     }
 
     fn required_size(&mut self, req: Vec2) -> Vec2 {

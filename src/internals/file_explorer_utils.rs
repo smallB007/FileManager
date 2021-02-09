@@ -103,16 +103,20 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     if showMenu {
         siv.select_menubar()
     }
-    siv.add_global_callback(Key::Esc, |s| s.select_menubar());
-    siv.add_global_callback(Key::Tab, switch_panel); //todo not working
+    siv.add_global_callback(Key::Esc, switch_panel);
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F4, cpy);
     //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 
     //siv.run();
 }
-fn switch_panel(siv: &mut cursive::Cursive) {
-    siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
+fn switch_panel(s: &mut cursive::Cursive) {
+    if let Some(mut dialog) = s.find_name::<Dialog>("DLG") {
+for but in dialog.buttons_mut()
+{
+}
+    }
+    //siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 }
 // Modules --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
@@ -335,15 +339,18 @@ fn copying_error(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn copying_already_exists(s: &mut Cursive) {
+fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf) {
     s.set_autorefresh(false); //todo repeat
     if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer();
     }
-    //Dialog::around(TextView::new("t")).set_style(theme::ColorStyle::primary());
-    let sw = ShadowView::new(Button::new("Ok", |s| {}));
-    s.add_layer(
-        LinearLayout::vertical().child(Dialog::around(TextView::new("File exists").center()).dismiss_button("Ok"))
+    let name = path_from.to_str().unwrap();
+    let size = "";
+let date = "";
+    let file_exist_dlg = 
+        Dialog::around(LinearLayout::horizontal().child(TextView::new(format!("New: {name}{size}{date}",name=name,size=size,date=date)))).title("File Exists");
+
+    s.add_layer(file_exist_dlg
     );
 }
 fn copying_finished_success(s: &mut Cursive) {
@@ -435,7 +442,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                         Other,
                     }
                     */
-                    match fs_extra::copy_items_with_progress(&vec![selected_path_from], &selected_path_to, &options, handle) {
+                    match fs_extra::copy_items_with_progress(&vec![selected_path_from.clone()], &selected_path_to, &options, handle) {
                         Ok(_) => {
                             // When we're done, send a callback through the channel
                             cb.send(Box::new(copying_finished_success)).unwrap()
@@ -443,7 +450,15 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                         Err(e) => match e.kind {
                             fs_extra::error::ErrorKind::NotFound => {}
                             fs_extra::error::ErrorKind::PermissionDenied => {}
-                            fs_extra::error::ErrorKind::AlreadyExists => cb.send(Box::new(copying_already_exists)).unwrap(),
+                            fs_extra::error::ErrorKind::AlreadyExists => {
+                                
+                                cb.send(
+                                Box::new(|s|{
+                                    copying_already_exists(s,selected_path_from,selected_path_to)}
+                                    )
+                                
+                                ).unwrap()
+                            },
                             fs_extra::error::ErrorKind::Interrupted => {}
                             fs_extra::error::ErrorKind::InvalidFolder => {}
                             fs_extra::error::ErrorKind::InvalidFile => {}
@@ -492,23 +507,43 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("Copy from:"))
-            .child(EditView::new().content(path_from).with_name("cpy_from_edit_view").min_width(80))
+            .child(EditView::new().content(path_from).with_name("cpy_from_edit_view").min_width(100))
+            .child(DummyView)
             .child(TextView::new("Copy to:"))
-            .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(80))
-            .child(Delimiter::new(""))
+            .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(100))
+            .child(DummyView)
+//            .child(Delimiter::new(""))
             .child(
                 LinearLayout::horizontal()
-                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("recursive_chck_bx")).child(TextView::new("Recursive")))
-                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("overwrite_chck_bx")).child(TextView::new("Overwrite")))
-            ),
+                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("recursive_chck_bx")).child(TextView::new(" Recursive")))
+                    .child(DummyView.min_width(5))
+                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("overwrite_chck_bx")).child(TextView::new(" Overwrite")))
+                    .child(DummyView.min_width(5))
+                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("preserve_attribs_chck_bx")).child(TextView::new(" Preserve attributes")))
+            )
+            .child(DummyView)
     )
+    .title("Copy")
     .button("[ OK ]", ok_cpy_callback)
     .button("[ Background ]", quit)
-    .button("[ Cancel ]", quit)
-    .with_name("cpy_dialog");
-        let fc = cpy_dialog.get_mut().focus();
-        cpy_dialog.get_mut().set_focus(DialogFocus::Button(1));
-        let fc = cpy_dialog.get_mut().focus();
+    
+    .button("[ Cancel ]", quit);
+    cpy_dialog.set_focus(DialogFocus::Button(1));
+let cpy_dialog = cpy_dialog.with_name("DLG");
+    /*
+        match cpy_dialog.focus()
+        {
+            DialogFocus::Content=>{println!("Content")}
+            _=>println!("Guziory")
+        }
+        let fc = cpy_dialog.focus();
+        match cpy_dialog.focus()
+        {
+            DialogFocus::Content=>{println!("Content")}
+            _=>println!("Guziory")
+        }
+        cpy_dialog.take_focus(cursive::direction::Direction::down());
+    */
         cpy_dialog
     }
 use fs_extra::dir::{copy, TransitProcessResult};
