@@ -1,4 +1,13 @@
-use cursive::{Cursive, Printer, Vec2, With, align::*, direction::{Absolute, Direction, Relative}, event::{AnyCb, Event, EventResult, Key}, theme::{ColorStyle, Palette, PaletteColor}, utils::markup::StyledString, view::{IntoBoxedView, Margins, Selector, View, ViewNotFound}, views::{BoxedView, Button, DummyView, LastSizeView, TextView}};
+use cursive::{
+    align::*,
+    direction::{Absolute, Direction, Relative},
+    event::{AnyCb, Event, EventResult, Key},
+    theme::{ColorStyle, Palette, PaletteColor},
+    utils::markup::StyledString,
+    view::{IntoBoxedView, Margins, Selector, View, ViewNotFound},
+    views::{BoxedView, Button, DummyView, LastSizeView, TextView},
+    Cursive, Printer, Vec2, With,
+};
 
 use std::cell::Cell;
 use std::cmp::max;
@@ -575,18 +584,17 @@ impl Atomic_Dialog {
             None => return,
         };
         //printer.with_color(theme::ColorStyle::highlight(), |printer| {
-            ///     printer.print((0, 0), "This text is highlighted!");
-            /// });
-            //++artie
-            /* /// Whether views in a StackView should have shadows.
-    pub shadow: bool,
+        ///     printer.print((0, 0), "This text is highlighted!");
+        /// });
+        //++artie
+        /* /// Whether views in a StackView should have shadows.
+        pub shadow: bool,
 
-    /// How view borders should be drawn.
-    pub borders: BorderStyle,
+        /// How view borders should be drawn.
+        pub borders: BorderStyle,
 
-    /// What colors should be used through the application?
-    pub palette: Palette,*/
-
+        /// What colors should be used through the application?
+        pub palette: Palette,*/
         self.content.draw(
             &printer
                 .offset(self.borders.top_left() + self.padding.top_left())
@@ -693,37 +701,41 @@ impl View for Atomic_Dialog {
             None => return,
         };
         /*
-        pub enum PaletteColor {
-    /// Color used for the application background.
-    Background,
-    /// Color used for View shadows.
-    Shadow,
-    /// Color used for View backgrounds.
-    View,
-    /// Primary color used for the text.
-    Primary,
-    /// Secondary color used for the text.
-    Secondary,
-    /// Tertiary color used for the text.
-    Tertiary,
-    /// Primary color used for title text.
-    TitlePrimary,
-    /// Secondary color used for title text.
-    TitleSecondary,
-    /// Color used for highlighting text.
-    Highlight,
-    /// Color used for highlighting inactive text.
-    HighlightInactive,
-    /// Color used for highlighted text
-    HighlightText,
-}
+                pub enum PaletteColor {
+            /// Color used for the application background.
+            Background,
+            /// Color used for View shadows.
+            Shadow,
+            /// Color used for View backgrounds.
+            View,
+            /// Primary color used for the text.
+            Primary,
+            /// Secondary color used for the text.
+            Secondary,
+            /// Tertiary color used for the text.
+            Tertiary,
+            /// Primary color used for title text.
+            TitlePrimary,
+            /// Secondary color used for title text.
+            TitleSecondary,
+            /// Color used for highlighting text.
+            Highlight,
+            /// Color used for highlighting inactive text.
+            HighlightInactive,
+            /// Color used for highlighted text
+            HighlightText,
+        }
 
-         ++artie*/
-        let mut thm = cursive::theme::Theme{shadow:false,borders:cursive::theme::BorderStyle::Simple,palette:Palette::default()};
+                 ++artie*/
+        let mut thm = cursive::theme::Theme {
+            shadow: false,
+            borders: cursive::theme::BorderStyle::Simple,
+            palette: Palette::default(),
+        };
         //thm.palette.set_basic_color("Tertiary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Green));
         thm.palette.set_color("Primary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Red));
-        
-       // let printer = printer.theme(&thm);
+
+        // let printer = printer.theme(&thm);
         self.draw_content(&printer, buttons_height);
 
         // Print the borders

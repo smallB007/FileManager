@@ -4,25 +4,32 @@ use cursive::traits::*;
 use cursive::view::Boxable;
 use cursive::views::*;
 use cursive::{Cursive, CursiveExt};
+use cursive::align::{HAlign, VAlign};
+use cursive::traits::*;
+use cursive::*;
+use cursive::utils::Counter;
+// STD Dependencies -----------------------------------------------------------
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::{
     io::{Error, ErrorKind},
     os::unix::prelude::MetadataExt,
 };
-// STD Dependencies -----------------------------------------------------------
-// ----------------------------------------------------------------------------
-//use std::cmp::Ordering;
-// External Dependencies ------------------------------------------------------
-// ----------------------------------------------------------------------------
+use std::rc::Rc;
+use std::sync::mpsc::channel;
+use std::time::Duration;
+use std::thread;
+/*FileManager crate*/
 use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::atomic_dialog_try::AtomicDialog;
 use crate::internals::atomic_text_view::AtomicTextView;
-use cursive::align::{HAlign, VAlign};
-use cursive::traits::*;
-use cursive::*;
-use std::rc::Rc;
+// ----------------------------------------------------------------------------
+//use std::cmp::Ordering;
+// External Dependencies ------------------------------------------------------
+// ----------------------------------------------------------------------------
+
+use notify::{Watcher, RecursiveMode, watcher};
 // This examples shows how to configure and use a menubar at the top of the
 // application.
 
@@ -80,13 +87,11 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
             Tree::new()
                 .subtree(
                     "Help",
-                    Tree::new()
-                        .leaf("General", |s| s.add_layer(Dialog::info("Help message!")))
-                        .leaf("Online", |s| {
-                            let text = "Google it yourself!\n\
+                    Tree::new().leaf("General", |s| s.add_layer(Dialog::info("Help message!"))).leaf("Online", |s| {
+                        let text = "Google it yourself!\n\
                                         Kids, these days...";
-                            s.add_layer(Dialog::info(text))
-                        }),
+                        s.add_layer(Dialog::info(text))
+                    }),
                 )
                 .leaf("About", |s| s.add_layer(Dialog::info("Cursive v0.0.0"))),
         )
@@ -112,9 +117,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
 }
 fn switch_panel(s: &mut cursive::Cursive) {
     if let Some(mut dialog) = s.find_name::<Dialog>("DLG") {
-for but in dialog.buttons_mut()
-{
-}
+        for but in dialog.buttons_mut() {}
     }
     //siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 }
@@ -326,9 +329,6 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
     new_path
 }
 // Function to simulate a long process.
-use cursive::utils::Counter;
-use std::thread;
-use std::time::Duration;
 fn copying_error(s: &mut Cursive) {
     s.set_autorefresh(false);
     s.pop_layer(); //trouble
@@ -346,12 +346,12 @@ fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf)
     }
     let name = path_from.to_str().unwrap();
     let size = "";
-let date = "";
-    let file_exist_dlg = 
-        Dialog::around(LinearLayout::horizontal().child(TextView::new(format!("New: {name}{size}{date}",name=name,size=size,date=date)))).title("File Exists");
+    let date = "";
+    let file_exist_dlg =
+        Dialog::around(LinearLayout::horizontal().child(TextView::new(format!("New: {name}{size}{date}", name = name, size = size, date = date))))
+            .title("File Exists");
 
-    s.add_layer(file_exist_dlg
-    );
+    s.add_layer(file_exist_dlg);
 }
 fn copying_finished_success(s: &mut Cursive) {
     s.set_autorefresh(false);
@@ -365,7 +365,7 @@ fn copying_finished_success(s: &mut Cursive) {
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
-/*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
+    /*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer(); //trouble
     }*/
     s.add_layer(
@@ -451,14 +451,8 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                             fs_extra::error::ErrorKind::NotFound => {}
                             fs_extra::error::ErrorKind::PermissionDenied => {}
                             fs_extra::error::ErrorKind::AlreadyExists => {
-                                
-                                cb.send(
-                                Box::new(|s|{
-                                    copying_already_exists(s,selected_path_from,selected_path_to)}
-                                    )
-                                
-                                ).unwrap()
-                            },
+                                cb.send(Box::new(|s| copying_already_exists(s, selected_path_from, selected_path_to))).unwrap()
+                            }
                             fs_extra::error::ErrorKind::Interrupted => {}
                             fs_extra::error::ErrorKind::InvalidFolder => {}
                             fs_extra::error::ErrorKind::InvalidFile => {}
@@ -474,7 +468,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                 .min_width(50)
                 .max_width(50),
         )
-        .button("Cancel", |s|{
+        .button("Cancel", |s| {
             s.pop_layer();
             cancel_operation(s)
         })
@@ -499,7 +493,7 @@ fn ok_cpy_callback(siv: &mut Cursive) {
         .unwrap();
     /*Close our dialog*/
     siv.pop_layer();
-    
+
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
 
@@ -512,40 +506,37 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
             .child(TextView::new("Copy to:"))
             .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(100))
             .child(DummyView)
-//            .child(Delimiter::new(""))
             .child(
                 LinearLayout::horizontal()
-                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("recursive_chck_bx")).child(TextView::new(" Recursive")))
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(Checkbox::new().with_name("recursive_chck_bx"))
+                            .child(TextView::new(" Recursive")),
+                    )
                     .child(DummyView.min_width(5))
-                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("overwrite_chck_bx")).child(TextView::new(" Overwrite")))
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(Checkbox::new().with_name("overwrite_chck_bx"))
+                            .child(TextView::new(" Overwrite")),
+                    )
                     .child(DummyView.min_width(5))
-                    .child(LinearLayout::horizontal().child(Checkbox::new().with_name("preserve_attribs_chck_bx")).child(TextView::new(" Preserve attributes")))
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(Checkbox::new().with_name("preserve_attribs_chck_bx"))
+                            .child(TextView::new(" Preserve attributes")),
+                    ),
             )
-            .child(DummyView)
+            .child(DummyView),
     )
     .title("Copy")
     .button("[ OK ]", ok_cpy_callback)
     .button("[ Background ]", quit)
-    
     .button("[ Cancel ]", quit);
+
     cpy_dialog.set_focus(DialogFocus::Button(0));
-let cpy_dialog = cpy_dialog.with_name("DLG");
-    /*
-        match cpy_dialog.focus()
-        {
-            DialogFocus::Content=>{println!("Content")}
-            _=>println!("Guziory")
-        }
-        let fc = cpy_dialog.focus();
-        match cpy_dialog.focus()
-        {
-            DialogFocus::Content=>{println!("Content")}
-            _=>println!("Guziory")
-        }
-        cpy_dialog.take_focus(cursive::direction::Direction::down());
-    */
-        cpy_dialog
-    }
+
+    cpy_dialog.with_name("DLG")
+}
 use fs_extra::dir::{copy, TransitProcessResult};
 use std::collections::HashMap;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
@@ -653,7 +644,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
         .child(del_layout.full_width())
         .child(pulldn_layout.full_width())
         .child(quit_layout);
-    let left_right_layout = CircularFocus::new(LinearLayout::horizontal().child(left_layout).child(right_layout),true,true);
+    let left_right_layout = CircularFocus::new(LinearLayout::horizontal().child(left_layout).child(right_layout), true, true);
     let whole_layout = LinearLayout::vertical().child(left_right_layout).child(buttons_layout);
     siv.add_fullscreen_layer(whole_layout);
     //    siv.run();
