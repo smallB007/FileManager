@@ -493,7 +493,7 @@ fn copying_finished_success(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn update_table(s: &mut Cursive, a_table_name: String) {
+fn update_table(s: &mut Cursive, a_table_name: String, a_path: String) {
     println!("Command received");
 }
 fn copying_cancelled(s: &mut Cursive) {
@@ -710,18 +710,10 @@ fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
 use super::delimiter::Delimiter;
-fn install_watcher(a_table_name:String,a_path:String)
+fn install_watcher(siv: &mut Cursive,a_table_name:String,a_path:String)
 {
 
-}
-fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
-    /*
-                let v = GLOBAL_FileManager.get();
-                let tmp = v.lock().unwrap();
-                let mut a_file_mngr = tmp.borrow_mut();
-    //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
     let cb_panel_update = siv.cb_sink().clone();
-    let left_panel_path = String::from(fm_config.left_panel_initial_path.clone());
     std::thread::spawn(move || {
         let (tx, rx) = channel();
 
@@ -730,20 +722,29 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
         let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
         // Add a path to be watched. All files and directories at that path and
         // below will be monitored for changes.
-        watcher.watch(left_panel_path, RecursiveMode::NonRecursive).unwrap();
+        watcher.watch(a_path.clone(), RecursiveMode::NonRecursive).unwrap();
 //        let watcher = Arc::new(Mutex::new(watcher));
         loop {
             match rx.recv() {
                 Ok(event) => {
+                    let name = a_table_name.clone();
+                    let path = a_path.clone();//todo optimize
                     //println!("{:?}", event);
-                    cb_panel_update.send(Box::new(|s| update_table(s, String::from("LeftPanel")))).unwrap();
+                    cb_panel_update.send(Box::new(|s| update_table(s, name,path))).unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
         };
 
     });
-
+}
+fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
+    /*
+                let v = GLOBAL_FileManager.get();
+                let tmp = v.lock().unwrap();
+                let mut a_file_mngr = tmp.borrow_mut();
+    //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
+install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
     let mut left_table = create_basic_table_core("LeftPanel", &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
