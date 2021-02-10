@@ -298,7 +298,7 @@ fn watch_dir(path: PathBuf, table: &str) {
     }
 }
 type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
-pub fn create_basic_table_core(a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
+pub fn create_basic_table_core(siv:&mut Cursive,a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
     let mut table = tableViewType::new()
         .column(ExplorerColumn::Name, "Name", |c| c.width_percent(60))
         .column(ExplorerColumn::Size, "Size", |c| c.align(cursive::align::HAlign::Center))
@@ -311,6 +311,7 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &str) -> Name
     let mut fm_manager = tmp.borrow_mut();
       fm_manager.install_watcher(&a_name, &initial_path,&mut table);*/
 
+let left_cb_sink = install_watcher(siv,String::from(a_name),String::from(initial_path));
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
     table.set_on_sort(|siv: &mut Cursive, column: ExplorerColumn, order: std::cmp::Ordering| {
         siv.add_layer(
@@ -710,10 +711,11 @@ fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
 use super::delimiter::Delimiter;
-fn install_watcher(siv: &mut Cursive,a_table_name:String,a_path:String)
+fn install_watcher(siv: &mut Cursive,a_table_name:String,a_path:String)->CbSink
 {
 
     let cb_panel_update = siv.cb_sink().clone();
+    let cb_panel_update_clone = cb_panel_update.clone();
     std::thread::spawn(move || {
         let (tx, rx) = channel();
 
@@ -730,13 +732,14 @@ fn install_watcher(siv: &mut Cursive,a_table_name:String,a_path:String)
                     let name = a_table_name.clone();
                     let path = a_path.clone();//todo optimize
                     //println!("{:?}", event);
-                    cb_panel_update.send(Box::new(|s| update_table(s, name,path))).unwrap();
+                        cb_panel_update_clone.send(Box::new(|s| update_table(s, name,path))).unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
         };
 
     });
+    cb_panel_update
 }
 fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
     /*
@@ -744,8 +747,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
                 let tmp = v.lock().unwrap();
                 let mut a_file_mngr = tmp.borrow_mut();
     //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
-install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
-    let mut left_table = create_basic_table_core("LeftPanel", &fm_config.left_panel_initial_path);
+//let left_cb_sink = install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
+    let mut left_table = create_basic_table_core(siv,"LeftPanel", &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -757,7 +760,7 @@ install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel
     .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
-    let mut right_table = create_basic_table_core("RightPanel", &fm_config.right_panel_initial_path);
+    let mut right_table = create_basic_table_core(siv,"RightPanel", &fm_config.right_panel_initial_path);
     let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
