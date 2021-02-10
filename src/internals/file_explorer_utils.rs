@@ -1,24 +1,32 @@
+use cursive::align::{HAlign, VAlign};
 use cursive::event::*;
 use cursive::menu::Tree;
 use cursive::traits::*;
+use cursive::traits::*;
+use cursive::utils::Counter;
 use cursive::view::Boxable;
 use cursive::views::*;
-use cursive::{Cursive, CursiveExt};
-use cursive::align::{HAlign, VAlign};
-use cursive::traits::*;
 use cursive::*;
-use cursive::utils::Counter;
+use cursive::{Cursive, CursiveExt};
 // STD Dependencies -----------------------------------------------------------
+use super::cursive_table_view::{TableView, TableViewItem};
+use chrono::offset::Utc;
+use chrono::DateTime;
+use std::collections::HashMap;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::mpsc::channel;
+use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
+use std::sync::Arc;
+use std::sync::Mutex;
+use std::thread;
+use std::time::Duration;
+use std::time::SystemTime;
 use std::{
     io::{Error, ErrorKind},
     os::unix::prelude::MetadataExt,
 };
-use std::rc::Rc;
-use std::sync::mpsc::channel;
-use std::time::Duration;
-use std::thread;
 /*FileManager crate*/
 use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
@@ -29,10 +37,104 @@ use crate::internals::atomic_text_view::AtomicTextView;
 // External Dependencies ------------------------------------------------------
 // ----------------------------------------------------------------------------
 
-use notify::{Watcher, RecursiveMode, watcher};
+use config::Config;
+use fs_extra::dir::{copy, TransitProcessResult};
+use notify::{watcher, INotifyWatcher, RecursiveMode, Watcher};
 // This examples shows how to configure and use a menubar at the top of the
 // application.
 
+struct AtomicWatcher {
+    current_dir: PathBuf,
+    a_watcher: HashMap<String, Arc<Mutex<INotifyWatcher>>>,
+}
+impl AtomicWatcher {
+    fn new(table: &str, path: &str, a_table_view: &mut tableViewType) -> Self {
+        let (tx, rx) = channel();
+
+        // Create a watcher object, delivering debounced events.
+        // The notification back-end is selected based on the platform.
+        let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+        // Add a path to be watched. All files and directories at that path and
+        // below will be monitored for changes.
+        watcher.watch(path, RecursiveMode::NonRecursive).unwrap();
+        let watcher = Arc::new(Mutex::new(watcher));
+        std::thread::spawn(move || loop {
+            match rx.recv() {
+                Ok(event) => {
+                    println!("{:?}", event);
+                }
+                Err(e) => println!("watch error: {:?}", e),
+            }
+        });
+
+        let mut hm = HashMap::new();
+        hm.insert(table.to_owned(), watcher);
+        hm.shrink_to_fit();
+
+        AtomicWatcher {
+            current_dir: PathBuf::from(path),
+            a_watcher: hm,
+        }
+    }
+
+    fn start_watching_path(&mut self, table: String, path: PathBuf) {
+        self.a_watcher.get(&table).unwrap().lock().unwrap().unwatch(self.current_dir.clone());
+        self.current_dir = path.clone();
+        self.a_watcher.get(&table).unwrap().lock().unwrap().watch(path, RecursiveMode::NonRecursive);
+    }
+}
+struct FileMangerConfig {
+    left_panel_initial_path: String,
+    right_panel_initial_path: String,
+}
+fn read_config() -> FileMangerConfig {
+    FileMangerConfig {
+        left_panel_initial_path: "/home/artie/Desktop/Left".to_owned(),
+        right_panel_initial_path: "/home/artie/Desktop/Right".to_owned(),
+    }
+}
+pub struct FileManager {
+    //    a_siv:Arc<Mutex<Option<Cursive>>>,
+    id: i64,
+    active_table: String, //change to &str
+    tx_rx: (Sender<fs_extra::dir::TransitProcessResult>, Receiver<fs_extra::dir::TransitProcessResult>),
+    tx_rx_panel_update: (Sender<String>, Receiver<String>),
+    cancel_current_operation: bool,
+   watchers_x: HashMap<String, AtomicWatcher>,
+}
+impl Default for FileManager {
+    fn default() -> Self {
+        FileManager {
+            //a_siv: Arc::new(Mutex::new(None)),
+            id: 0,
+            active_table: String::from(""),
+            tx_rx: std::sync::mpsc::channel(),
+            tx_rx_panel_update: std::sync::mpsc::channel(),
+            cancel_current_operation: false,
+           watchers_x: HashMap::new(),
+        }
+    }
+}
+
+static GLOBAL_FileManager: state::Storage<std::sync::Mutex<std::cell::RefCell<FileManager>>> = state::Storage::new();
+//static GLOBAL_FileManager: state::LocalStorage<std::cell::RefCell<FileManager>> = state::LocalStorage::new();
+impl FileManager {
+    pub fn new(mut siv: &mut cursive::CursiveRunnable) {
+        GLOBAL_FileManager.set(std::sync::Mutex::new(std::cell::RefCell::new(FileManager::default())));
+        let fm_config = read_config();
+        create_main_menu(&mut siv, true, true);
+
+        create_main_layout(&mut siv, &fm_config);
+        /* let v = GLOBAL_FileManager.get();
+        let tmp = v.lock().unwrap();
+        let fm = tmp.borrow_mut();
+        //let fm = FileManager{id:1};
+        fm.init(&mut siv);*/
+    }
+    fn install_watcher(&mut self, table: &str, path: &str, a_table_view: &mut tableViewType) {
+        self.watchers_x.insert(table.to_owned(), AtomicWatcher::new(table, path, a_table_view));
+    }
+}
 pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwaysVisible: bool) {
     //    let mut siv = cursive::default();
 
@@ -123,10 +225,6 @@ fn switch_panel(s: &mut cursive::Cursive) {
 }
 // Modules --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
-use super::cursive_table_view::{TableView, TableViewItem};
-use chrono::offset::Utc;
-use chrono::DateTime;
-use std::time::SystemTime;
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub enum ExplorerColumn {
     Name,
@@ -180,17 +278,40 @@ impl TableViewItem<ExplorerColumn> for ExplorerColumnData {
         }
     }
 }
+fn watch_dir(path: PathBuf, table: &str) {
+    // Create a channel to receive the events.
+    let (tx, rx) = channel();
 
+    // Create a watcher object, delivering debounced events.
+    // The notification back-end is selected based on the platform.
+    let mut watcher = watcher(tx, Duration::from_secs(10)).unwrap();
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(path, RecursiveMode::NonRecursive).unwrap();
+
+    loop {
+        match rx.recv() {
+            Ok(event) => println!("{:?}", event),
+            Err(e) => println!("watch error: {:?}", e),
+        }
+    }
+}
 type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
-pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> NamedView<tableViewType> {
+pub fn create_basic_table_core(a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
     let mut table = tableViewType::new()
         .column(ExplorerColumn::Name, "Name", |c| c.width_percent(60))
         .column(ExplorerColumn::Size, "Size", |c| c.align(cursive::align::HAlign::Center))
         .column(ExplorerColumn::LastModifyTime, "LastModifyTime", |c| {
             c.ordering(std::cmp::Ordering::Greater).align(HAlign::Right).width_percent(20)
         });
+/*
+    let v = GLOBAL_FileManager.get();
+    let tmp = v.lock().unwrap();
+    let mut fm_manager = tmp.borrow_mut();
+      fm_manager.install_watcher(&a_name, &initial_path,&mut table);*/
 
-    fill_table_with_items(&mut table, &std::path::PathBuf::from(initial_path));
+    fill_table_with_items(&mut table, PathBuf::from(initial_path));
     table.set_on_sort(|siv: &mut Cursive, column: ExplorerColumn, order: std::cmp::Ordering| {
         siv.add_layer(
             Dialog::around(TextView::new(format!("{} / {:?}", column.as_str(), order)))
@@ -259,9 +380,18 @@ pub fn create_basic_table_core(a_name: &'static str, initial_path: &PathBuf) -> 
             })
             .unwrap();
         if new_path.is_dir() {
+            /*            let new_path_clone = new_path.clone();
+            let a_table_name_clone = a_name.clone();*/
+
+            /*            if let Some(wtchr) = a_file_mngr.watchers.remove_entry(a_table_name_clone) {}
+            a_file_mngr.watchers.insert(
+                String::from(a_table_name_clone),
+
+                std::thread::spawn(move || watch_dir(new_path_clone, a_table_name_clone)),
+            );*/
             let mut res = Option::<std::io::Error>::default();
             siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-                res = fill_table_with_items(a_table, &new_path.clone()).err();
+                res = fill_table_with_items(a_table, new_path.clone()).err();
             });
             match res {
                 Some(e) => {
@@ -362,6 +492,9 @@ fn copying_finished_success(s: &mut Cursive) {
             .content(TextView::new("Copying finished successfully").center())
             .dismiss_button("OK"),
     );
+}
+fn update_table(s: &mut Cursive, a_table_name: String) {
+    println!("Command received");
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
@@ -537,9 +670,6 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
 
     cpy_dialog.with_name("DLG")
 }
-use fs_extra::dir::{copy, TransitProcessResult};
-use std::collections::HashMap;
-use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
 fn help(siv: &mut cursive::Cursive) {}
 fn cancel_operation(siv: &mut cursive::Cursive) {
     let v = GLOBAL_FileManager.get();
@@ -580,10 +710,41 @@ fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
 use super::delimiter::Delimiter;
-pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
-    let initial_path = String::from("/home/artie/Desktop/Left");
+fn install_watcher(a_table_name:String,a_path:String)
+{
 
-    let mut left_table = create_basic_table_core("LeftPanel", &PathBuf::from(initial_path.clone()));
+}
+fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
+    /*
+                let v = GLOBAL_FileManager.get();
+                let tmp = v.lock().unwrap();
+                let mut a_file_mngr = tmp.borrow_mut();
+    //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
+    let cb_panel_update = siv.cb_sink().clone();
+    let left_panel_path = String::from(fm_config.left_panel_initial_path.clone());
+    std::thread::spawn(move || {
+        let (tx, rx) = channel();
+
+        // Create a watcher object, delivering debounced events.
+        // The notification back-end is selected based on the platform.
+        let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+        // Add a path to be watched. All files and directories at that path and
+        // below will be monitored for changes.
+        watcher.watch(left_panel_path, RecursiveMode::NonRecursive).unwrap();
+//        let watcher = Arc::new(Mutex::new(watcher));
+        loop {
+            match rx.recv() {
+                Ok(event) => {
+                    //println!("{:?}", event);
+                    cb_panel_update.send(Box::new(|s| update_table(s, String::from("LeftPanel")))).unwrap();
+                }
+                Err(e) => println!("watch error: {:?}", e),
+            }
+        };
+
+    });
+
+    let mut left_table = create_basic_table_core("LeftPanel", &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -591,11 +752,11 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
             .child(Delimiter::new("Title 1"))
             .child(left_info_item),
     )
-    .title(initial_path.clone())
+    .title(fm_config.left_panel_initial_path.clone())
     .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
-    let mut right_table = create_basic_table_core("RightPanel", &PathBuf::from(initial_path.clone()));
+    let mut right_table = create_basic_table_core("RightPanel", &fm_config.right_panel_initial_path);
     let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -603,7 +764,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
             .child(Delimiter::new("Title 2"))
             .child(right_info_item),
     )
-    .title(initial_path.clone())
+    .title(fm_config.right_panel_initial_path.clone()) //todo get name from table
     .padding_lrtb(0, 0, 0, 0)
     .with_name("RightPanelDlg");
 
@@ -649,44 +810,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable) {
     siv.add_fullscreen_layer(whole_layout);
     //    siv.run();
 }
-fn read_config() {}
-use config::Config;
-pub struct FileManager {
-    id: i64,
-    active_table: String, //change to &str
-    tx_rx: (Sender<fs_extra::dir::TransitProcessResult>, Receiver<fs_extra::dir::TransitProcessResult>),
-    cancel_current_operation: bool,
-}
-impl Default for FileManager {
-    fn default() -> Self {
-        FileManager {
-            id: 0,
-            active_table: String::from(""),
-            tx_rx: std::sync::mpsc::channel(),
-            cancel_current_operation: false,
-        }
-    }
-}
-use std::sync::Mutex;
-static GLOBAL_FileManager: state::Storage<std::sync::Mutex<std::cell::RefCell<FileManager>>> = state::Storage::new();
-//static GLOBAL_FileManager: state::LocalStorage<std::cell::RefCell<FileManager>> = state::LocalStorage::new();
-impl FileManager {
-    fn init(&self, mut siv: &mut cursive::CursiveRunnable) {
-        read_config();
-        create_main_menu(&mut siv, true, true);
-
-        create_main_layout(&mut siv);
-    }
-    pub fn new(mut siv: &mut cursive::CursiveRunnable) {
-        GLOBAL_FileManager.set(std::sync::Mutex::new(std::cell::RefCell::new(FileManager::default())));
-        let v = GLOBAL_FileManager.get();
-        let tmp = v.lock().unwrap();
-        let fm = tmp.borrow_mut();
-        //let fm = FileManager{id:1};
-        fm.init(&mut siv);
-    }
-}
-fn fill_table_with_items(a_table: &mut tableViewType, a_dir: &PathBuf) -> Result<(), std::io::Error> {
+fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<(), std::io::Error> {
     let is = crate::internals::utils::read_directory(&a_dir)?;
     let mut items = Vec::new();
     if a_dir.parent().is_some() {

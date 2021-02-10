@@ -122,7 +122,7 @@ pub struct TableView<T, H> {
     column_select: bool,
     columns: Vec<TableColumn<H>>,
     column_indicies: HashMap<H, usize>,
-    ///Allows to check if view is in focus
+    ///Allows to check if view is in focus ++artie
     pub last_focus_time: std::time::SystemTime,
     ///Allows to check if view is in focus
     pub rows_selected: std::collections::BTreeMap<usize, bool>,
@@ -736,10 +736,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     }
 
     fn draw_content(&self, printer: &Printer) {
+        //++artie
         for i in 0..self.rows_to_items.len() {
             let printer = printer.offset((0, i));
             let color = if i == self.focus && self.enabled {
                 if !self.column_select && self.enabled && printer.focused {
+                    //theme::ColorStyle::highlight()
                     theme::ColorStyle::highlight()
                 } else {
                     theme::ColorStyle::highlight_inactive()
@@ -1053,7 +1055,14 @@ impl<H: Copy + Clone + 'static> TableColumn<H> {
             HAlign::Right => format!("{:>width$} ", value, width = self.width),
             HAlign::Center => format!("{:^width$} ", value, width = self.width),
         };
+        /*++artie*/
+        /*let color = theme::ColorStyle::primary();
 
+        printer.with_color(color, |printer| {
+            printer.print((0, 0), value.as_str());
+
+        });*/
+        /*--artie*/
         printer.print((0, 0), value.as_str());
     }
 }
