@@ -28,6 +28,7 @@ use std::{
     os::unix::prelude::MetadataExt,
 };
 /*FileManager crate*/
+use super::delimiter::Delimiter;
 use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::atomic_dialog_try::AtomicDialog;
@@ -100,7 +101,7 @@ pub struct FileManager {
     tx_rx: (Sender<fs_extra::dir::TransitProcessResult>, Receiver<fs_extra::dir::TransitProcessResult>),
     tx_rx_panel_update: (Sender<String>, Receiver<String>),
     cancel_current_operation: bool,
-   watchers_x: HashMap<String, AtomicWatcher>,
+    watchers_x: HashMap<String, AtomicWatcher>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -111,7 +112,7 @@ impl Default for FileManager {
             tx_rx: std::sync::mpsc::channel(),
             tx_rx_panel_update: std::sync::mpsc::channel(),
             cancel_current_operation: false,
-           watchers_x: HashMap::new(),
+            watchers_x: HashMap::new(),
         }
     }
 }
@@ -298,20 +299,30 @@ fn watch_dir(path: PathBuf, table: &str) {
     }
 }
 type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
-pub fn create_basic_table_core(siv:&mut Cursive,a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
+pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
     let mut table = tableViewType::new()
         .column(ExplorerColumn::Name, "Name", |c| c.width_percent(60))
         .column(ExplorerColumn::Size, "Size", |c| c.align(cursive::align::HAlign::Center))
         .column(ExplorerColumn::LastModifyTime, "LastModifyTime", |c| {
             c.ordering(std::cmp::Ordering::Greater).align(HAlign::Right).width_percent(20)
         });
-/*
+    /*
     let v = GLOBAL_FileManager.get();
     let tmp = v.lock().unwrap();
     let mut fm_manager = tmp.borrow_mut();
       fm_manager.install_watcher(&a_name, &initial_path,&mut table);*/
+/*=============BEGIN DIR WATCHER=================*/
+    let (tx, rx) = channel();
+    // Create a watcher object, delivering debounced events.
+    // The notification back-end is selected based on the platform.
+    let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(initial_path.clone(), RecursiveMode::NonRecursive).unwrap();
 
-let left_cb_sink = install_watcher(siv,String::from(a_name),String::from(initial_path));
+    install_watcher(siv, String::from(a_name), String::from(initial_path), rx);
+    let watcher = Arc::new(Mutex::new(watcher));
+/*=============END DIR WATCHER=================*/
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
     table.set_on_sort(|siv: &mut Cursive, column: ExplorerColumn, order: std::cmp::Ordering| {
         siv.add_layer(
@@ -357,6 +368,7 @@ let left_cb_sink = install_watcher(siv,String::from(a_name),String::from(initial
                 a_dlg.get_title()
             })
             .unwrap();
+        let path_to_stop_watching = current_dir.clone();
         let new_path = siv
             .call_on_name(a_name, move |a_table: &mut tableViewType| {
                 let selected_item = a_table.borrow_item(index).unwrap().name.clone();
@@ -381,6 +393,8 @@ let left_cb_sink = install_watcher(siv,String::from(a_name),String::from(initial
             })
             .unwrap();
         if new_path.is_dir() {
+            watcher.lock().unwrap().unwatch(path_to_stop_watching);
+            watcher.lock().unwrap().watch(new_path.clone(), RecursiveMode::NonRecursive).unwrap();
             /*            let new_path_clone = new_path.clone();
             let a_table_name_clone = a_name.clone();*/
 
@@ -710,36 +724,34 @@ fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
-use super::delimiter::Delimiter;
-fn install_watcher(siv: &mut Cursive,a_table_name:String,a_path:String)->CbSink
-{
-
+fn install_watcher(siv: &mut Cursive, a_table_name: String, a_path: String, rx: Receiver<notify::DebouncedEvent>) {
     let cb_panel_update = siv.cb_sink().clone();
     let cb_panel_update_clone = cb_panel_update.clone();
-    std::thread::spawn(move || {
-        let (tx, rx) = channel();
 
-        // Create a watcher object, delivering debounced events.
-        // The notification back-end is selected based on the platform.
-        let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
-        // Add a path to be watched. All files and directories at that path and
-        // below will be monitored for changes.
-        watcher.watch(a_path.clone(), RecursiveMode::NonRecursive).unwrap();
-//        let watcher = Arc::new(Mutex::new(watcher));
+    /*let (tx, rx) = channel();
+    // Create a watcher object, delivering debounced events.
+    // The notification back-end is selected based on the platform.
+    let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+    watcher.watch(a_path.clone(), RecursiveMode::NonRecursive).unwrap();
+    let watcher = Arc::new(Mutex::new(watcher));*/
+    std::thread::spawn(move || {
+        // let v = GLOBAL_FileManager.get();
+        // let tmp = v.lock().unwrap();
+        //  let mut a_file_mngr = tmp.borrow_mut();
         loop {
             match rx.recv() {
                 Ok(event) => {
                     let name = a_table_name.clone();
-                    let path = a_path.clone();//todo optimize
-                    //println!("{:?}", event);
-                        cb_panel_update_clone.send(Box::new(|s| update_table(s, name,path))).unwrap();
+                    let path = a_path.clone(); //todo optimize
+                                               //println!("{:?}", event);
+                    cb_panel_update_clone.send(Box::new(|s| update_table(s, name, path))).unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
-        };
-
+        }
     });
-    cb_panel_update
 }
 fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
     /*
@@ -747,8 +759,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
                 let tmp = v.lock().unwrap();
                 let mut a_file_mngr = tmp.borrow_mut();
     //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
-//let left_cb_sink = install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
-    let mut left_table = create_basic_table_core(siv,"LeftPanel", &fm_config.left_panel_initial_path);
+    //let left_cb_sink = install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
+    let mut left_table = create_basic_table_core(siv, "LeftPanel", &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -760,7 +772,7 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
-    let mut right_table = create_basic_table_core(siv,"RightPanel", &fm_config.right_panel_initial_path);
+    let mut right_table = create_basic_table_core(siv, "RightPanel", &fm_config.right_panel_initial_path);
     let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
