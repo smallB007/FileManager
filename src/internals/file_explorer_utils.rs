@@ -63,7 +63,6 @@ pub struct FileManager {
 impl Default for FileManager {
     fn default() -> Self {
         FileManager {
-            //a_siv: Arc::new(Mutex::new(None)),
             id: 0,
             active_table: String::from(""),
             tx_rx: std::sync::mpsc::channel(),
@@ -441,8 +440,25 @@ fn copying_finished_success(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn update_table(s: &mut Cursive, a_table_name: String, a_path: String) {
-    println!("Command received");
+fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
+    let new_path = PathBuf::from(a_path);
+    let mut res = Option::<std::io::Error>::default();//todo repeat
+            siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
+                res = fill_table_with_items(a_table, new_path.clone()).err();
+            });
+            match res {
+                Some(e) => {
+                    siv.add_layer(Dialog::around(TextView::new(e.to_string())).dismiss_button("Ok"));
+                }
+                None => {
+                    let _value = siv
+                        .call_on_name(&(String::from(a_name) + &String::from("Dlg")), |a_dlg: &mut Atomic_Dialog| {
+                            a_dlg.set_title(new_path.clone().to_str().unwrap());
+                        })
+                        .unwrap();
+                }
+            }
+//println!("Command received");
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
