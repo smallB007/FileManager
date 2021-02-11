@@ -44,46 +44,6 @@ use notify::{watcher, INotifyWatcher, RecursiveMode, Watcher};
 // This examples shows how to configure and use a menubar at the top of the
 // application.
 
-struct AtomicWatcher {
-    current_dir: PathBuf,
-    a_watcher: HashMap<String, Arc<Mutex<INotifyWatcher>>>,
-}
-impl AtomicWatcher {
-    fn new(table: &str, path: &str, a_table_view: &mut tableViewType) -> Self {
-        let (tx, rx) = channel();
-
-        // Create a watcher object, delivering debounced events.
-        // The notification back-end is selected based on the platform.
-        let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
-        // Add a path to be watched. All files and directories at that path and
-        // below will be monitored for changes.
-        watcher.watch(path, RecursiveMode::NonRecursive).unwrap();
-        let watcher = Arc::new(Mutex::new(watcher));
-        std::thread::spawn(move || loop {
-            match rx.recv() {
-                Ok(event) => {
-                    println!("{:?}", event);
-                }
-                Err(e) => println!("watch error: {:?}", e),
-            }
-        });
-
-        let mut hm = HashMap::new();
-        hm.insert(table.to_owned(), watcher);
-        hm.shrink_to_fit();
-
-        AtomicWatcher {
-            current_dir: PathBuf::from(path),
-            a_watcher: hm,
-        }
-    }
-
-    fn start_watching_path(&mut self, table: String, path: PathBuf) {
-        self.a_watcher.get(&table).unwrap().lock().unwrap().unwatch(self.current_dir.clone());
-        self.current_dir = path.clone();
-        self.a_watcher.get(&table).unwrap().lock().unwrap().watch(path, RecursiveMode::NonRecursive);
-    }
-}
 struct FileMangerConfig {
     left_panel_initial_path: String,
     right_panel_initial_path: String,
@@ -95,13 +55,10 @@ fn read_config() -> FileMangerConfig {
     }
 }
 pub struct FileManager {
-    //    a_siv:Arc<Mutex<Option<Cursive>>>,
     id: i64,
     active_table: String, //change to &str
     tx_rx: (Sender<fs_extra::dir::TransitProcessResult>, Receiver<fs_extra::dir::TransitProcessResult>),
-    tx_rx_panel_update: (Sender<String>, Receiver<String>),
     cancel_current_operation: bool,
-    watchers_x: HashMap<String, AtomicWatcher>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -110,9 +67,7 @@ impl Default for FileManager {
             id: 0,
             active_table: String::from(""),
             tx_rx: std::sync::mpsc::channel(),
-            tx_rx_panel_update: std::sync::mpsc::channel(),
             cancel_current_operation: false,
-            watchers_x: HashMap::new(),
         }
     }
 }
@@ -131,9 +86,6 @@ impl FileManager {
         let fm = tmp.borrow_mut();
         //let fm = FileManager{id:1};
         fm.init(&mut siv);*/
-    }
-    fn install_watcher(&mut self, table: &str, path: &str, a_table_view: &mut tableViewType) {
-        self.watchers_x.insert(table.to_owned(), AtomicWatcher::new(table, path, a_table_view));
     }
 }
 pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwaysVisible: bool) {
@@ -279,25 +231,6 @@ impl TableViewItem<ExplorerColumn> for ExplorerColumnData {
         }
     }
 }
-fn watch_dir(path: PathBuf, table: &str) {
-    // Create a channel to receive the events.
-    let (tx, rx) = channel();
-
-    // Create a watcher object, delivering debounced events.
-    // The notification back-end is selected based on the platform.
-    let mut watcher = watcher(tx, Duration::from_secs(10)).unwrap();
-
-    // Add a path to be watched. All files and directories at that path and
-    // below will be monitored for changes.
-    watcher.watch(path, RecursiveMode::NonRecursive).unwrap();
-
-    loop {
-        match rx.recv() {
-            Ok(event) => println!("{:?}", event),
-            Err(e) => println!("watch error: {:?}", e),
-        }
-    }
-}
 type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
 pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
     let mut table = tableViewType::new()
@@ -310,17 +243,17 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
     let v = GLOBAL_FileManager.get();
     let tmp = v.lock().unwrap();
     let mut fm_manager = tmp.borrow_mut();
-      fm_manager.install_watcher(&a_name, &initial_path,&mut table);*/
+      fm_manager.start_dir_watcher_thread(&a_name, &initial_path,&mut table);*/
 /*=============BEGIN DIR WATCHER=================*/
     let (tx, rx) = channel();
     // Create a watcher object, delivering debounced events.
     // The notification back-end is selected based on the platform.
-    let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
+    let mut watcher = watcher(tx, Duration::from_secs(2)).unwrap();
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
     watcher.watch(initial_path.clone(), RecursiveMode::NonRecursive).unwrap();
 
-    install_watcher(siv, String::from(a_name), String::from(initial_path), rx);
+    start_dir_watcher_thread(siv, String::from(a_name), String::from(initial_path), rx);
     let watcher = Arc::new(Mutex::new(watcher));
 /*=============END DIR WATCHER=================*/
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
@@ -724,7 +657,7 @@ fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
-fn install_watcher(siv: &mut Cursive, a_table_name: String, a_path: String, rx: Receiver<notify::DebouncedEvent>) {
+fn start_dir_watcher_thread(siv: &mut Cursive, a_table_name: String, a_path: String, rx: Receiver<notify::DebouncedEvent>) {
     let cb_panel_update = siv.cb_sink().clone();
     let cb_panel_update_clone = cb_panel_update.clone();
 
@@ -758,8 +691,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
                 let v = GLOBAL_FileManager.get();
                 let tmp = v.lock().unwrap();
                 let mut a_file_mngr = tmp.borrow_mut();
-    //            a_file_mngr.install_watcher(a_name,initial_path.clone());*/
-    //let left_cb_sink = install_watcher(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
+    //            a_file_mngr.start_dir_watcher_thread(a_name,initial_path.clone());*/
+    //let left_cb_sink = start_dir_watcher_thread(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
     let mut left_table = create_basic_table_core(siv, "LeftPanel", &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
