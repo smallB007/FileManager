@@ -2,10 +2,19 @@ use cursive::align::HAlign;
 use cursive::theme::ColorStyle;
 use cursive::view::View;
 use cursive::{Printer, Vec2};
+use std::default::Default;
 use unicode_width::UnicodeWidthStr;
 pub struct Delimiter {
     title: String,
     title_position: HAlign,
+}
+impl Default for Delimiter {
+    fn default() -> Self {
+        Delimiter {
+            title: "".to_owned(),
+            title_position: HAlign::Center,
+        }
+    }
 }
 impl Delimiter {
     pub fn new(title: &str) -> Self {

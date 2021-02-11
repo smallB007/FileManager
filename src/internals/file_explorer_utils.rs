@@ -1,3 +1,4 @@
+#![allow(warnings,unused)]
 use cursive::align::{HAlign, VAlign};
 use cursive::event::*;
 use cursive::menu::Tree;
@@ -243,7 +244,7 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
     let tmp = v.lock().unwrap();
     let mut fm_manager = tmp.borrow_mut();
       fm_manager.start_dir_watcher_thread(&a_name, &initial_path,&mut table);*/
-/*=============BEGIN DIR WATCHER=================*/
+    /*=============BEGIN DIR WATCHER=================*/
     let (tx, rx) = channel();
     // Create a watcher object, delivering debounced events.
     // The notification back-end is selected based on the platform.
@@ -254,7 +255,7 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 
     start_dir_watcher_thread(siv, String::from(a_name), String::from(initial_path), rx);
     let watcher = Arc::new(Mutex::new(watcher));
-/*=============END DIR WATCHER=================*/
+    /*=============END DIR WATCHER=================*/
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
     table.set_on_sort(|siv: &mut Cursive, column: ExplorerColumn, order: std::cmp::Ordering| {
         siv.add_layer(
@@ -336,8 +337,8 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 
                 std::thread::spawn(move || watch_dir(new_path_clone, a_table_name_clone)),
             );*/
-    fill_table_with_items_wrapper(siv,String::from(a_name),new_path);
-/*
+            fill_table_with_items_wrapper(siv, String::from(a_name), new_path);
+            /*
             let mut res = Option::<std::io::Error>::default();
             siv.call_on_name(a_name, |a_table: &mut tableViewType| {
                 res = fill_table_with_items(a_table, new_path.clone()).err();
@@ -418,37 +419,63 @@ fn copying_error(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf) {
-/*    s.set_autorefresh(false); //todo repeat
+fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>,is_overwrite:bool,is_recursive:bool) {
+    let theme = s.current_theme().clone().with(|theme| {
+        theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
+        theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
+        theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
+        theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
+    });
+    s.set_autorefresh(false); //todo repeat
     if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer();
     }
-    let name = path_from.to_str().unwrap();
-    let size = "";
-    let date = "";
-    let file_exist_dlg =
-        Dialog::around(LinearLayout::horizontal().child(TextView::new(format!("New: {name}{size}{date}", name = name, size = size, date = date))))
-            .title("File Exists");
+    let name_from = path_from.to_str().unwrap();
+    let size_from = path_from.metadata().unwrap().size();
+    let date_from = {
+        let datetime: DateTime<Utc> = path_from.metadata().unwrap().modified().unwrap().into();
+        format!("{}", datetime.format("%d/%m/%Y %T"))
+    };
+    let right_file_name = path_from.file_name().unwrap();
+    let path_to_joined = path_to.join(right_file_name);
+    let name_to = path_to_joined.to_str().unwrap();
+    let size_to = path_to_joined.metadata().unwrap().size();
+    let date_to = {
+        let datetime: DateTime<Utc> = path_to_joined.metadata().unwrap().modified().unwrap().into();
+        format!("{}", datetime.format("%d/%m/%Y %T"))
+    };
 
-    s.add_layer(file_exist_dlg);*/ 
-    // Let's build a green theme
-    let theme = s.current_theme().clone().with(|theme| {
-        theme.palette[theme::PaletteColor::View] =
-            theme::Color::Dark(theme::BaseColor::Red);
-        theme.palette[theme::PaletteColor::Primary] =
-            theme::Color::Light(theme::BaseColor::White);
-        theme.palette[theme::PaletteColor::TitlePrimary] =
-            theme::Color::Light(theme::BaseColor::Yellow);
-        theme.palette[theme::PaletteColor::Highlight] =
-            theme::Color::Dark(theme::BaseColor::Black);
-    });
+    let new_from_layout = LinearLayout::horizontal().child(TextView::new(format!(
+        "New     : {name}\nSize: {size}\t Date: {date}",
+        name = name_from,
+        size = size_from,
+        date = date_from
+    )));
+    let new_to_layout = LinearLayout::horizontal().child(TextView::new(format!(
+        "Existing: {name}\nSize: {size}\t Date: {date}",
+        name = name_to,
+        size = size_to,
+        date = date_to
+    )));
+    let file_exist_dlg = Dialog::around(
+        LinearLayout::vertical()
+            .child(new_from_layout)
+            .child(DummyView)
+            .child(new_to_layout)
+            .child(DummyView)
+            .child(Delimiter::default()),
+    )
+    .title("File Exists")
+    .button("Overwrite",move |s| {
 
-    s.add_layer(views::ThemedView::new(
-        theme,
-        views::Layer::new(
-            views::Dialog::info("Colors!").title("Themed Dialog"),
-        ),
-    ));
+        ok_cpy_callback(s,
+            path_from.clone(),
+            path_to.clone(),is_recursive,true)
+    })
+    .button("Append", |s| {})
+    .button("Abort", |s| {});
+
+    s.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
 fn copying_finished_success(s: &mut Cursive) {
     s.set_autorefresh(false);
@@ -460,30 +487,29 @@ fn copying_finished_success(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf)
-{
+fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf) {
     let mut res = Option::<std::io::Error>::default();
-            siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
-                res = fill_table_with_items(a_table, new_path.clone()).err();
-            });
-            match res {
-                Some(e) => {
-                    siv.add_layer(Dialog::around(TextView::new(e.to_string())).dismiss_button("Ok"));
-                }
-                None => {
-                    let _value = siv
-                        .call_on_name(&(String::from(a_name) + &String::from("Dlg")), |a_dlg: &mut Atomic_Dialog| {
-                            a_dlg.set_title(new_path.clone().to_str().unwrap());
-                        })
-                        .unwrap();
-                }
-            }
+    siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
+        res = fill_table_with_items(a_table, new_path.clone()).err();
+    });
+    match res {
+        Some(e) => {
+            siv.add_layer(Dialog::around(TextView::new(e.to_string())).dismiss_button("Ok"));
+        }
+        None => {
+            let _value = siv
+                .call_on_name(&(String::from(a_name) + &String::from("Dlg")), |a_dlg: &mut Atomic_Dialog| {
+                    a_dlg.set_title(new_path.clone().to_str().unwrap());
+                })
+                .unwrap();
+        }
+    }
 }
 
 fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
     let new_path = PathBuf::from(a_path);
-    fill_table_with_items_wrapper(siv,a_name,new_path);
-//println!("Command received");
+    fill_table_with_items_wrapper(siv, a_name, new_path);
+    //println!("Command received");
 }
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
@@ -500,10 +526,10 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is_recursive: bool, is_overwrite: bool) {
+fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
     // This is the callback channel
-    let selected_path_from = PathBuf::from((*path_from).clone());
-    let selected_path_to = PathBuf::from((*path_to).clone());
+    let selected_path_from = (*path_from).clone();
+    let selected_path_to = (*path_to).clone();
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
@@ -573,7 +599,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
                             fs_extra::error::ErrorKind::NotFound => {}
                             fs_extra::error::ErrorKind::PermissionDenied => {}
                             fs_extra::error::ErrorKind::AlreadyExists => {
-                                cb.send(Box::new(|s| copying_already_exists(s, selected_path_from, selected_path_to))).unwrap()
+                                cb.send(Box::new(move|s| copying_already_exists(s, Rc::new(selected_path_from), Rc::new(selected_path_to),is_overwrite,is_recursive))).unwrap()
                             }
                             fs_extra::error::ErrorKind::Interrupted => {}
                             fs_extra::error::ErrorKind::InvalidFolder => {}
@@ -599,22 +625,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<String>, path_to: Rc<String>, is
     siv.set_autorefresh(true);
 }
 
-fn ok_cpy_callback(siv: &mut Cursive) {
-    let selected_path_from: Rc<String> = siv
-        .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
-        .unwrap();
-
-    let selected_path_to: Rc<String> = siv
-        .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
-        .unwrap();
-    let is_recursive = siv
-        .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
-        .unwrap();
-    let is_overwrite = siv
-        .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
-        .unwrap();
-    /*Close our dialog*/
-    siv.pop_layer();
+fn ok_cpy_callback(siv: &mut Cursive,selected_path_from:Rc<PathBuf>,selected_path_to:Rc<PathBuf>,is_recursive:bool, is_overwrite: bool) {
 
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
@@ -651,7 +662,27 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", ok_cpy_callback)
+    .button("[ OK ]", |s| {
+    let selected_path_from: Rc<String> = s
+        .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+        .unwrap();
+
+    let selected_path_to: Rc<String> = s
+        .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+        .unwrap();
+    let is_recursive = s
+        .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+        .unwrap();
+    let is_overwrite = s
+        .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+        .unwrap();
+    /*Close our dialog*/
+    s.pop_layer();
+
+        ok_cpy_callback(s,
+            Rc::new(PathBuf::from((*selected_path_from).clone())),
+            Rc::new(PathBuf::from((*selected_path_to).clone())),is_recursive,is_overwrite)
+    })
     .button("[ Background ]", quit)
     .button("[ Cancel ]", quit);
 
