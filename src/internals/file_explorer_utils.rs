@@ -336,6 +336,8 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 
                 std::thread::spawn(move || watch_dir(new_path_clone, a_table_name_clone)),
             );*/
+    fill_table_with_items_wrapper(siv,String::from(a_name),new_path);
+/*
             let mut res = Option::<std::io::Error>::default();
             siv.call_on_name(a_name, |a_table: &mut tableViewType| {
                 res = fill_table_with_items(a_table, new_path.clone()).err();
@@ -351,7 +353,7 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
                         })
                         .unwrap();
                 }
-            }
+            }*/
         }
         /*        siv.add_layer(
             Dialog::around(TextView::new(value))
@@ -417,7 +419,7 @@ fn copying_error(s: &mut Cursive) {
     );
 }
 fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf) {
-    s.set_autorefresh(false); //todo repeat
+/*    s.set_autorefresh(false); //todo repeat
     if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer();
     }
@@ -428,7 +430,25 @@ fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf)
         Dialog::around(LinearLayout::horizontal().child(TextView::new(format!("New: {name}{size}{date}", name = name, size = size, date = date))))
             .title("File Exists");
 
-    s.add_layer(file_exist_dlg);
+    s.add_layer(file_exist_dlg);*/ 
+    // Let's build a green theme
+    let theme = s.current_theme().clone().with(|theme| {
+        theme.palette[theme::PaletteColor::View] =
+            theme::Color::Dark(theme::BaseColor::Red);
+        theme.palette[theme::PaletteColor::Primary] =
+            theme::Color::Light(theme::BaseColor::White);
+        theme.palette[theme::PaletteColor::TitlePrimary] =
+            theme::Color::Light(theme::BaseColor::Yellow);
+        theme.palette[theme::PaletteColor::Highlight] =
+            theme::Color::Dark(theme::BaseColor::Black);
+    });
+
+    s.add_layer(views::ThemedView::new(
+        theme,
+        views::Layer::new(
+            views::Dialog::info("Colors!").title("Themed Dialog"),
+        ),
+    ));
 }
 fn copying_finished_success(s: &mut Cursive) {
     s.set_autorefresh(false);
@@ -440,9 +460,9 @@ fn copying_finished_success(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
-    let new_path = PathBuf::from(a_path);
-    let mut res = Option::<std::io::Error>::default();//todo repeat
+fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf)
+{
+    let mut res = Option::<std::io::Error>::default();
             siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
                 res = fill_table_with_items(a_table, new_path.clone()).err();
             });
@@ -458,6 +478,11 @@ fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
                         .unwrap();
                 }
             }
+}
+
+fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
+    let new_path = PathBuf::from(a_path);
+    fill_table_with_items_wrapper(siv,a_name,new_path);
 //println!("Command received");
 }
 fn copying_cancelled(s: &mut Cursive) {
