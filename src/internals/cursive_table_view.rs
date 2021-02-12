@@ -125,7 +125,7 @@ pub struct TableView<T, H> {
     ///Allows to check if view is in focus ++artie
     pub last_focus_time: std::time::SystemTime,
     ///Allows to check if view is in focus
-    pub rows_selected: std::collections::BTreeMap<usize, bool>,
+    pub rows_selected: std::collections::BTreeSet<usize>,
     focus: usize,
     items: Vec<T>,
     rows_to_items: Vec<usize>,
@@ -162,9 +162,10 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             column_select: false,
             columns: Vec::new(),
             column_indicies: HashMap::new(),
-
+            /*++artie*/
             last_focus_time: std::time::SystemTime::now(),
-            rows_selected: std::collections::BTreeMap::new(),
+            rows_selected: std::collections::BTreeSet::new(),
+            /*--artie*/
             focus: 0,
             items: Vec::new(),
             rows_to_items: Vec::new(),
@@ -529,7 +530,13 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             Some(self.rows_to_items[self.focus])
         }
     }
-
+    //++artie
+    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> {
+        let focused_inx = self.rows_to_items[self.focus];
+        self.rows_selected.insert(focused_inx);
+        self.rows_selected.clone()
+    }
+    //--artie
     /// Selects the item at the specified index within the underlying storage
     /// vector.
     pub fn set_selected_item(&mut self, item_index: usize) {
@@ -647,10 +654,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         self.draw_columns(printer, "┆ ", |printer, column| {
             let value = self.items[self.rows_to_items[i]].to_column(column.column);
             //++artie
-            if self.rows_selected.contains_key(&i) && self.focus != i {
+            if self.rows_selected.contains(&i) && self.focus != i {
                 let color = theme::ColorStyle::secondary();
                 column.draw_row_with_color(printer, value.as_str(), color);
-            } else /*--artie*/{
+            } else
+            /*--artie*/
+            {
                 column.draw_row(printer, value.as_str());
             }
         });
@@ -802,14 +811,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             //++artie
             Event::Key(Key::Ins) => {
                 let row = self.row().unwrap();
-//                let index = self.item().unwrap();
-                if self.rows_selected.contains_key(&row)
-                {
-                    self.rows_selected.remove_entry(&row);
-                }
-                else
-                {
-                    self.rows_selected.insert(row, true);
+                //                let index = self.item().unwrap();
+                if self.rows_selected.contains(&row) {
+                    self.rows_selected.remove(&row);
+                } else {
+                    self.rows_selected.insert(row);
                 }
                 self.focus_down(1);
                 /*                if self.column_select {

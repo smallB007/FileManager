@@ -371,15 +371,22 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 
     named_view_table
 }
-fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<String> {
-    let mut item_from_inx = usize::MAX;
+fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<Vec<String>> {
+    let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-        if let Some(inx) = a_table.item() {
-            item_from_inx = inx;
-        };
+        selected_items_inx = a_table.get_selected_items();
     });
-    let selected_path = get_selected_path_from_inx(siv, a_name, item_from_inx);
-    selected_path
+
+    if selected_items_inx.len() != 0 {
+        let mut selected_paths = Vec::<String>::new();
+        for selected_inx in selected_items_inx {
+            selected_paths.push(get_selected_path_from_inx(siv, a_name, selected_inx).unwrap());
+        }
+
+        Some(selected_paths)
+    } else {
+        None
+    }
 }
 
 fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
@@ -481,7 +488,7 @@ fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<P
     .title("File Exists")
     .button("Overwrite", move |s| {
         s.pop_layer();
-        ok_cpy_callback(s, path_from.clone(), path_to.clone(), is_recursive, true)
+        ok_cpy_callback(s, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
     })
     .button("Older", |s| {})
     .button("Smaller", |s| {})
@@ -541,16 +548,16 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
+fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
     // This is the callback channel
-    let selected_path_from = (*path_from).clone();
+   // let selected_path_from = (*path_from).clone();
     let selected_path_to = (*path_to).clone();
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
             ProgressBar::new()
                 // We need to know how many ticks represent a full bar.
-                .range(0, selected_path_from.metadata(/*panic if dir*/).unwrap().size() as usize)
+                .range(0, paths_from.len())
                 .with_task(move |counter| {
                     let mut options = fs_extra::dir::CopyOptions::new();
                     options.overwrite = is_overwrite;
@@ -605,7 +612,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, 
                         Other,
                     }
                     */
-                    match fs_extra::copy_items_with_progress(&vec![selected_path_from.clone()], &selected_path_to, &options, handle) {
+                    match fs_extra::copy_items_with_progress(&paths_from, &selected_path_to, &options, handle) {
                         Ok(_) => {
                             // When we're done, send a callback through the channel
                             cb.send(Box::new(copying_finished_success)).unwrap()
@@ -615,7 +622,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, 
                             fs_extra::error::ErrorKind::PermissionDenied => {}
                             fs_extra::error::ErrorKind::AlreadyExists => cb
                                 .send(Box::new(move |s| {
-                                    copying_already_exists(s, Rc::new(selected_path_from), Rc::new(selected_path_to), is_overwrite, is_recursive)
+                                    copying_already_exists(s, Rc::new(PathBuf::from("selected_path_from")), Rc::new(selected_path_to), is_overwrite, is_recursive)
                                 }))
                                 .unwrap(),
                             fs_extra::error::ErrorKind::Interrupted => {}
@@ -642,15 +649,15 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, 
     siv.set_autorefresh(true);
 }
 
-fn ok_cpy_callback(siv: &mut Cursive, selected_path_from: Rc<PathBuf>, selected_path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
+fn ok_cpy_callback(siv: &mut Cursive, selected_path_from: Vec<String>, selected_path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
 
-fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
+fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dialog> {
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
-            .child(TextView::new("Copy from:"))
-            .child(EditView::new().content(path_from).with_name("cpy_from_edit_view").min_width(100))
+            .child(TextView::new(format!("Copy {} items with mask:",paths_from.len())))
+            .child(EditView::new().content("*").with_name("cpy_from_edit_view").min_width(100))
             .child(DummyView)
             .child(TextView::new("Copy to:"))
             .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(100))
@@ -678,8 +685,8 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", |s| {
-        let selected_path_from: Rc<String> = s
+    .button("[ OK ]", move|s| {
+        let selected_mask_from: Rc<String> = s
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
 
@@ -697,7 +704,7 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
 
         ok_cpy_callback(
             s,
-            Rc::new(PathBuf::from((*selected_path_from).clone())),
+            paths_from.clone(),
             Rc::new(PathBuf::from((*selected_path_to).clone())),
             is_recursive,
             is_overwrite,
@@ -737,9 +744,9 @@ fn cpy(siv: &mut cursive::Cursive) {
         ("RightPanel", "LeftPanel")
     };
     match get_selected_path(siv, from) {
-        Some(selected_path_from) => {
+        Some(selected_paths_from) => {
             let selected_path_to = get_current_dir(siv, to);
-            siv.add_layer(create_cpy_dialog(selected_path_from, selected_path_to));
+            siv.add_layer(create_cpy_dialog(selected_paths_from, selected_path_to));
         }
         None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
     }
