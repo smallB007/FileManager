@@ -646,7 +646,13 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     fn draw_item(&self, printer: &Printer, i: usize) {
         self.draw_columns(printer, "┆ ", |printer, column| {
             let value = self.items[self.rows_to_items[i]].to_column(column.column);
-            column.draw_row(printer, value.as_str());
+            //++artie
+            if self.rows_selected.contains_key(&i) && self.focus != i {
+                let color = theme::ColorStyle::secondary();
+                column.draw_row_with_color(printer, value.as_str(), color);
+            } else /*--artie*/{
+                column.draw_row(printer, value.as_str());
+            }
         });
     }
 
@@ -741,7 +747,6 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             let printer = printer.offset((0, i));
             let color = if i == self.focus && self.enabled {
                 if !self.column_select && self.enabled && printer.focused {
-                    //theme::ColorStyle::highlight()
                     theme::ColorStyle::highlight()
                 } else {
                     theme::ColorStyle::highlight_inactive()
@@ -794,6 +799,21 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         let last_focus = self.focus;
         self.last_focus_time = std::time::SystemTime::now();
         match event {
+            //++artie
+            Event::Key(Key::Ins) => {
+                let row = self.row().unwrap();
+                let index = self.item().unwrap();
+                self.rows_selected.insert(row, true);
+                self.focus_down(1);
+                /*                if self.column_select {
+                    if !self.column_next() {
+                        return EventResult::Ignored;
+                    }
+                } else {
+                    self.column_select = true;
+                }*/
+            }
+            //--artie
             Event::Key(Key::Right) => {
                 if self.column_select {
                     if !self.column_next() {
@@ -1048,21 +1068,24 @@ impl<H: Copy + Clone + 'static> TableColumn<H> {
 
         printer.print((0, 0), header.as_str());
     }
-
+    /*++artie*/
+    fn draw_row_with_color(&self, printer: &Printer, value: &str, color: theme::ColorStyle) {
+        let value = match self.alignment {
+            HAlign::Left => format!("{:<width$} ", value, width = self.width),
+            HAlign::Right => format!("{:>width$} ", value, width = self.width),
+            HAlign::Center => format!("{:^width$} ", value, width = self.width),
+        };
+        printer.with_color(color, |printer| {
+            printer.print((0, 0), value.as_str());
+        });
+    }
+    /*--artie*/
     fn draw_row(&self, printer: &Printer, value: &str) {
         let value = match self.alignment {
             HAlign::Left => format!("{:<width$} ", value, width = self.width),
             HAlign::Right => format!("{:>width$} ", value, width = self.width),
             HAlign::Center => format!("{:^width$} ", value, width = self.width),
         };
-        /*++artie*/
-        /*let color = theme::ColorStyle::primary();
-
-        printer.with_color(color, |printer| {
-            printer.print((0, 0), value.as_str());
-
-        });*/
-        /*--artie*/
         printer.print((0, 0), value.as_str());
     }
 }

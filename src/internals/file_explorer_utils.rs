@@ -470,9 +470,13 @@ fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<P
             .child(
                 LinearLayout::vertical()
                     .child(LinearLayout::horizontal().child(Checkbox::new()).child(TextView::new(" Apply to all")))
-                    .child(LinearLayout::horizontal().child(Checkbox::new()).child(TextView::new(" Don't overwrite with zero length file"))),
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(Checkbox::new())
+                            .child(TextView::new(" Don't overwrite with zero length file")),
+                    ),
             )
-            .child(DummyView)
+            .child(DummyView),
     )
     .title("File Exists")
     .button("Overwrite", move |s| {
