@@ -809,25 +809,18 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
 
     fn on_inner_event(&mut self, event: Event) -> EventResult {
         let last_focus = self.focus;
-        self.last_focus_time = std::time::SystemTime::now();
+        self.last_focus_time = std::time::SystemTime::now();//++artie
         match event {
             //++artie
             Event::Key(Key::Ins) => {
-                let row = self.row().unwrap();
-                //                let index = self.item().unwrap();
-                if self.rows_selected.contains(&row) {
-                    self.rows_selected.remove(&row);
+  //              let row = self.row().unwrap();
+//                let value = self.items[self.rows_to_items[row]].to_column(column.column);
+                if self.rows_selected.contains(&last_focus) {
+                    self.rows_selected.remove(&last_focus);
                 } else {
-                    self.rows_selected.insert(row);
+                    self.rows_selected.insert(last_focus);
                 }
                 self.focus_down(1);
-                /*                if self.column_select {
-                    if !self.column_next() {
-                        return EventResult::Ignored;
-                    }
-                } else {
-                    self.column_select = true;
-                }*/
             }
             //--artie
             Event::Key(Key::Right) => {
