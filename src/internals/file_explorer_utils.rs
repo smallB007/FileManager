@@ -465,13 +465,23 @@ fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<P
             .child(DummyView)
             .child(new_to_layout)
             .child(DummyView)
-            .child(Delimiter::default()),
+            .child(Delimiter::default())
+            .child(DummyView)
+            .child(
+                LinearLayout::vertical()
+                    .child(LinearLayout::horizontal().child(Checkbox::new()).child(TextView::new(" Apply to all")))
+                    .child(LinearLayout::horizontal().child(Checkbox::new()).child(TextView::new(" Don't overwrite with zero length file"))),
+            )
+            .child(DummyView)
     )
     .title("File Exists")
     .button("Overwrite", move |s| {
         s.pop_layer();
         ok_cpy_callback(s, path_from.clone(), path_to.clone(), is_recursive, true)
     })
+    .button("Older", |s| {})
+    .button("Smaller", |s| {})
+    .button("Different size", |s| {})
     .button("Append", |s| {})
     .button("Skip", |s| {})
     .button("Abort", |s| {});
