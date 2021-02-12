@@ -802,8 +802,15 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             //++artie
             Event::Key(Key::Ins) => {
                 let row = self.row().unwrap();
-                let index = self.item().unwrap();
-                self.rows_selected.insert(row, true);
+//                let index = self.item().unwrap();
+                if self.rows_selected.contains_key(&row)
+                {
+                    self.rows_selected.remove_entry(&row);
+                }
+                else
+                {
+                    self.rows_selected.insert(row, true);
+                }
                 self.focus_down(1);
                 /*                if self.column_select {
                     if !self.column_next() {
