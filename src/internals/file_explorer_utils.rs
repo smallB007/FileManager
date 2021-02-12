@@ -396,12 +396,14 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
     let new_path = siv
         .call_on_name(a_name, move |a_table: &mut tableViewType| {
             let mut selected_item = a_table.borrow_item(index).unwrap().name.clone();
-            if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
-                selected_item.insert(0, std::path::MAIN_SEPARATOR);
-            }
             let whole_path = match selected_item.as_str() {
                 ".." => None,
-                _ => Some(current_dir + &selected_item),
+                _ => {
+                    if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
+                        selected_item.insert(0, std::path::MAIN_SEPARATOR);
+                    }
+                    Some(current_dir + &selected_item)
+                }
             };
             whole_path
         })
@@ -466,7 +468,7 @@ fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<P
             .child(Delimiter::default()),
     )
     .title("File Exists")
-    .button("Overwrite", move |s|{
+    .button("Overwrite", move |s| {
         s.pop_layer();
         ok_cpy_callback(s, path_from.clone(), path_to.clone(), is_recursive, true)
     })
@@ -688,7 +690,9 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
         )
     })
     .button("[ Background ]", quit)
-    .button("[ Cancel ]", quit);
+    .button("[ Cancel ]", |s| {
+        s.pop_layer();
+    });
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
 
