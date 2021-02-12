@@ -1,4 +1,4 @@
-#![allow(warnings,unused)]
+#![allow(warnings, unused)]
 use cursive::align::{HAlign, VAlign};
 use cursive::event::*;
 use cursive::menu::Tree;
@@ -419,7 +419,7 @@ fn copying_error(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>,is_overwrite:bool,is_recursive:bool) {
+fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, is_overwrite: bool, is_recursive: bool) {
     let theme = s.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
@@ -466,13 +466,12 @@ fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<P
             .child(Delimiter::default()),
     )
     .title("File Exists")
-    .button("Overwrite",move |s| {
-
-        ok_cpy_callback(s,
-            path_from.clone(),
-            path_to.clone(),is_recursive,true)
+    .button("Overwrite", move |s|{
+        s.pop_layer();
+        ok_cpy_callback(s, path_from.clone(), path_to.clone(), is_recursive, true)
     })
     .button("Append", |s| {})
+    .button("Skip", |s| {})
     .button("Abort", |s| {});
 
     s.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
@@ -598,9 +597,11 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, 
                         Err(e) => match e.kind {
                             fs_extra::error::ErrorKind::NotFound => {}
                             fs_extra::error::ErrorKind::PermissionDenied => {}
-                            fs_extra::error::ErrorKind::AlreadyExists => {
-                                cb.send(Box::new(move|s| copying_already_exists(s, Rc::new(selected_path_from), Rc::new(selected_path_to),is_overwrite,is_recursive))).unwrap()
-                            }
+                            fs_extra::error::ErrorKind::AlreadyExists => cb
+                                .send(Box::new(move |s| {
+                                    copying_already_exists(s, Rc::new(selected_path_from), Rc::new(selected_path_to), is_overwrite, is_recursive)
+                                }))
+                                .unwrap(),
                             fs_extra::error::ErrorKind::Interrupted => {}
                             fs_extra::error::ErrorKind::InvalidFolder => {}
                             fs_extra::error::ErrorKind::InvalidFile => {}
@@ -625,8 +626,7 @@ fn copy_engine(siv: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, 
     siv.set_autorefresh(true);
 }
 
-fn ok_cpy_callback(siv: &mut Cursive,selected_path_from:Rc<PathBuf>,selected_path_to:Rc<PathBuf>,is_recursive:bool, is_overwrite: bool) {
-
+fn ok_cpy_callback(siv: &mut Cursive, selected_path_from: Rc<PathBuf>, selected_path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
     copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
 }
 
@@ -663,25 +663,29 @@ fn create_cpy_dialog(path_from: String, path_to: String) -> NamedView<Dialog> {
     )
     .title("Copy")
     .button("[ OK ]", |s| {
-    let selected_path_from: Rc<String> = s
-        .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
-        .unwrap();
+        let selected_path_from: Rc<String> = s
+            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .unwrap();
 
-    let selected_path_to: Rc<String> = s
-        .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
-        .unwrap();
-    let is_recursive = s
-        .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
-        .unwrap();
-    let is_overwrite = s
-        .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
-        .unwrap();
-    /*Close our dialog*/
-    s.pop_layer();
+        let selected_path_to: Rc<String> = s
+            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .unwrap();
+        let is_recursive = s
+            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .unwrap();
+        let is_overwrite = s
+            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .unwrap();
+        /*Close our dialog*/
+        s.pop_layer();
 
-        ok_cpy_callback(s,
+        ok_cpy_callback(
+            s,
             Rc::new(PathBuf::from((*selected_path_from).clone())),
-            Rc::new(PathBuf::from((*selected_path_to).clone())),is_recursive,is_overwrite)
+            Rc::new(PathBuf::from((*selected_path_to).clone())),
+            is_recursive,
+            is_overwrite,
+        )
     })
     .button("[ Background ]", quit)
     .button("[ Cancel ]", quit);
