@@ -536,6 +536,9 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         self.rows_selected.insert(focused_inx);
         self.rows_selected.clone()
     }
+    pub fn clear_selected_items(&mut self){
+        self.rows_selected.clear();
+    }
     //--artie
     /// Selects the item at the specified index within the underlying storage
     /// vector.

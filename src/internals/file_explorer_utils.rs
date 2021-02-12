@@ -295,6 +295,10 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
     });
     table.set_selected_row(0);
     table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
+siv.call_on_name(a_name, |a_table: &mut tableViewType| {
+        a_table.clear_selected_items();
+    });
+
         let current_dir = siv
             .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
                 //format!("{:?}", a_table.borrow_item(index).unwrap())
