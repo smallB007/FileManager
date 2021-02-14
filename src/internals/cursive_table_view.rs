@@ -531,12 +531,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         }
     }
     //++artie
-    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize>/*todo, why not by &*/ {
+    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> /*todo, why not by &*/ {
         let focused_inx = self.rows_to_items[self.focus];
         self.rows_selected.insert(focused_inx);
         self.rows_selected.clone()
     }
-    pub fn clear_selected_items(&mut self){
+    pub fn clear_selected_items(&mut self) {
         self.rows_selected.clear();
     }
     //--artie
@@ -809,12 +809,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
 
     fn on_inner_event(&mut self, event: Event) -> EventResult {
         let last_focus = self.focus;
-        self.last_focus_time = std::time::SystemTime::now();//++artie
+        self.last_focus_time = std::time::SystemTime::now(); //++artie
         match event {
             //++artie
             Event::Key(Key::Ins) => {
-  //              let row = self.row().unwrap();
-//                let value = self.items[self.rows_to_items[row]].to_column(column.column);
+                //              let row = self.row().unwrap();
+                //                let value = self.items[self.rows_to_items[row]].to_column(column.column);
                 if self.rows_selected.contains(&last_focus) {
                     self.rows_selected.remove(&last_focus);
                 } else {

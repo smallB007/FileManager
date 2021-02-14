@@ -1,4 +1,4 @@
-#![allow(warnings, unused)]
+#![forbid(unreachable_patterns)]
 use cursive::align::{HAlign, VAlign};
 use cursive::event::*;
 use cursive::menu::Tree;
@@ -295,9 +295,9 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
     });
     table.set_selected_row(0);
     table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
-siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-        a_table.clear_selected_items();
-    });
+        siv.call_on_name(a_name, |a_table: &mut tableViewType| {
+            a_table.clear_selected_items();
+        });
 
         let current_dir = siv
             .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
@@ -432,7 +432,7 @@ fn copying_error(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn copying_already_exists(s: &mut Cursive, path_from: Rc<PathBuf>, path_to: Rc<PathBuf>, is_overwrite: bool, is_recursive: bool) {
+fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf, is_overwrite: bool, is_recursive: bool) {
     let theme = s.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
@@ -552,10 +552,139 @@ fn copying_cancelled(s: &mut Cursive) {
 /*let v = GLOBAL_FileManager.get();
 let mut v = v.borrow_mut();
 v.id = 1;*/
-fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
+fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProcess) {
+    siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
+        a_text_view.set_content(format!(
+            "Copying {} of {}",
+            /*current_inx*/ process_info.copied_bytes, process_info.total_bytes
+        ));
+    })
+    .unwrap();
+    siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
+        a_text_view.set_content(format!("Copying {}", process_info.file_name));
+    })
+    .unwrap();
+    siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
+        a_progress_bar.set_range(0, 1);
+    })
+    .unwrap();
+}
+
+fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) -> NamedView<Dialog> {
+    let paths_from_clone = paths_from.clone();
+    let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
+    let cb = siv.cb_sink().clone();
+    let total_files = paths_from.len();
+    let cpy_progress_dlg = Dialog::around(
+        LinearLayout::vertical()
+            .child(TextView::new("").with_name("TextView_copying_x_of_n"))
+            .child(ProgressBar::new().range(0, total_files).with_name("ProgressBar_Total"))
+            .child(TextView::new("").with_name("TextView_copying_x"))
+            .child(
+                ProgressBar::new()
+                    //                    .range(0, current_file_size)
+                    .with_task(move |counter| {
+                        //               for (current_inx, current_file) in paths_from_clone.iter().enumerate() {
+                        //               let current_file_clone = current_file.clone();
+                        //                  cb.send(Box::new(move |s| update_copying_total(s, current_file_clone, current_inx, total_files)))
+                        //                    .unwrap();
+                        let options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
+                        let handle = |process_info: fs_extra::TransitProcess| {
+                            let v = GLOBAL_FileManager.get();
+                            match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
+                                Ok(val) => {
+                                    if val as usize == fs_extra::dir::TransitProcessResult::Abort as usize {
+                                        cb.send(Box::new(copying_cancelled)).unwrap();
+                                        return TransitProcessResult::Abort;
+                                    }
+                                }
+                                _ => { /*Do nothing, we are only interested in handling Abort*/ }
+                            }
+                            let process_info_clone = process_info.clone();
+                            cb.send(Box::new(|s| update_copying_total(s, process_info_clone))).unwrap();
+
+                            let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
+                            counter.tick(percent as usize);
+                            TransitProcessResult::ContinueOrAbort
+                        };
+
+                        match fs_extra::copy_items_with_progress(&paths_from, path_to_clone.clone(), &options, handle) {
+                            Ok(_) => {
+                                // When we're done, send a callback through the channel
+                                cb.send(Box::new(copying_finished_success)).unwrap()
+                            }
+                            Err(e) => match e.kind {
+                                fs_extra::error::ErrorKind::NotFound => {}
+                                fs_extra::error::ErrorKind::PermissionDenied => {}
+                                fs_extra::error::ErrorKind::AlreadyExists => cb
+                                    .send(Box::new(move |s| {
+                                        copying_already_exists(s, PathBuf::from("selected_path_from"), PathBuf::from(path_to_clone), is_overwrite, is_recursive)
+                                    }))
+                                    .unwrap(),
+                                fs_extra::error::ErrorKind::Interrupted => {}
+                                fs_extra::error::ErrorKind::InvalidFolder => {}
+                                fs_extra::error::ErrorKind::InvalidFile => {}
+                                fs_extra::error::ErrorKind::InvalidFileName => {}
+                                fs_extra::error::ErrorKind::InvalidPath => {}
+                                fs_extra::error::ErrorKind::Io(IoError) => {}
+                                fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
+                                fs_extra::error::ErrorKind::OsString(OsString) => {}
+                                fs_extra::error::ErrorKind::Other => {}
+                            },
+                        }
+                        /**/
+                        /*
+                        match fs_extra::file::copy_with_progress(current_file, &path_to_clone, &options, handle) {
+                            Ok(_) => {
+                                // When we're done, send a callback through the channel
+                                cb.send(Box::new(copying_finished_success)).unwrap()
+                            }
+                            Err(e) => match e.kind {
+                                fs_extra::error::ErrorKind::NotFound => {}
+                                fs_extra::error::ErrorKind::PermissionDenied => {}
+                                fs_extra::error::ErrorKind::AlreadyExists => cb
+                                    .send(Box::new(move |s| {
+                                        copying_already_exists(
+                                            s,
+                                            Rc::new(PathBuf::from("selected_path_from")),//todo
+                                            Rc::new(PathBuf::from("selected_path_to")),
+                                            is_overwrite,
+                                            is_recursive,
+                                        )
+                                    }))
+                                    .unwrap(),
+                                fs_extra::error::ErrorKind::Interrupted => {}
+                                fs_extra::error::ErrorKind::InvalidFolder => {}
+                                fs_extra::error::ErrorKind::InvalidFile => {}
+                                fs_extra::error::ErrorKind::InvalidFileName => {}
+                                fs_extra::error::ErrorKind::InvalidPath => {}
+                                fs_extra::error::ErrorKind::Io(IoError) => {}
+                                fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
+                                fs_extra::error::ErrorKind::OsString(OsString) => {}
+                                fs_extra::error::ErrorKind::Other => {}
+                            },
+                        }*/
+                        /**/
+                        //}
+                        cb.send(Box::new(copying_finished_success)).unwrap()
+                    })
+                    .with_name("ProgressBar_Current"),
+            ),
+    )
+    .button("Cancel", |s| {
+        s.pop_layer();
+        cancel_operation(s)
+    })
+    .with_name("ProgressDlg");
+
+    cpy_progress_dlg
+}
+fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
     // This is the callback channel
-   // let selected_path_from = (*path_from).clone();
-    let selected_path_to = (*path_to).clone();
+    // let selected_path_from = (*path_from).clone();
+    let cpy_progress_dlg = create_cpy_progress_dialog(siv, paths_from, path_to, is_recursive, is_overwrite);
+    siv.add_layer(cpy_progress_dlg);
+    /*let selected_path_to = (*path_to).clone();
     let cb = siv.cb_sink().clone();
     siv.add_layer(
         Dialog::around(
@@ -626,7 +755,13 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: Rc<PathBuf>,
                             fs_extra::error::ErrorKind::PermissionDenied => {}
                             fs_extra::error::ErrorKind::AlreadyExists => cb
                                 .send(Box::new(move |s| {
-                                    copying_already_exists(s, Rc::new(PathBuf::from("selected_path_from")), Rc::new(selected_path_to), is_overwrite, is_recursive)
+                                    copying_already_exists(
+                                        s,
+                                        Rc::new(PathBuf::from("selected_path_from")),
+                                        Rc::new(selected_path_to),
+                                        is_overwrite,
+                                        is_recursive,
+                                    )
                                 }))
                                 .unwrap(),
                             fs_extra::error::ErrorKind::Interrupted => {}
@@ -649,18 +784,18 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: Rc<PathBuf>,
             cancel_operation(s)
         })
         .with_name("ProgressDlg"),
-    );
+    );*/
     siv.set_autorefresh(true);
 }
 
-fn ok_cpy_callback(siv: &mut Cursive, selected_path_from: Vec<String>, selected_path_to: Rc<PathBuf>, is_recursive: bool, is_overwrite: bool) {
-    copy_engine(siv, selected_path_from, selected_path_to, is_recursive, is_overwrite);
+fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite);
 }
 
 fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dialog> {
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
-            .child(TextView::new(format!("Copy {} items with mask:",paths_from.len())))
+            .child(TextView::new(format!("Copy {} items with mask:", paths_from.len())))
             .child(EditView::new().content("*").with_name("cpy_from_edit_view").min_width(100))
             .child(DummyView)
             .child(TextView::new("Copy to:"))
@@ -689,7 +824,7 @@ fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dial
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", move|s| {
+    .button("[ OK ]", move |s| {
         let selected_mask_from: Rc<String> = s
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
@@ -706,13 +841,7 @@ fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dial
         /*Close our dialog*/
         s.pop_layer();
 
-        ok_cpy_callback(
-            s,
-            paths_from.clone(),
-            Rc::new(PathBuf::from((*selected_path_to).clone())),
-            is_recursive,
-            is_overwrite,
-        )
+        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
     })
     .button("[ Background ]", quit)
     .button("[ Cancel ]", |s| {
@@ -862,6 +991,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     let left_right_layout = CircularFocus::new(LinearLayout::horizontal().child(left_layout).child(right_layout), true, true);
     let whole_layout = LinearLayout::vertical().child(left_right_layout).child(buttons_layout);
     siv.add_fullscreen_layer(whole_layout);
+    /*    let paths_from = vec!["file.txt".to_owned(),"file.txt".to_owned()];
+    siv.add_layer(create_cpy_progress_dialog(siv,paths_from,Rc::new(PathBuf::from("path_to")),false,false));*/
     //    siv.run();
 }
 fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<(), std::io::Error> {
