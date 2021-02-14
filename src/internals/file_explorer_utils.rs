@@ -549,14 +549,12 @@ fn copying_cancelled(s: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-/*let v = GLOBAL_FileManager.get();
-let mut v = v.borrow_mut();
-v.id = 1;*/
+
 fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProcess) {
     siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!(
             "Copying {} of {}",
-            /*current_inx*/ process_info.copied_bytes, process_info.total_bytes
+             process_info.copied_bytes, process_info.total_bytes
         ));
     })
     .unwrap();
@@ -570,7 +568,8 @@ fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProces
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
-        a_progress_bar.set_range(0, 1);
+        let current_file_percent = ((process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_f64) as usize ;
+        a_progress_bar.set_value(current_file_percent);
     })
     .unwrap();
 }
@@ -587,8 +586,8 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
             .child(TextView::new("").with_name("TextView_copying_x"))
             .child(
                 ProgressBar::new()
-                    //                    .range(0, current_file_size)
-                    .with_task(move |counter| {
+                                        .range(0, 100)
+                    .with_task(move |counter/*counter.tick(percent)*/| {
                         //               for (current_inx, current_file) in paths_from_clone.iter().enumerate() {
                         //               let current_file_clone = current_file.clone();
                         //                  cb.send(Box::new(move |s| update_copying_total(s, current_file_clone, current_inx, total_files)))
@@ -608,8 +607,8 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
                             let process_info_clone = process_info.clone();
                             cb.send(Box::new(|s| update_copying_total(s, process_info_clone))).unwrap();
 
-                            let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
-                            counter.tick(percent as usize);
+                          /*  let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
+                            counter.tick(percent as usize);*/
                             TransitProcessResult::ContinueOrAbort
                         };
 
