@@ -564,6 +564,11 @@ fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProces
         a_text_view.set_content(format!("Copying {}", process_info.file_name));
     })
     .unwrap();
+    siv.call_on_name("ProgressBar_Total", |a_progress_bar: &mut ProgressBar| {
+    let total_percent = (process_info.copied_bytes as f64 /  process_info.total_bytes as f64) * 100_f64;
+        a_progress_bar.set_value(total_percent as usize);
+    })
+    .unwrap();
     siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
         a_progress_bar.set_range(0, 1);
     })
@@ -578,7 +583,7 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("").with_name("TextView_copying_x_of_n"))
-            .child(ProgressBar::new().range(0, total_files).with_name("ProgressBar_Total"))
+            .child(ProgressBar::new().range(0, 100).with_name("ProgressBar_Total"))
             .child(TextView::new("").with_name("TextView_copying_x"))
             .child(
                 ProgressBar::new()
@@ -632,41 +637,6 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
                                 fs_extra::error::ErrorKind::Other => {}
                             },
                         }
-                        /**/
-                        /*
-                        match fs_extra::file::copy_with_progress(current_file, &path_to_clone, &options, handle) {
-                            Ok(_) => {
-                                // When we're done, send a callback through the channel
-                                cb.send(Box::new(copying_finished_success)).unwrap()
-                            }
-                            Err(e) => match e.kind {
-                                fs_extra::error::ErrorKind::NotFound => {}
-                                fs_extra::error::ErrorKind::PermissionDenied => {}
-                                fs_extra::error::ErrorKind::AlreadyExists => cb
-                                    .send(Box::new(move |s| {
-                                        copying_already_exists(
-                                            s,
-                                            Rc::new(PathBuf::from("selected_path_from")),//todo
-                                            Rc::new(PathBuf::from("selected_path_to")),
-                                            is_overwrite,
-                                            is_recursive,
-                                        )
-                                    }))
-                                    .unwrap(),
-                                fs_extra::error::ErrorKind::Interrupted => {}
-                                fs_extra::error::ErrorKind::InvalidFolder => {}
-                                fs_extra::error::ErrorKind::InvalidFile => {}
-                                fs_extra::error::ErrorKind::InvalidFileName => {}
-                                fs_extra::error::ErrorKind::InvalidPath => {}
-                                fs_extra::error::ErrorKind::Io(IoError) => {}
-                                fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
-                                fs_extra::error::ErrorKind::OsString(OsString) => {}
-                                fs_extra::error::ErrorKind::Other => {}
-                            },
-                        }*/
-                        /**/
-                        //}
-                        cb.send(Box::new(copying_finished_success)).unwrap()
                     })
                     .with_name("ProgressBar_Current"),
             ),
