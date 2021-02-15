@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cursive = {path = "../../../Repos/cursive/cursive"}
+cursive = {path = "../../../Repos/smallB_cursive/cursive"}
 #cursive_table_view = "*"
 rand = "0.8.2"
 chrono = "0.4.19"
@@ -24,3 +24,6 @@ notify = "*"
 #git = "https://github.com/ocboogie/enumset"
 #branch = "span-fix" 
 crossbeam-channel = "*"
+[features]
+defaults = ["serial_cpy"] 
+serial_cpy = []

@@ -550,13 +550,13 @@ fn copying_cancelled(s: &mut Cursive) {
     );
 }
 
-fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProcess) {
+fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String) {
     siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
-        a_text_view.set_content(format!("Copying {}", process_info.file_name));
+        a_text_view.set_content(format!("Copying {}", file_name));
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Total", |a_progress_bar: &mut ProgressBar| {
@@ -565,7 +565,7 @@ fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProces
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
-        let current_file_percent = ((process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_f64) as usize;
+        let current_file_percent = ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
         a_progress_bar.set_value(current_file_percent);
     })
     .unwrap();
@@ -577,96 +577,57 @@ struct file_transfer_context {
     bps_time: u64,
 }
 
+fn cpy_task(chnk: Vec<String>, path_to: String, counter: Counter, cb: CbSink) {
+    let start = std::time::Instant::now();
+    for (current_inx, current_file) in chnk.iter().enumerate() {
+        let progres_handler = |process_info: fs_extra::file::TransitProcess| {
+            //let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64;
+            //counter.tick(percent as usize);
+            let current_file_clone = current_file.clone();
+            cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone)));
+            TransitProcessResult::ContinueOrAbort
+        };
+
+        let options = fs_extra::file::CopyOptions::new(); //Initialize default values for CopyOptions
+        let current_file_name = PathBuf::from(current_file.clone());
+        let current_file_name = current_file_name.file_name().unwrap().to_str().unwrap();
+        let full_path_to = path_to.clone() + "/" + current_file_name;
+        match fs_extra::file::copy_with_progress(current_file, full_path_to, &options, progres_handler) {
+            Ok(val) => {
+                println!("val: {}", val)
+            }
+            Err(err) => {
+                println!("err: {}", err)
+            }
+        }
+    }
+    let duration = start.elapsed();
+    println!("Copying finished:{}", duration.as_secs());
+}
+
 fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
     let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
+    let path_to: String = String::from(path_to.as_os_str().to_str().unwrap());
     let cb = siv.cb_sink().clone();
-    let total_files = paths_from.len();
+    let hideable_total = HideableView::new(
+        LinearLayout::vertical()
+            .child(ProgressBar::new().range(0, 100).with_name("ProgressBar_Total"))
+            .child(TextView::new("").with_name("TextView_copying_x")),
+    )
+    .hidden_with_flag(paths_from.len() < 2);
+
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new("").with_name("TextView_copying_x_of_n"))
-            .child(ProgressBar::new().range(0, 100).with_name("ProgressBar_Total"))
-            .child(TextView::new("").with_name("TextView_copying_x"))
+            .child(hideable_total)
             .child(
                 ProgressBar::new()
                     .range(0, 100)
                     .with_task(move |counter /*counter.tick(percent)*/| {
-                        //               for (current_inx, current_file) in paths_from_clone.iter().enumerate() {
-                        //               let current_file_clone = current_file.clone();
-                        //                  cb.send(Box::new(move |s| update_copying_total(s, current_file_clone, current_inx, total_files)))
-                        //                    .unwrap();
-                        #[cfg(ETA)]
+                        //#[cfg(feature = "serial_cpy")]
                         {
-                        let mut ctx = file_transfer_context {
-                            eta_secs: 0,
-                            bps: 0,
-                            bps_time: 0,
-                        };
-                        
-                        let transfer_start_time = std::time::SystemTime::now();
-                        }
-                        let options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
-                        let handle = |process_info: fs_extra::TransitProcess| {
-                            let v = GLOBAL_FileManager.get();
-                            match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
-                                Ok(val) => {
-                                    if val as usize == fs_extra::dir::TransitProcessResult::Abort as usize {
-                                        cb.send(Box::new(copying_cancelled)).unwrap();
-                                        return TransitProcessResult::Abort;
-                                    }
-                                }
-                                _ => { /*Do nothing, we are only interested in handling Abort*/ }
-                            }
-                           #[cfg(ETA)]
-                            {
-                              let dt = std::time::SystemTime::now().elapsed().unwrap() - transfer_start_time.elapsed().unwrap();
-                            if process_info.total_bytes == 0 {
-                                ctx.eta_secs = 0;
-                            } else {
-                                ctx.eta_secs = ((dt.as_secs() / process_info.total_bytes as u64) * process_info.file_total_bytes) - dt.as_secs();
-                                ctx.bps = process_info.total_bytes / if dt.as_secs() < 1 { 1 } else { dt.as_secs() };
-                            }
-                            ctx.bps_time = dt.as_secs();
-                            if ctx.bps_time < 1 {
-                                ctx.bps_time = 1;
-                            }
-                            ctx.bps = process_info.total_bytes / ctx.bps_time;
-                            let remain_bytes = process_info.total_bytes - process_info.copied_bytes;
-                            let total_secs = if dt.as_secs() >= 1 { dt.as_secs() } else { 1 };
-                            ctx.bps = process_info.copied_bytes / total_secs;
-                            ctx.eta_secs = if ctx.bps != 0 { remain_bytes / ctx.bps } else { 0 };
-                            }
-                            let process_info_clone = process_info.clone();
-                            cb.send(Box::new(|s| update_copying_total(s, process_info_clone))).unwrap();
-
-                            /*  let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
-                            counter.tick(percent as usize);*/
-                            TransitProcessResult::ContinueOrAbort
-                        };
-
-                        match fs_extra::copy_items_with_progress(&paths_from, path_to_clone.clone(), &options, handle) {
-                            Ok(_) => {
-                                // When we're done, send a callback through the channel
-                                cb.send(Box::new(copying_finished_success)).unwrap()
-                            }
-                            Err(e) => match e.kind {
-                                fs_extra::error::ErrorKind::NotFound => {}
-                                fs_extra::error::ErrorKind::PermissionDenied => {}
-                                fs_extra::error::ErrorKind::AlreadyExists => cb
-                                    .send(Box::new(move |s| {
-                                        copying_already_exists(s, PathBuf::from("selected_path_from"), PathBuf::from(path_to_clone), is_overwrite, is_recursive)
-                                    }))
-                                    .unwrap(),
-                                fs_extra::error::ErrorKind::Interrupted => {}
-                                fs_extra::error::ErrorKind::InvalidFolder => {}
-                                fs_extra::error::ErrorKind::InvalidFile => {}
-                                fs_extra::error::ErrorKind::InvalidFileName => {}
-                                fs_extra::error::ErrorKind::InvalidPath => {}
-                                fs_extra::error::ErrorKind::Io(IoError) => {}
-                                fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
-                                fs_extra::error::ErrorKind::OsString(OsString) => {}
-                                fs_extra::error::ErrorKind::Other => {}
-                            },
+                            cpy_task(paths_from, path_to, counter.clone(), cb);
                         }
                     })
                     .with_name("ProgressBar_Current"),
