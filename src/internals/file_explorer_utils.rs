@@ -624,7 +624,8 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
                     .with_task(move |counter /*counter.tick(percent)*/| {
                         //#[cfg(feature = "serial_cpy")]
                         {
-                            cpy_task(paths_from, path_to, counter.clone(), cb);
+                            cpy_task(paths_from, path_to, counter.clone(), cb.clone());
+                            cb.send(Box::new(|s|{copying_finished_success(s)}));
                         }
                     })
                     .with_name("ProgressBar_Current"),
