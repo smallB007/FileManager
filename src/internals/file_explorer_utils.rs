@@ -552,10 +552,7 @@ fn copying_cancelled(s: &mut Cursive) {
 
 fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProcess) {
     siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
-        a_text_view.set_content(format!(
-            "Copying {} of {}",
-             process_info.copied_bytes, process_info.total_bytes
-        ));
+        a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
@@ -563,15 +560,21 @@ fn update_copying_total(siv: &mut Cursive, process_info: fs_extra::TransitProces
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Total", |a_progress_bar: &mut ProgressBar| {
-    let total_percent = (process_info.copied_bytes as f64 /  process_info.total_bytes as f64) * 100_f64;
+        let total_percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64;
         a_progress_bar.set_value(total_percent as usize);
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
-        let current_file_percent = ((process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_f64) as usize ;
+        let current_file_percent = ((process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_f64) as usize;
         a_progress_bar.set_value(current_file_percent);
     })
     .unwrap();
+}
+#[cfg(ETA)]
+struct file_transfer_context {
+    eta_secs: u64,
+    bps: u64,
+    bps_time: u64,
 }
 
 fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) -> NamedView<Dialog> {
@@ -586,12 +589,22 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
             .child(TextView::new("").with_name("TextView_copying_x"))
             .child(
                 ProgressBar::new()
-                                        .range(0, 100)
-                    .with_task(move |counter/*counter.tick(percent)*/| {
+                    .range(0, 100)
+                    .with_task(move |counter /*counter.tick(percent)*/| {
                         //               for (current_inx, current_file) in paths_from_clone.iter().enumerate() {
                         //               let current_file_clone = current_file.clone();
                         //                  cb.send(Box::new(move |s| update_copying_total(s, current_file_clone, current_inx, total_files)))
                         //                    .unwrap();
+                        #[cfg(ETA)]
+                        {
+                        let mut ctx = file_transfer_context {
+                            eta_secs: 0,
+                            bps: 0,
+                            bps_time: 0,
+                        };
+                        
+                        let transfer_start_time = std::time::SystemTime::now();
+                        }
                         let options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
                         let handle = |process_info: fs_extra::TransitProcess| {
                             let v = GLOBAL_FileManager.get();
@@ -604,10 +617,29 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
                                 }
                                 _ => { /*Do nothing, we are only interested in handling Abort*/ }
                             }
+                           #[cfg(ETA)]
+                            {
+                              let dt = std::time::SystemTime::now().elapsed().unwrap() - transfer_start_time.elapsed().unwrap();
+                            if process_info.total_bytes == 0 {
+                                ctx.eta_secs = 0;
+                            } else {
+                                ctx.eta_secs = ((dt.as_secs() / process_info.total_bytes as u64) * process_info.file_total_bytes) - dt.as_secs();
+                                ctx.bps = process_info.total_bytes / if dt.as_secs() < 1 { 1 } else { dt.as_secs() };
+                            }
+                            ctx.bps_time = dt.as_secs();
+                            if ctx.bps_time < 1 {
+                                ctx.bps_time = 1;
+                            }
+                            ctx.bps = process_info.total_bytes / ctx.bps_time;
+                            let remain_bytes = process_info.total_bytes - process_info.copied_bytes;
+                            let total_secs = if dt.as_secs() >= 1 { dt.as_secs() } else { 1 };
+                            ctx.bps = process_info.copied_bytes / total_secs;
+                            ctx.eta_secs = if ctx.bps != 0 { remain_bytes / ctx.bps } else { 0 };
+                            }
                             let process_info_clone = process_info.clone();
                             cb.send(Box::new(|s| update_copying_total(s, process_info_clone))).unwrap();
 
-                          /*  let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
+                            /*  let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_000_f64;
                             counter.tick(percent as usize);*/
                             TransitProcessResult::ContinueOrAbort
                         };
