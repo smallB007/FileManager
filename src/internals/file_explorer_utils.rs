@@ -550,21 +550,20 @@ fn copying_cancelled(s: &mut Cursive) {
     );
 }
 
-fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String) {
+fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String,current_inx: usize) {
     siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();
-    siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
+    siv.call_on_name("ProgressBar_Total", |a_progress_bar: &mut ProgressBar| {
+        a_progress_bar.set_value(current_inx);
+    })
+    .unwrap();
+ siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying {}", file_name));
     })
     .unwrap();
-    siv.call_on_name("ProgressBar_Total", |a_progress_bar: &mut ProgressBar| {
-        let total_percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64;
-        a_progress_bar.set_value(total_percent as usize);
-    })
-    .unwrap();
-    siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
+       siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
         let current_file_percent = ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
         a_progress_bar.set_value(current_file_percent);
     })
@@ -581,10 +580,8 @@ fn cpy_task(chnk: Vec<String>, path_to: String, counter: Counter, cb: CbSink) {
     let start = std::time::Instant::now();
     for (current_inx, current_file) in chnk.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
-            //let percent = (process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64;
-            //counter.tick(percent as usize);
             let current_file_clone = current_file.clone();
-            cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone)));
+            cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone, current_inx)));
             TransitProcessResult::ContinueOrAbort
         };
 
@@ -612,7 +609,7 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
     let cb = siv.cb_sink().clone();
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
-            .child(ProgressBar::new().range(0, 100).with_name("ProgressBar_Total"))
+            .child(ProgressBar::new().range(0, paths_from.len()).with_name("ProgressBar_Total"))
             .child(TextView::new("").with_name("TextView_copying_x")),
     )
     .hidden_with_flag(paths_from.len() < 2);
