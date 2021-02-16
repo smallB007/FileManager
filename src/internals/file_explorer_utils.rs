@@ -557,7 +557,7 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
     .unwrap();*/
     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
         a_progress_bar.set_value(current_inx);
-        a_progress_bar.set_label(|val,(min,max)|{format!("Copied {} of {}",val,max)});
+        a_progress_bar.set_label(|val, (min, max)| format!("Copied {} of {}", val, max));
     })
     .unwrap();
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
@@ -577,10 +577,20 @@ struct file_transfer_context {
     bps_time: u64,
 }
 
-fn cpy_task(chnk: Vec<String>, path_to: String, counter: Counter, cb: CbSink) {
+fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink) {
     let start = std::time::Instant::now();
     for (current_inx, current_file) in chnk.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
+            /*            let v = GLOBAL_FileManager.get();
+            match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
+                Ok(val) => {
+                    if val as usize == fs_extra::TransitProcessResult::Abort as usize {
+                        cb.send(Box::new(copying_cancelled)).unwrap();
+                        return fs_extra::file::TransitProcessResult::Abort;
+                    }
+                }
+                _ => { /*Do nothing, we are only interested in handling Abort*/ }
+            }*/
             let current_file_clone = current_file.clone();
             cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone, current_inx)));
             TransitProcessResult::ContinueOrAbort
@@ -604,6 +614,7 @@ fn cpy_task(chnk: Vec<String>, path_to: String, counter: Counter, cb: CbSink) {
 }
 const a_const: i128 = 0;
 use crate::internals::literals::copy_progress_dlg;
+fn suspend_cpy_thread(siv: &mut Cursive) {}
 fn create_cpy_progress_dialog(
     siv: &mut Cursive,
     paths_from: Vec<String>,
@@ -634,13 +645,15 @@ fn create_cpy_progress_dialog(
                 .child(
                     ProgressBar::new()
                         .range(0, 100)
+                        /*
                         .with_task(move |counter /*counter.tick(percent)*/| {
                             #[cfg(feature = "serial_cpy")]
                             {
-                                cpy_task(paths_from, path_to, counter.clone(), cb.clone());
+                                cpy_task(paths_from, path_to/*, counter.clone()*/, cb.clone());
                                 cb.send(Box::new(|s| copying_finished_success(s)));
                             }
                         })
+                        */
                         .with_name(copy_progress_dlg::widget_names::progress_bar_current),
                 )
                 .child(DummyView),
@@ -650,9 +663,16 @@ fn create_cpy_progress_dialog(
         s.pop_layer();
         cancel_operation(s)
     })
+    .button("Suspend", |s| suspend_cpy_thread(s))
     .fixed_width(80)
     .with_name("ProgressDlg");
 
+                            #[cfg(feature = "serial_cpy")]
+let handle =    std::thread::spawn(move||
+                            {
+                                cpy_task(paths_from, path_to, cb.clone());
+                                cb.send(Box::new(|s| copying_finished_success(s)));
+                            });
     cpy_progress_dlg
 }
 fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
