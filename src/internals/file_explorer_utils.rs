@@ -560,7 +560,7 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
     })
     .unwrap();
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
-        a_text_view.set_content(format!("Copying {}", file_name));
+        a_text_view.set_content(format!("Copying:\n {}", file_name));
     })
     .unwrap();
     siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
@@ -603,7 +603,13 @@ fn cpy_task(chnk: Vec<String>, path_to: String, counter: Counter, cb: CbSink) {
 }
 const a_const: i128 = 0;
 use crate::internals::literals::copy_progress_dlg;
-fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) -> NamedView<Dialog> {
+fn create_cpy_progress_dialog(
+    siv: &mut Cursive,
+    paths_from: Vec<String>,
+    path_to: PathBuf,
+    is_recursive: bool,
+    is_overwrite: bool,
+) -> NamedView<ResizedView<Dialog>> {
     let paths_from_clone = paths_from.clone();
     let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
     let path_to: String = String::from(path_to.as_os_str().to_str().unwrap());
@@ -611,15 +617,17 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
-            .child(ProgressBar::new().range(0, paths_from.len()).with_name(copy_progress_dlg::widget_names::progress_bar_total))
+            .child(
+                ProgressBar::new()
+                    .range(0, paths_from.len())
+                    .with_name(copy_progress_dlg::widget_names::progress_bar_total),
+            ),
     )
     .hidden_with_flag(paths_from.len() < 2);
 
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
-            LinearLayout::vertical()
-            .child(TextView::new("").with_name("TextView_copying_x"))
-            .child(
+            LinearLayout::vertical().child(TextView::new("").with_name("TextView_copying_x")).child(
                 ProgressBar::new()
                     .range(0, 100)
                     .with_task(move |counter /*counter.tick(percent)*/| {
@@ -637,6 +645,7 @@ fn create_cpy_progress_dialog(siv: &mut Cursive, paths_from: Vec<String>, path_t
         s.pop_layer();
         cancel_operation(s)
     })
+    .fixed_size(cursive::XY { x: 70, y: 10 })
     .with_name("ProgressDlg");
 
     cpy_progress_dlg
