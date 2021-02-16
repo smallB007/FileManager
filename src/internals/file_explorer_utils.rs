@@ -621,13 +621,16 @@ fn create_cpy_progress_dialog(
                 ProgressBar::new()
                     .range(0, paths_from.len())
                     .with_name(copy_progress_dlg::widget_names::progress_bar_total),
-            ),
+            )
+            .child(DummyView),
     )
     .hidden_with_flag(paths_from.len() < 2);
 
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
-            LinearLayout::vertical().child(TextView::new("").with_name("TextView_copying_x")).child(
+            LinearLayout::vertical()
+            .child(TextView::new("").with_name("TextView_copying_x"))
+            .child(
                 ProgressBar::new()
                     .range(0, 100)
                     .with_task(move |counter /*counter.tick(percent)*/| {
@@ -637,15 +640,15 @@ fn create_cpy_progress_dialog(
                             cb.send(Box::new(|s| copying_finished_success(s)));
                         }
                     })
-                    .with_name("ProgressBar_Current"),
-            ),
+                    .with_name("ProgressBar_Current")
+            )
+                    .child(DummyView),
         ),
     )
     .button("Cancel", |s| {
         s.pop_layer();
         cancel_operation(s)
-    })
-    .fixed_size(cursive::XY { x: 70, y: 10 })
+    }).fixed_width(80)
     .with_name("ProgressDlg");
 
     cpy_progress_dlg
