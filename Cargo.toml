@@ -25,5 +25,5 @@ notify = "*"
 #branch = "span-fix" 
 crossbeam-channel = "*"
 [features]
-defaults = ["serial_cpy"] 
+default = ["serial_cpy"] 
 serial_cpy = []

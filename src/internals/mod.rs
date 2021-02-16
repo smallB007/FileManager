@@ -6,3 +6,4 @@ mod cursive_table_view;
 mod delimiter;
 pub mod file_explorer_utils;
 mod utils;
+pub mod literals;
