@@ -557,13 +557,14 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
     .unwrap();*/
     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
         a_progress_bar.set_value(current_inx);
+        a_progress_bar.set_label(|val,(min,max)|{format!("Copied {} of {}",val,max)});
     })
     .unwrap();
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying:\n {}", file_name));
     })
     .unwrap();
-    siv.call_on_name("ProgressBar_Current", |a_progress_bar: &mut ProgressBar| {
+    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_current, |a_progress_bar: &mut ProgressBar| {
         let current_file_percent = ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
         a_progress_bar.set_value(current_file_percent);
     })
@@ -629,26 +630,27 @@ fn create_cpy_progress_dialog(
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
             LinearLayout::vertical()
-            .child(TextView::new("").with_name("TextView_copying_x"))
-            .child(
-                ProgressBar::new()
-                    .range(0, 100)
-                    .with_task(move |counter /*counter.tick(percent)*/| {
-                        #[cfg(feature = "serial_cpy")]
-                        {
-                            cpy_task(paths_from, path_to, counter.clone(), cb.clone());
-                            cb.send(Box::new(|s| copying_finished_success(s)));
-                        }
-                    })
-                    .with_name("ProgressBar_Current")
-            )
-                    .child(DummyView),
+                .child(TextView::new("").with_name("TextView_copying_x"))
+                .child(
+                    ProgressBar::new()
+                        .range(0, 100)
+                        .with_task(move |counter /*counter.tick(percent)*/| {
+                            #[cfg(feature = "serial_cpy")]
+                            {
+                                cpy_task(paths_from, path_to, counter.clone(), cb.clone());
+                                cb.send(Box::new(|s| copying_finished_success(s)));
+                            }
+                        })
+                        .with_name(copy_progress_dlg::widget_names::progress_bar_current),
+                )
+                .child(DummyView),
         ),
     )
     .button("Cancel", |s| {
         s.pop_layer();
         cancel_operation(s)
-    }).fixed_width(80)
+    })
+    .fixed_width(80)
     .with_name("ProgressDlg");
 
     cpy_progress_dlg
