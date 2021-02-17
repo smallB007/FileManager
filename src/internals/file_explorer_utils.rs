@@ -19,7 +19,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::sync::{Arc,Mutex,Condvar};
+use std::sync::{Arc, Condvar, Mutex};
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
@@ -54,12 +54,10 @@ fn read_config() -> FileMangerConfig {
         right_panel_initial_path: "/home/artie/Desktop/Right".to_owned(),
     }
 }
-#[derive(Copy,Clone)]
-enum AtomicFileTransitFlags
-{
+#[derive(Copy, Clone)]
+enum AtomicFileTransitFlags {
     Abort,
     Skip,
-    Suspend,
 }
 pub struct FileManager {
     id: i64,
@@ -543,6 +541,18 @@ fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
     fill_table_with_items_wrapper(siv, a_name, new_path);
     //println!("Command received");
 }
+fn cannot_suspend_copy(s: &mut Cursive) {
+    s.set_autorefresh(false);
+    /*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
+        s.pop_layer(); //trouble
+    }*/
+    s.add_layer(
+        Dialog::new()
+            .title("Cannot suspend")
+            .content(TextView::new("Cannot suspend").center())
+            .dismiss_button("OK"),
+    );
+}
 fn copying_cancelled(s: &mut Cursive) {
     s.set_autorefresh(false);
     /*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
@@ -580,46 +590,46 @@ struct file_transfer_context {
     bps_time: u64,
 }
 
-fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink,cond_var: Arc<(Mutex<bool>,Condvar)>) {
+fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {
     let start = std::time::Instant::now();
     for (current_inx, current_file) in chnk.iter().enumerate() {
-
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
-                        let v = GLOBAL_FileManager.get();
+            let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
                 Ok(ref val) => {
                     if *val as usize == AtomicFileTransitFlags::Abort as usize {
-                        
-                        let wait = cond_var.0.lock().unwrap();
-                        cond_var.1.wait(wait);
-//                        std::thread::park();
-                       /* cb.send(Box::new(copying_cancelled)).unwrap();
-                        return fs_extra::dir::TransitProcessResult::Abort;*/
-                    }
-                    else if *val as usize == AtomicFileTransitFlags::Suspend as usize
-                    {
-                        let wait = cond_var.0.lock().unwrap();
-                        cond_var.1.wait(wait);
-                    }
+                    //                        std::thread::park();
+                     cb.send(Box::new(copying_cancelled)).unwrap();
+                    return fs_extra::dir::TransitProcessResult::Abort;
+                    }                        
                 }
                 _ => { /*Do nothing, we are only interested in handling Abort*/ }
             }
-            let tid = std::thread::current().id();
+
+        let (lock,cvar) = &*cond_var;
+       match cvar.wait_while(lock.lock().unwrap(), |pending|{*pending})
+       {
+           Err(err)=>{
+                     cb.send(Box::new(cannot_suspend_copy)).unwrap()}
+           _=>{}
+       }
+
+        /*let tid = std::thread::current().id();
+            let tid = std::thread::current().id();*/
             //println!("ThreadID inside handler: {:?}",tid);
             let current_file_clone = current_file.clone();
             cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone, current_inx)));
             TransitProcessResult::ContinueOrAbort
         };
 
-            let tid = std::thread::current().id();
-//            println!("ThreadID outside handler: {:?}",tid);
+        //            println!("ThreadID outside handler: {:?}",tid);
         let options = fs_extra::file::CopyOptions::new(); //Initialize default values for CopyOptions
         let current_file_name = PathBuf::from(current_file.clone());
         let current_file_name = current_file_name.file_name().unwrap().to_str().unwrap();
         let full_path_to = path_to.clone() + "/" + current_file_name;
         match fs_extra::file::copy_with_progress(current_file, full_path_to, &options, progres_handler) {
             Ok(val) => {
-                println!("val: {}", val)
+                println!("val from copy_with_progress: {}", val)
             }
             Err(err) => {
                 println!("err: {}", err)
@@ -631,14 +641,18 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink,cond_var: Arc<(Mutex<
 }
 const a_const: i128 = 0;
 use crate::internals::literals::copy_progress_dlg;
-fn suspend_cpy_thread(siv: &mut Cursive) {}
+fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) {
+    let mut resume_thread = cond_var.0.lock().unwrap();
+    *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal { false } else { true };
+    cond_var.1.notify_one();
+}
 fn create_cpy_progress_dialog(
     siv: &mut Cursive,
     paths_from: Vec<String>,
     path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
-) -> NamedView<ResizedView<Dialog>> {
+) -> NamedView<ResizedView<NamedView<Dialog>>> {
     let paths_from_clone = paths_from.clone();
     let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
     let path_to: String = String::from(path_to.as_os_str().to_str().unwrap());
@@ -655,6 +669,9 @@ fn create_cpy_progress_dialog(
     )
     .visible(paths_from.len() > 1);
 
+    let cond_var = Arc::new((Mutex::new(false), Condvar::new()));
+    let cond_var_clone = Arc::clone(&cond_var);
+
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
             LinearLayout::vertical()
@@ -662,34 +679,28 @@ fn create_cpy_progress_dialog(
                 .child(
                     ProgressBar::new()
                         .range(0, 100)
-                        /*
+                        
                         .with_task(move |counter /*counter.tick(percent)*/| {
                             #[cfg(feature = "serial_cpy")]
-                            {
-                                cpy_task(paths_from, path_to/*, counter.clone()*/, cb.clone());
+                            let handle = std::thread::spawn(move || {
+                                cpy_task(paths_from, path_to, cb.clone(), cond_var_clone);
                                 cb.send(Box::new(|s| copying_finished_success(s)));
-                            }
+                            });
                         })
-                        */
+                        
                         .with_name(copy_progress_dlg::widget_names::progress_bar_current),
                 )
                 .child(DummyView),
         ),
     )
     .button("Cancel", |s| {
-        s.pop_layer();//yes but make sure that update isn't proceeding ;)
+        s.pop_layer(); //yes but make sure that update isn't proceeding ;)
         cancel_operation(s)
     })
-    .button("Suspend", |s| suspend_cpy_thread(s))
+    .button("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone()))
+    .with_name("Suspend_Resume_Btn")
     .fixed_width(80)
     .with_name("ProgressDlg");
-let cond_var = Arc::new((Mutex::new(false),Condvar::new()));
-let cond_var_clone = Arc::clone(&cond_var);
-    #[cfg(feature = "serial_cpy")]
-    let handle = std::thread::spawn(move || {
-        cpy_task(paths_from, path_to, cb.clone(),cond_var_clone);
-        cb.send(Box::new(|s| copying_finished_success(s)));
-    });
 
     cpy_progress_dlg
 }
