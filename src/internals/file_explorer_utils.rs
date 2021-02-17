@@ -19,8 +19,7 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::channel;
 use std::sync::mpsc::{self, Receiver, Sender, TryRecvError};
-use std::sync::Arc;
-use std::sync::Mutex;
+use std::sync::{Arc,Mutex,Condvar};
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
@@ -55,10 +54,17 @@ fn read_config() -> FileMangerConfig {
         right_panel_initial_path: "/home/artie/Desktop/Right".to_owned(),
     }
 }
+#[derive(Copy,Clone)]
+enum AtomicFileTransitFlags
+{
+    Abort,
+    Skip,
+    Suspend,
+}
 pub struct FileManager {
     id: i64,
     active_table: String, //change to &str
-    tx_rx: (Sender<fs_extra::dir::TransitProcessResult>, Receiver<fs_extra::dir::TransitProcessResult>),
+    tx_rx: (Sender<AtomicFileTransitFlags>, Receiver<AtomicFileTransitFlags>),
     cancel_current_operation: bool,
 }
 impl Default for FileManager {
@@ -558,17 +564,14 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
         a_progress_bar.set_value(current_inx);
         a_progress_bar.set_label(|val, (min, max)| format!("Copied {} of {}", val, max));
-    })
-    .unwrap();
+    });
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying:\n {}", file_name));
-    })
-    .unwrap();
+    });
     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_current, |a_progress_bar: &mut ProgressBar| {
         let current_file_percent = ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
         a_progress_bar.set_value(current_file_percent);
-    })
-    .unwrap();
+    });
 }
 #[cfg(ETA)]
 struct file_transfer_context {
@@ -577,25 +580,39 @@ struct file_transfer_context {
     bps_time: u64,
 }
 
-fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink) {
+fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink,cond_var: Arc<(Mutex<bool>,Condvar)>) {
     let start = std::time::Instant::now();
     for (current_inx, current_file) in chnk.iter().enumerate() {
+
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
-            /*            let v = GLOBAL_FileManager.get();
+                        let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
-                Ok(val) => {
-                    if val as usize == fs_extra::TransitProcessResult::Abort as usize {
-                        cb.send(Box::new(copying_cancelled)).unwrap();
-                        return fs_extra::file::TransitProcessResult::Abort;
+                Ok(ref val) => {
+                    if *val as usize == AtomicFileTransitFlags::Abort as usize {
+                        
+                        let wait = cond_var.0.lock().unwrap();
+                        cond_var.1.wait(wait);
+//                        std::thread::park();
+                       /* cb.send(Box::new(copying_cancelled)).unwrap();
+                        return fs_extra::dir::TransitProcessResult::Abort;*/
+                    }
+                    else if *val as usize == AtomicFileTransitFlags::Suspend as usize
+                    {
+                        let wait = cond_var.0.lock().unwrap();
+                        cond_var.1.wait(wait);
                     }
                 }
                 _ => { /*Do nothing, we are only interested in handling Abort*/ }
-            }*/
+            }
+            let tid = std::thread::current().id();
+            //println!("ThreadID inside handler: {:?}",tid);
             let current_file_clone = current_file.clone();
             cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone, current_inx)));
             TransitProcessResult::ContinueOrAbort
         };
 
+            let tid = std::thread::current().id();
+//            println!("ThreadID outside handler: {:?}",tid);
         let options = fs_extra::file::CopyOptions::new(); //Initialize default values for CopyOptions
         let current_file_name = PathBuf::from(current_file.clone());
         let current_file_name = current_file_name.file_name().unwrap().to_str().unwrap();
@@ -636,7 +653,7 @@ fn create_cpy_progress_dialog(
             )
             .child(DummyView),
     )
-    .hidden_with_flag(paths_from.len() < 2);
+    .visible(paths_from.len() > 1);
 
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
@@ -660,19 +677,20 @@ fn create_cpy_progress_dialog(
         ),
     )
     .button("Cancel", |s| {
-        s.pop_layer();
+        s.pop_layer();//yes but make sure that update isn't proceeding ;)
         cancel_operation(s)
     })
     .button("Suspend", |s| suspend_cpy_thread(s))
     .fixed_width(80)
     .with_name("ProgressDlg");
+let cond_var = Arc::new((Mutex::new(false),Condvar::new()));
+let cond_var_clone = Arc::clone(&cond_var);
+    #[cfg(feature = "serial_cpy")]
+    let handle = std::thread::spawn(move || {
+        cpy_task(paths_from, path_to, cb.clone(),cond_var_clone);
+        cb.send(Box::new(|s| copying_finished_success(s)));
+    });
 
-                            #[cfg(feature = "serial_cpy")]
-let handle =    std::thread::spawn(move||
-                            {
-                                cpy_task(paths_from, path_to, cb.clone());
-                                cb.send(Box::new(|s| copying_finished_success(s)));
-                            });
     cpy_progress_dlg
 }
 fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
@@ -853,7 +871,7 @@ fn cancel_operation(siv: &mut cursive::Cursive) {
     let v = GLOBAL_FileManager.get();
     let tmp = v.lock().unwrap();
     let mut v = tmp.borrow_mut();
-    v.tx_rx.0.send(fs_extra::dir::TransitProcessResult::Abort).unwrap();
+    v.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
     v.cancel_current_operation = true;
 }
 fn menu(siv: &mut cursive::Cursive) {}
