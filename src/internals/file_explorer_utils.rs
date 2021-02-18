@@ -598,23 +598,21 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
                 Ok(ref val) => {
                     if *val as usize == AtomicFileTransitFlags::Abort as usize {
-                    //                        std::thread::park();
-                     cb.send(Box::new(copying_cancelled)).unwrap();
-                    return fs_extra::dir::TransitProcessResult::Abort;
-                    }                        
+                        //                        std::thread::park();
+                        cb.send(Box::new(copying_cancelled)).unwrap();
+                        return fs_extra::dir::TransitProcessResult::Abort;
+                    }
                 }
                 _ => { /*Do nothing, we are only interested in handling Abort*/ }
             }
 
-        let (lock,cvar) = &*cond_var;
-       match cvar.wait_while(lock.lock().unwrap(), |pending|{*pending})
-       {
-           Err(err)=>{
-                     cb.send(Box::new(cannot_suspend_copy)).unwrap()}
-           _=>{}
-       }
+            let (lock, cvar) = &*cond_var;
+            match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
+                Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
+                _ => {}
+            }
 
-        /*let tid = std::thread::current().id();
+            /*let tid = std::thread::current().id();
             let tid = std::thread::current().id();*/
             //println!("ThreadID inside handler: {:?}",tid);
             let current_file_clone = current_file.clone();
@@ -643,7 +641,14 @@ const a_const: i128 = 0;
 use crate::internals::literals::copy_progress_dlg;
 fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) {
     let mut resume_thread = cond_var.0.lock().unwrap();
-    *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal { false } else { true };
+    *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
+        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| a_button.set_label("Suspend"))
+            .unwrap();
+        false
+    } else {
+        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| a_button.set_label("Resume"));
+        true
+    };
     cond_var.1.notify_one();
 }
 fn create_cpy_progress_dialog(
@@ -652,7 +657,7 @@ fn create_cpy_progress_dialog(
     path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
-) -> NamedView<ResizedView<NamedView<Dialog>>> {
+) -> NamedView<ResizedView<Dialog>> {
     let paths_from_clone = paths_from.clone();
     let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
     let path_to: String = String::from(path_to.as_os_str().to_str().unwrap());
@@ -671,7 +676,13 @@ fn create_cpy_progress_dialog(
 
     let cond_var = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_clone = Arc::clone(&cond_var);
-
+    let suspend_button = Button::new("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone())).with_name("Suspend_Resume_Btn");
+    let cancel_button = Button::new("Cancel", |s| {
+        s.pop_layer(); //yes but make sure that update isn't proceeding ;)
+        cancel_operation(s)
+    });
+    let buttons = LinearLayout::horizontal().child(suspend_button).child(DummyView).child(cancel_button);
+    
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
             LinearLayout::vertical()
@@ -679,7 +690,6 @@ fn create_cpy_progress_dialog(
                 .child(
                     ProgressBar::new()
                         .range(0, 100)
-                        
                         .with_task(move |counter /*counter.tick(percent)*/| {
                             #[cfg(feature = "serial_cpy")]
                             let handle = std::thread::spawn(move || {
@@ -687,18 +697,12 @@ fn create_cpy_progress_dialog(
                                 cb.send(Box::new(|s| copying_finished_success(s)));
                             });
                         })
-                        
                         .with_name(copy_progress_dlg::widget_names::progress_bar_current),
                 )
-                .child(DummyView),
+                .child(DummyView)
+                .child(buttons),
         ),
     )
-    .button("Cancel", |s| {
-        s.pop_layer(); //yes but make sure that update isn't proceeding ;)
-        cancel_operation(s)
-    })
-    .button("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone()))
-    .with_name("Suspend_Resume_Btn")
     .fixed_width(80)
     .with_name("ProgressDlg");
 
