@@ -571,9 +571,15 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();*/
-    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
-        a_progress_bar.set_value(current_inx);
-        a_progress_bar.set_label(|val, (min, max)| format!("Copied {} of {}", val, max));
+    siv.call_on_name(
+        copy_progress_dlg::widget_names::progress_bar_total,
+        |a_progress_bar: &mut ProgressBar| {
+            a_progress_bar.set_value(current_inx);
+            a_progress_bar.set_label(|val, (_min, max)| format!("Copied {} of {}", val, max));
+        },
+    );
+    siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
+        hideable_view_total.get_inner_mut().get_inner_mut().set_value(current_inx);
     });
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying:\n {}", file_name));
@@ -657,11 +663,8 @@ fn create_cpy_progress_dialog(
     path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
+    cond_var: Arc<(Mutex<bool>, Condvar)>,
 ) -> NamedView<ResizedView<Dialog>> {
-    let paths_from_clone = paths_from.clone();
-    let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
-    let path_to: String = String::from(path_to.as_os_str().to_str().unwrap());
-    let cb = siv.cb_sink().clone();
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
@@ -674,15 +677,13 @@ fn create_cpy_progress_dialog(
     )
     .visible(paths_from.len() > 1);
 
-    let cond_var = Arc::new((Mutex::new(false), Condvar::new()));
-    let cond_var_clone = Arc::clone(&cond_var);
     let suspend_button = Button::new("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone())).with_name("Suspend_Resume_Btn");
     let cancel_button = Button::new("Cancel", |s| {
         s.pop_layer(); //yes but make sure that update isn't proceeding ;)
         cancel_operation(s)
     });
     let buttons = LinearLayout::horizontal().child(suspend_button).child(DummyView).child(cancel_button);
-    
+
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
             LinearLayout::vertical()
@@ -690,13 +691,6 @@ fn create_cpy_progress_dialog(
                 .child(
                     ProgressBar::new()
                         .range(0, 100)
-                        .with_task(move |counter /*counter.tick(percent)*/| {
-                            #[cfg(feature = "serial_cpy")]
-                            let handle = std::thread::spawn(move || {
-                                cpy_task(paths_from, path_to, cb.clone(), cond_var_clone);
-                                cb.send(Box::new(|s| copying_finished_success(s)));
-                            });
-                        })
                         .with_name(copy_progress_dlg::widget_names::progress_bar_current),
                 )
                 .child(DummyView)
@@ -708,120 +702,49 @@ fn create_cpy_progress_dialog(
 
     cpy_progress_dlg
 }
-fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
-    // This is the callback channel
-    // let selected_path_from = (*path_from).clone();
-    let cpy_progress_dlg = create_cpy_progress_dialog(siv, paths_from, path_to, is_recursive, is_overwrite);
-    siv.add_layer(cpy_progress_dlg);
-    /*let selected_path_to = (*path_to).clone();
+fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
+    let cond_var = Arc::new((Mutex::new(false), Condvar::new()));
+    let cond_var_clone = Arc::clone(&cond_var);
+    let paths_from_clone = paths_from.clone();
+    let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
+
     let cb = siv.cb_sink().clone();
-    siv.add_layer(
-        Dialog::around(
-            ProgressBar::new()
-                // We need to know how many ticks represent a full bar.
-                .range(0, paths_from.len())
-                .with_task(move |counter| {
-                    let mut options = fs_extra::dir::CopyOptions::new();
-                    options.overwrite = is_overwrite;
-                    options.copy_inside = is_recursive;
-                    // This closure will be called in a separate thread.
-                    let handle = |process_info: fs_extra::TransitProcess| {
-                        let v = GLOBAL_FileManager.get();
-                        match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
-                            Ok(val) => {
-                                if val as usize == fs_extra::dir::TransitProcessResult::Abort as usize {
-                                    cb.send(Box::new(copying_cancelled)).unwrap();
-                                    return fs_extra::dir::TransitProcessResult::Abort;
-                                }
-                            }
-                            _ => { /*Do nothing, we are only interested in handling Abort*/ }
-                        }
-                        let percent = (process_info.file_bytes_copied as f64 / process_info.file_total_bytes as f64) * 100_000_f64;
-                        counter.tick(percent as usize);
-                        fs_extra::dir::TransitProcessResult::ContinueOrAbort
-                    };
-
-                    /*pub struct Error {
-                        /// Type error
-                        pub kind: ErrorKind,
-                        message: String,
-                    }
-
-                    pub enum ErrorKind {
-                        /// An entity was not found.
-                        NotFound,
-                        /// The operation lacked the necessary privileges to complete.
-                        PermissionDenied,
-                        /// An entity already exists.
-                        AlreadyExists,
-                        /// This operation was interrupted.
-                        Interrupted,
-                        /// Path does not a directory.
-                        InvalidFolder,
-                        /// Path does not a file.
-                        InvalidFile,
-                        /// Invalid file name.
-                        InvalidFileName,
-                        /// Invalid path.
-                        InvalidPath,
-                        /// Any I/O error.
-                        Io(IoError),
-                        /// Any StripPrefix error.
-                        StripPrefix(StripPrefixError),
-                        /// Any OsString error.
-                        OsString(OsString),
-                        /// Any fs_extra error not part of this list.
-                        Other,
-                    }
-                    */
-                    match fs_extra::copy_items_with_progress(&paths_from, &selected_path_to, &options, handle) {
-                        Ok(_) => {
-                            // When we're done, send a callback through the channel
-                            cb.send(Box::new(copying_finished_success)).unwrap()
-                        }
-                        Err(e) => match e.kind {
-                            fs_extra::error::ErrorKind::NotFound => {}
-                            fs_extra::error::ErrorKind::PermissionDenied => {}
-                            fs_extra::error::ErrorKind::AlreadyExists => cb
-                                .send(Box::new(move |s| {
-                                    copying_already_exists(
-                                        s,
-                                        Rc::new(PathBuf::from("selected_path_from")),
-                                        Rc::new(selected_path_to),
-                                        is_overwrite,
-                                        is_recursive,
-                                    )
-                                }))
-                                .unwrap(),
-                            fs_extra::error::ErrorKind::Interrupted => {}
-                            fs_extra::error::ErrorKind::InvalidFolder => {}
-                            fs_extra::error::ErrorKind::InvalidFile => {}
-                            fs_extra::error::ErrorKind::InvalidFileName => {}
-                            fs_extra::error::ErrorKind::InvalidPath => {}
-                            fs_extra::error::ErrorKind::Io(IoError) => {}
-                            fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {}
-                            fs_extra::error::ErrorKind::OsString(OsString) => {}
-                            fs_extra::error::ErrorKind::Other => {}
-                        },
-                    }
-                })
-                .min_width(50)
-                .max_width(50),
-        )
-        .button("Cancel", |s| {
-            s.pop_layer();
-            cancel_operation(s)
-        })
-        .with_name("ProgressDlg"),
-    );*/
-    siv.set_autorefresh(true);
+    #[cfg(feature = "serial_cpy")]
+    let handle = std::thread::spawn(move || {
+        cpy_task(paths_from_clone/*todo clone here?*/, path_to_clone, cb.clone(), cond_var_clone);
+        cb.send(Box::new(|s| copying_finished_success(s)));
+    });
+    if !is_background_cpy {
+        let cpy_progress_dlg = create_cpy_progress_dialog(siv, paths_from, path_to, is_recursive, is_overwrite, cond_var);
+        siv.add_layer(cpy_progress_dlg);
+        siv.set_autorefresh(true);
+    }
 }
 
 fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
-    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite);
+    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, false);
+}
+
+fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+    /*todo repeat*/
+    siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
+        hideable_cpy_btn.set_visible(false);
+    });
+    siv.call_on_name("left_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
+        hideable_bracket.set_visible(true);
+    });
+    siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
+        hideable_view_total.set_visible(true);
+        hideable_view_total.get_inner_mut().get_inner_mut().set_range(0, selected_paths_from.len());
+    });
+    siv.call_on_name("right_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
+        hideable_bracket.set_visible(true);
+    });
+    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
 fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dialog> {
+    let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new(format!("Copy {} items with mask:", paths_from.len())))
@@ -872,7 +795,31 @@ fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dial
 
         ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
     })
-    .button("[ Background ]", quit)
+    .button("[ Background ]", move |s| {
+        let selected_mask_from: Rc<String> = s
+            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .unwrap();
+
+        let selected_path_to: Rc<String> = s
+            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .unwrap();
+        let is_recursive = s
+            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .unwrap();
+        let is_overwrite = s
+            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .unwrap();
+        /*Close our dialog*/
+        s.pop_layer();
+
+        background_cpy_callback(
+            s,
+            paths_from_clone.clone(),
+            PathBuf::from((*selected_path_to).clone()),
+            is_recursive,
+            is_overwrite,
+        )
+    })
     .button("[ Cancel ]", |s| {
         s.pop_layer();
     });
@@ -992,8 +939,30 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     let view_layout = LinearLayout::horizontal().child(TextView::new("3")).child(button_view);
     let button_edit = Button::new_raw("[ Edit ]", edit);
     let edit_layout = LinearLayout::horizontal().child(TextView::new("4")).child(button_edit);
-    let button_cpy = Button::new_raw("[ Copy ]", cpy);
-    let cpy_layout = LinearLayout::horizontal().child(TextView::new("5")).child(button_cpy);
+    let mouse_event = event::Event::Mouse {
+        offset: XY::new(0, 0),
+        position: XY::new(1, 1),
+        event: MouseEvent::Press(MouseButton::Left),
+    };
+    let fn_with_label = |val, (min, max)| copy_progress_dlg::labels::copying_progress_total_background.to_owned();
+    let ProgressBar_on_event_view = HideableView::new(
+        ProgressBar::new()
+            .with_label(fn_with_label)
+            .min_width(copy_progress_dlg::labels::copying_progress_total_background.len()),
+    )
+    .visible(false)
+    .with_name("hideable_cpy_prgrs_br");
+    let left_bracket_hideable = HideableView::new(TextView::new("[")).visible(false).with_name("left_bracket_hideable");
+    let right_bracket_hideable = HideableView::new(TextView::new("]")).visible(false).with_name("right_bracket_hideable");
+    let button_cpy = HideableView::new(Button::new_raw("[ Copy ]", cpy))
+        .visible(true)
+        .with_name("hideable_cpy_button");
+    let cpy_layout = LinearLayout::horizontal()
+        .child(TextView::new("5"))
+        .child(button_cpy)
+        .child(left_bracket_hideable)
+        .child(ProgressBar_on_event_view)
+        .child(right_bracket_hideable);
     let button_RenMov = Button::new_raw("[ RenMov ]", ren_mov);
     let mut tv = TextView::new("6");
     tv.set_style(theme::ColorStyle::title_primary());

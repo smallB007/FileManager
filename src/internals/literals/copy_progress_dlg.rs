@@ -5,4 +5,5 @@ pub mod widget_names {
 }
 pub mod labels {
     pub static copying_progress_total: &str = "Copying total progress:";
+    pub static copying_progress_total_background: &str = "Copying...";
 }

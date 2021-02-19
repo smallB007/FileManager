@@ -14,7 +14,7 @@ Array	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/s
 ArrayToken	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/array.rs	/^pub struct ArrayToken {$/;"	s
 AtToken	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/at.rs	/^pub type AtToken = Option<Instant>;$/;"	T
 AtomicDialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog_try.rs	/^pub struct AtomicDialog<T: View> {$/;"	s
-AtomicFileTransitFlags	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^enum AtomicFileTransitFlags$/;"	g
+AtomicFileTransitFlags	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^enum AtomicFileTransitFlags {$/;"	g
 AtomicTextView	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^pub struct AtomicTextView {$/;"	s
 Atomic_Button	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_button.rs	/^pub struct Atomic_Button {$/;"	s
 Atomic_Dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^pub struct Atomic_Dialog {$/;"	s
@@ -786,6 +786,7 @@ asctime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^pub fn at(when: Instant) -> Receiver<Instant> {$/;"	f
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at(clock: Timespec) -> Tm {$/;"	f
 at_utc	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at_utc(clock: Timespec) -> Tm {$/;"	f
+background_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^    pub fn blt() -> Self {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/lib.rs	/^pub fn blt() -> CursiveRunnable {$/;"	f
 blt_colour_to_colour	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/blt.rs	/^fn blt_colour_to_colour(c: BltColor) -> Color {$/;"	f
@@ -817,6 +818,7 @@ call	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src
 call_on_any	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    fn call_on_any<'a>(&mut self, selector: &Selector<'_>, callback: AnyCb<'a>) {$/;"	f
 can_select	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/waker.rs	/^    pub fn can_select(&self) -> bool {$/;"	f
 cancel_operation	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cancel_operation(siv: &mut cursive::Cursive) {$/;"	f
+cannot_suspend_copy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cannot_suspend_copy(s: &mut Cursive) {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/array.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/at.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
@@ -943,7 +945,7 @@ copying_finished_success	/home/artie/Documents/Projects/rust/FileManager/src/int
 copying_progress_total	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^    pub static copying_progress_total: &str = "Copying total progress:";$/;"	c
 counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^    fn counter(&self) -> &Counter<C> {$/;"	f
 cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy(siv: &mut cursive::Cursive) {$/;"	f
-cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink,cond_var: Arc<(Mutex<bool>,Condvar)>) {$/;"	f
+cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
 create	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/windows.rs	/^    pub fn create($/;"	f
 create	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn create<P>(path: P, erase: bool) -> Result<()>$/;"	f
 create_all	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn create_all<P>(path: P, erase: bool) -> Result<()>$/;"	f
@@ -2572,7 +2574,7 @@ succ	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/s
 succ	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/internals.rs	/^    pub fn succ(&self) -> Of {$/;"	f
 succ_opt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/date.rs	/^    pub fn succ_opt(&self) -> Option<Date<Tz>> {$/;"	f
 succ_opt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/date.rs	/^    pub fn succ_opt(&self) -> Option<NaiveDate> {$/;"	f
-suspend_cpy_thread	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn suspend_cpy_thread(siv: &mut Cursive) {}$/;"	f
+suspend_cpy_thread	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
 switch_panel	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn switch_panel(s: &mut cursive::Cursive) {$/;"	f
 system_time_to_file_time	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/sys/windows.rs	/^fn system_time_to_file_time(sys: &SYSTEMTIME) -> FILETIME {$/;"	f
 system_time_to_file_time	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    fn system_time_to_file_time(sys: &SYSTEMTIME) -> FILETIME {$/;"	f
