@@ -131,7 +131,6 @@ Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/s
 Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/ser.rs	/^    type Error = ConfigError;$/;"	T
 Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^pub enum Error {$/;"	g
 Error	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^pub struct Error {$/;"	s
-ErrorKind	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^                    pub enum ErrorKind {$/;"	g
 ErrorKind	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^pub enum ErrorKind {$/;"	g
 EventLoop	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^struct EventLoop {$/;"	s
 EventLoopMsg	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^enum EventLoopMsg {$/;"	g
@@ -933,7 +932,7 @@ content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_tex
 content_required_size	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn content_required_size(&mut self, req: Vec2) -> Vec2 {$/;"	f
 copy	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn copy<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
 copy	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn copy<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
-copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
+copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {$/;"	f
 copy_items	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn copy_items<P, Q>(from: &[P], to: Q, options: &dir::CopyOptions) -> Result<u64>$/;"	f
 copy_items_with_progress	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn copy_items_with_progress<P, Q, F>($/;"	f
 copy_with_progress	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn copy_with_progress<P, Q, F>($/;"	f
@@ -943,6 +942,7 @@ copying_cancelled	/home/artie/Documents/Projects/rust/FileManager/src/internals/
 copying_error	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_error(s: &mut Cursive) {$/;"	f
 copying_finished_success	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_finished_success(s: &mut Cursive) {$/;"	f
 copying_progress_total	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^    pub static copying_progress_total: &str = "Copying total progress:";$/;"	c
+copying_progress_total_background	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^    pub static copying_progress_total_background: &str = "Copying...";$/;"	c
 counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^    fn counter(&self) -> &Counter<C> {$/;"	f
 cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy(siv: &mut cursive::Cursive) {$/;"	f
 cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
@@ -2480,6 +2480,7 @@ short_or_long_weekday	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec82
 short_weekday	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/scan.rs	/^pub fn short_weekday(s: &str) -> ParseResult<(&str, Weekday)> {$/;"	f
 should_insert_into_empty_table	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn should_insert_into_empty_table() {$/;"	f
 should_insert_into_existing_table	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn should_insert_into_existing_table() {$/;"	f
+show_hide_cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn show_hide_cpy(siv: &mut cursive::Cursive) {$/;"	f
 shuffle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/utils.rs	/^pub fn shuffle<T>(v: &mut [T]) {$/;"	f
 shuffle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/mod.rs	/^    fn shuffle<R>(&mut self, rng: &mut R)$/;"	f
 signed_duration_since	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/date.rs	/^    pub fn signed_duration_since<Tz2: TimeZone>(self, rhs: Date<Tz2>) -> OldDuration {$/;"	f

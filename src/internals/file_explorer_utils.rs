@@ -59,11 +59,15 @@ enum AtomicFileTransitFlags {
     Abort,
     Skip,
 }
+struct CpyData {
+    cond_var: Arc<(Mutex<bool>, Condvar)>,
+    files_total: usize,
+}
 pub struct FileManager {
     id: i64,
     active_table: String, //change to &str
     tx_rx: (Sender<AtomicFileTransitFlags>, Receiver<AtomicFileTransitFlags>),
-    cancel_current_operation: bool,
+    cpy_data: Option<CpyData>,
 }
 impl Default for FileManager {
     fn default() -> Self {
@@ -71,7 +75,7 @@ impl Default for FileManager {
             id: 0,
             active_table: String::from(""),
             tx_rx: std::sync::mpsc::channel(),
-            cancel_current_operation: false,
+            cpy_data: None,
         }
     }
 }
@@ -170,6 +174,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     siv.add_global_callback(Key::Esc, switch_panel);
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F4, cpy);
+    siv.add_global_callback(Key::F7, show_hide_cpy);
     //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 
     //siv.run();
@@ -444,6 +449,7 @@ fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf,
         theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
     });
     s.set_autorefresh(false); //todo repeat
+    todo!("Dialog type changed");
     if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
         s.pop_layer();
     }
@@ -571,13 +577,10 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProces
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();*/
-    siv.call_on_name(
-        copy_progress_dlg::widget_names::progress_bar_total,
-        |a_progress_bar: &mut ProgressBar| {
-            a_progress_bar.set_value(current_inx);
-            a_progress_bar.set_label(|val, (_min, max)| format!("Copied {} of {}", val, max));
-        },
-    );
+    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
+        a_progress_bar.set_value(current_inx);
+        a_progress_bar.set_label(|val, (_min, max)| format!("Copied {} of {}", val, max));
+    });
     siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
         hideable_view_total.get_inner_mut().get_inner_mut().set_value(current_inx);
     });
@@ -657,25 +660,19 @@ fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) 
     };
     cond_var.1.notify_one();
 }
-fn create_cpy_progress_dialog(
-    siv: &mut Cursive,
-    paths_from: Vec<String>,
-    path_to: PathBuf,
-    is_recursive: bool,
-    is_overwrite: bool,
-    cond_var: Arc<(Mutex<bool>, Condvar)>,
-) -> NamedView<ResizedView<Dialog>> {
+type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;
+fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
             .child(
                 ProgressBar::new()
-                    .range(0, paths_from.len())
+                    .range(0, files_total)
                     .with_name(copy_progress_dlg::widget_names::progress_bar_total),
             )
             .child(DummyView),
     )
-    .visible(paths_from.len() > 1);
+    .visible(files_total > 1);
 
     let suspend_button = Button::new("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone())).with_name("Suspend_Resume_Btn");
     let cancel_button = Button::new("Cancel", |s| {
@@ -697,9 +694,9 @@ fn create_cpy_progress_dialog(
                 .child(buttons),
         ),
     )
-    .fixed_width(80)
-    .with_name("ProgressDlg");
+    .fixed_width(80);
 
+    let cpy_progress_dlg = cpy_progress_dlg.with_name("ProgressDlg");
     cpy_progress_dlg
 }
 fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
@@ -711,11 +708,17 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_
     let cb = siv.cb_sink().clone();
     #[cfg(feature = "serial_cpy")]
     let handle = std::thread::spawn(move || {
-        cpy_task(paths_from_clone/*todo clone here?*/, path_to_clone, cb.clone(), cond_var_clone);
+        cpy_task(paths_from_clone /*todo clone here?*/, path_to_clone, cb.clone(), cond_var_clone);
         cb.send(Box::new(|s| copying_finished_success(s)));
     });
+    let g_file_manager = GLOBAL_FileManager.get();
+    g_file_manager.lock().unwrap().borrow_mut().cpy_data = Some(CpyData {
+        cond_var: cond_var.clone(),
+        files_total: paths_from.len(),
+    });
+
     if !is_background_cpy {
-        let cpy_progress_dlg = create_cpy_progress_dialog(siv, paths_from, path_to, is_recursive, is_overwrite, cond_var);
+        let cpy_progress_dlg = create_cpy_progress_dialog(paths_from.len(), cond_var);
         siv.add_layer(cpy_progress_dlg);
         siv.set_autorefresh(true);
     }
@@ -834,7 +837,21 @@ fn cancel_operation(siv: &mut cursive::Cursive) {
     let tmp = v.lock().unwrap();
     let mut v = tmp.borrow_mut();
     v.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
-    v.cancel_current_operation = true;
+}
+fn show_hide_cpy(siv: &mut cursive::Cursive) {
+        if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+        siv.pop_layer(); //trouble
+    }
+        else {
+    let g_file_manager = GLOBAL_FileManager.get();
+    match &g_file_manager.lock().unwrap().borrow().cpy_data {
+        Some(cpy_data) => {
+        let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
+        siv.add_layer(cpy_progress_dlg);
+        siv.set_autorefresh(true);}
+        None => {}
+    }
+        }
 }
 fn menu(siv: &mut cursive::Cursive) {}
 fn view(siv: &mut cursive::Cursive) {}
