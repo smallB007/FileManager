@@ -109,19 +109,19 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
             "File",
             Tree::new()
                 // Trees are made of leaves, with are directly actionable...
-                .leaf("New", move |s| {
+                .leaf("New", move |siv| {
                     // Here we use the counter to add an entry
                     // in the list of "Recent" items.
                     let i = counter.fetch_add(1, Ordering::Relaxed);
                     let filename = format!("New {}", i);
-                    s.menubar()
+                    siv.menubar()
                         .find_subtree("File")
                         .unwrap()
                         .find_subtree("Recent")
                         .unwrap()
                         .insert_leaf(0, filename, |_| ());
 
-                    s.add_layer(Dialog::info("New file!"));
+                    siv.add_layer(Dialog::info("New file!"));
                 })
                 // ... and of sub-trees, which open up when selected.
                 .subtree(
@@ -150,16 +150,18 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
             Tree::new()
                 .subtree(
                     "Help",
-                    Tree::new().leaf("General", |s| s.add_layer(Dialog::info("Help message!"))).leaf("Online", |s| {
-                        let text = "Google it yourself!\n\
+                    Tree::new()
+                        .leaf("General", |siv| siv.add_layer(Dialog::info("Help message!")))
+                        .leaf("Online", |siv| {
+                            let text = "Google it yourself!\n\
                                         Kids, these days...";
-                        s.add_layer(Dialog::info(text))
-                    }),
+                            siv.add_layer(Dialog::info(text))
+                        }),
                 )
-                .leaf("About", |s| s.add_layer(Dialog::info("Cursive v0.0.0"))),
+                .leaf("About", |siv| siv.add_layer(Dialog::info("Cursive v0.0.0"))),
         )
         .add_delimiter()
-        .add_leaf("Quit", |s| s.quit());
+        .add_leaf("Quit", |siv| siv.quit());
 
     // When `autohide` is on (default), the menu only appears when active.
     // Turning it off will leave the menu always visible.
@@ -179,8 +181,8 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
 
     //siv.run();
 }
-fn switch_panel(s: &mut cursive::Cursive) {
-    if let Some(mut dialog) = s.find_name::<Dialog>("DLG") {
+fn switch_panel(siv: &mut cursive::Cursive) {
+    if let Some(mut dialog) = siv.find_name::<Dialog>("DLG") {
         for but in dialog.buttons_mut() {}
     }
     //siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
@@ -270,8 +272,8 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
         siv.add_layer(
             Dialog::around(TextView::new(format!("{} / {:?}", column.as_str(), order)))
                 .title("Sorted by")
-                .button("Close", |s| {
-                    s.pop_layer();
+                .button("Close", |siv| {
+                    siv.pop_layer();
                 }),
         );
     });
@@ -294,11 +296,11 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
         /*        siv.add_layer(
             Dialog::around(TextView::new(value))
                 .title(format!("Removing row # {}", row))
-                .button("Close", move |s| {
-                    s.call_on_name(a_name, |a_table: &mut tableViewType| {
+                .button("Close", move |siv| {
+                    siv.call_on_name(a_name, |a_table: &mut tableViewType| {
                         a_table.remove_item(index);
                     });
-                    s.pop_layer();
+                    siv.pop_layer();
                 }),
         );*/
     });
@@ -372,11 +374,11 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
         /*        siv.add_layer(
             Dialog::around(TextView::new(value))
                 .title(format!("Removing row # {}", row))
-                .button("Close", move |s| {
-                    s.call_on_name(a_name, |a_table: &mut tableViewType| {
+                .button("Close", move |siv| {
+                    siv.call_on_name(a_name, |a_table: &mut tableViewType| {
                         a_table.remove_item(index);
                     });
-                    s.pop_layer();
+                    siv.pop_layer();
                 }),
         );*/
     });
@@ -431,27 +433,27 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
     new_path
 }
 // Function to simulate a long process.
-fn copying_error(s: &mut Cursive) {
-    s.set_autorefresh(false);
-    s.pop_layer(); //trouble
-    s.add_layer(
+fn copying_error(siv: &mut Cursive) {
+    siv.set_autorefresh(false);
+    siv.pop_layer(); //trouble
+    siv.add_layer(
         Dialog::new()
             .title("Copying error")
             .content(TextView::new("Copying ERROR").center())
             .dismiss_button("OK"),
     );
 }
-fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf, is_overwrite: bool, is_recursive: bool) {
-    let theme = s.current_theme().clone().with(|theme| {
+fn copying_already_exists(siv: &mut Cursive, path_from: PathBuf, path_to: PathBuf, is_overwrite: bool, is_recursive: bool) {
+    let theme = siv.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
         theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
         theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
     });
-    s.set_autorefresh(false); //todo repeat
+    siv.set_autorefresh(false); //todo repeat
     todo!("Dialog type changed");
-    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
-        s.pop_layer();
+    if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
+        siv.pop_layer();
     }
     let name_from = path_from.to_str().unwrap();
     let size_from = path_from.metadata().unwrap().size();
@@ -500,28 +502,18 @@ fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf,
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite", move |s| {
-        s.pop_layer();
-        ok_cpy_callback(s, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
+    .button("Overwrite", move |siv| {
+        siv.pop_layer();
+        ok_cpy_callback(siv, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
     })
-    .button("Older", |s| {})
-    .button("Smaller", |s| {})
-    .button("Different size", |s| {})
-    .button("Append", |s| {})
-    .button("Skip", |s| {})
-    .button("Abort", |s| {});
+    .button("Older", |siv| {})
+    .button("Smaller", |siv| {})
+    .button("Different size", |siv| {})
+    .button("Append", |siv| {})
+    .button("Skip", |siv| {})
+    .button("Abort", |siv| {});
 
-    s.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
-}
-fn copying_finished_success(s: &mut Cursive) {
-    s.set_autorefresh(false);
-    s.pop_layer(); //trouble
-    s.add_layer(
-        Dialog::new()
-            .title("Copying finished")
-            .content(TextView::new("Copying finished successfully").center())
-            .dismiss_button("OK"),
-    );
+    siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
 fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf) {
     let mut res = Option::<std::io::Error>::default();
@@ -547,29 +539,38 @@ fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
     fill_table_with_items_wrapper(siv, a_name, new_path);
     //println!("Command received");
 }
-fn cannot_suspend_copy(s: &mut Cursive) {
-    s.set_autorefresh(false);
-    /*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
-        s.pop_layer(); //trouble
-    }*/
-    s.add_layer(
+fn cannot_suspend_copy(siv: &mut Cursive) {
+    siv.set_autorefresh(false);
+    if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+        siv.pop_layer();
+    }
+    siv.add_layer(
         Dialog::new()
             .title("Cannot suspend")
             .content(TextView::new("Cannot suspend").center())
             .dismiss_button("OK"),
     );
 }
-fn copying_cancelled(s: &mut Cursive) {
-    s.set_autorefresh(false);
-    /*    if let Some(_) = s.find_name::<Dialog>("ProgressDlg") {
-        s.pop_layer(); //trouble
-    }*/
-    s.add_layer(
+fn end_copying_helper(siv: &mut Cursive,title:&str,text:&str) {
+    let g_file_manager = GLOBAL_FileManager.get();
+    g_file_manager.lock().unwrap().borrow_mut().cpy_data = None;
+    show_progress_cpy(siv, 0, false);
+    siv.set_autorefresh(false);
+    if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
+        siv.pop_layer();
+    }
+    siv.add_layer(
         Dialog::new()
-            .title("User request Cancell")
-            .content(TextView::new("Copying cancelled").center())
+            .title(title)
+            .content(TextView::new(text).center())
             .dismiss_button("OK"),
     );
+}
+fn copying_finished_success(siv: &mut Cursive) {
+    end_copying_helper(siv,"Copying finished","Copying finished successfully");
+}
+fn copying_cancelled(siv: &mut Cursive) {
+    end_copying_helper(siv,"User request cancel","Copying cancelled");
 }
 
 fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String, current_inx: usize) {
@@ -625,7 +626,7 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex
             let tid = std::thread::current().id();*/
             //println!("ThreadID inside handler: {:?}",tid);
             let current_file_clone = current_file.clone();
-            cb.send(Box::new(move |s| update_cpy_dlg(s, process_info, current_file_clone, current_inx)));
+            cb.send(Box::new(move |siv| update_cpy_dlg(siv, process_info, current_file_clone, current_inx)));
             TransitProcessResult::ContinueOrAbort
         };
 
@@ -636,7 +637,7 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex
         let full_path_to = path_to.clone() + "/" + current_file_name;
         match fs_extra::file::copy_with_progress(current_file, full_path_to, &options, progres_handler) {
             Ok(val) => {
-                println!("val from copy_with_progress: {}", val)
+                //  println!("val from copy_with_progress: {}", val)
             }
             Err(err) => {
                 println!("err: {}", err)
@@ -674,16 +675,21 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Co
     )
     .visible(files_total > 1);
 
-    let suspend_button = Button::new("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone())).with_name("Suspend_Resume_Btn");
-    let background_button = Button::new("Background", move |s|{ 
-        show_progress_cpy(s,files_total,true);
-        s.pop_layer();
+    let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var.clone())).with_name("Suspend_Resume_Btn");
+    let background_button = Button::new("Background", move |siv| {
+        show_progress_cpy(siv, files_total, true);
+        siv.pop_layer();
     });
-    let cancel_button = Button::new("Cancel", |s| {
-        s.pop_layer(); //yes but make sure that update isn't proceeding ;)
-        cancel_operation(s)
+    let cancel_button = Button::new("Cancel", |siv| {
+        siv.pop_layer(); //yes but make sure that update isn't proceeding ;)
+        cancel_operation(siv)
     });
-    let buttons = LinearLayout::horizontal().child(suspend_button).child(DummyView).child(background_button).child(DummyView).child(cancel_button);
+    let buttons = LinearLayout::horizontal()
+        .child(suspend_button)
+        .child(DummyView)
+        .child(background_button)
+        .child(DummyView)
+        .child(cancel_button);
 
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
@@ -713,7 +719,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_
     #[cfg(feature = "serial_cpy")]
     let handle = std::thread::spawn(move || {
         cpy_task(paths_from_clone /*todo clone here?*/, path_to_clone, cb.clone(), cond_var_clone);
-        cb.send(Box::new(|s| copying_finished_success(s)));
+        cb.send(Box::new(|siv| copying_finished_success(siv)));
     });
     let g_file_manager = GLOBAL_FileManager.get();
     g_file_manager.lock().unwrap().borrow_mut().cpy_data = Some(CpyData {
@@ -731,8 +737,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_
 fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, false);
 }
-fn show_progress_cpy(siv: &mut Cursive,total_files: usize,show_progress_bar: bool)
-{
+fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {
     siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
         hideable_cpy_btn.set_visible(!show_progress_bar);
     });
@@ -748,7 +753,7 @@ fn show_progress_cpy(siv: &mut Cursive,total_files: usize,show_progress_bar: boo
     });
 }
 fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
-    show_progress_cpy(siv,selected_paths_from.len(),true);
+    show_progress_cpy(siv, selected_paths_from.len(), true);
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
@@ -785,52 +790,52 @@ fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dial
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", move |s| {
-        let selected_mask_from: Rc<String> = s
+    .button("[ OK ]", move |siv| {
+        let selected_mask_from: Rc<String> = siv
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
 
-        let selected_path_to: Rc<String> = s
+        let selected_path_to: Rc<String> = siv
             .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
-        let is_recursive = s
+        let is_recursive = siv
             .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
-        let is_overwrite = s
+        let is_overwrite = siv
             .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
         /*Close our dialog*/
-        s.pop_layer();
+        siv.pop_layer();
 
-        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
+        ok_cpy_callback(siv, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
     })
-    .button("[ Background ]", move |s| {
-        let selected_mask_from: Rc<String> = s
+    .button("[ Background ]", move |siv| {
+        let selected_mask_from: Rc<String> = siv
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
 
-        let selected_path_to: Rc<String> = s
+        let selected_path_to: Rc<String> = siv
             .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
-        let is_recursive = s
+        let is_recursive = siv
             .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
-        let is_overwrite = s
+        let is_overwrite = siv
             .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
         /*Close our dialog*/
-        s.pop_layer();
+        siv.pop_layer();
 
         background_cpy_callback(
-            s,
+            siv,
             paths_from_clone.clone(),
             PathBuf::from((*selected_path_to).clone()),
             is_recursive,
             is_overwrite,
         )
     })
-    .button("[ Cancel ]", |s| {
-        s.pop_layer();
+    .button("[ Cancel ]", |siv| {
+        siv.pop_layer();
     });
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
@@ -844,8 +849,9 @@ fn cancel_operation(siv: &mut cursive::Cursive) {
     let mut v = tmp.borrow_mut();
     v.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
 }
+type ProgressDlgT = ResizedView<Dialog>;
 fn show_hide_cpy(siv: &mut cursive::Cursive) {
-    if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+    if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
         siv.pop_layer(); //trouble
     } else {
         let g_file_manager = GLOBAL_FileManager.get();
@@ -865,12 +871,13 @@ fn edit(siv: &mut cursive::Cursive) {}
 fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
-        if let None = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+        if let None = siv.find_name::<ProgressDlgT>("ProgressDlg") {
             let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
         }
-    } else {/*No copying, let's start it then ;)*/
+    } else {
+        /*No copying, let'siv start it then ;)*/
         let left_panel_last_focus_time = siv
             .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
             .unwrap();
@@ -921,7 +928,7 @@ fn start_dir_watcher_thread(siv: &mut Cursive, a_table_name: String, a_path: Str
                     let name = a_table_name.clone();
                     let path = a_path.clone(); //todo optimize
                                                //println!("{:?}", event);
-                    cb_panel_update_clone.send(Box::new(|s| update_table(s, name, path))).unwrap();
+                    cb_panel_update_clone.send(Box::new(|siv| update_table(siv, name, path))).unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
@@ -960,8 +967,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     .with_name("RightPanelDlg");
 
     let button_help = OnEventView::new(TextView::new("[ Help ]"))
-        .on_event('w', |s| s.quit())
-        .on_event(event::Key::Tab, |s| s.quit());
+        .on_event('w', |siv| siv.quit())
+        .on_event(event::Key::Tab, |siv| siv.quit());
     //    button_help.disable();
     //button_help.align
     let help_layout = LinearLayout::horizontal().child(TextView::new("1")).child(button_help);
