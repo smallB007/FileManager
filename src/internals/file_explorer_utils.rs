@@ -865,9 +865,7 @@ fn edit(siv: &mut cursive::Cursive) {}
 fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
-        if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
-            siv.pop_layer();
-        } else {
+        if let None = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
             let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
