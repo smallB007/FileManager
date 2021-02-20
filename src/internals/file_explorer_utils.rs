@@ -675,11 +675,15 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Co
     .visible(files_total > 1);
 
     let suspend_button = Button::new("Suspend", move |s| suspend_cpy_thread(s, cond_var.clone())).with_name("Suspend_Resume_Btn");
+    let background_button = Button::new("Background", move |s|{ 
+        show_progress_cpy(s,files_total,true);
+        s.pop_layer();
+    });
     let cancel_button = Button::new("Cancel", |s| {
         s.pop_layer(); //yes but make sure that update isn't proceeding ;)
         cancel_operation(s)
     });
-    let buttons = LinearLayout::horizontal().child(suspend_button).child(DummyView).child(cancel_button);
+    let buttons = LinearLayout::horizontal().child(suspend_button).child(DummyView).child(background_button).child(DummyView).child(cancel_button);
 
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
@@ -727,22 +731,24 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_
 fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, false);
 }
-
-fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
-    /*todo repeat*/
+fn show_progress_cpy(siv: &mut Cursive,total_files: usize,show_progress_bar: bool)
+{
     siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
-        hideable_cpy_btn.set_visible(false);
+        hideable_cpy_btn.set_visible(!show_progress_bar);
     });
     siv.call_on_name("left_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
-        hideable_bracket.set_visible(true);
+        hideable_bracket.set_visible(show_progress_bar);
     });
     siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
-        hideable_view_total.set_visible(true);
-        hideable_view_total.get_inner_mut().get_inner_mut().set_range(0, selected_paths_from.len());
+        hideable_view_total.set_visible(show_progress_bar);
+        hideable_view_total.get_inner_mut().get_inner_mut().set_range(0, total_files);
     });
     siv.call_on_name("right_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
-        hideable_bracket.set_visible(true);
+        hideable_bracket.set_visible(show_progress_bar);
     });
+}
+fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+    show_progress_cpy(siv,selected_paths_from.len(),true);
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
