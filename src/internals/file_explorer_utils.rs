@@ -33,6 +33,7 @@ use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::atomic_dialog_try::AtomicDialog;
 use crate::internals::atomic_text_view::AtomicTextView;
+use crate::internals::literals::copy_progress_dlg;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -386,14 +387,18 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 
     named_view_table
 }
-fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<Vec<String>> {
+type TableNameT = String;
+type PathT = String;
+type IndexT = usize;
+type CopyPathInfoT = Vec<(TableNameT,PathT,IndexT)>;
+fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT > {
     let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
         selected_items_inx = a_table.get_selected_items();
     });
 
     if selected_items_inx.len() != 0 {
-        let mut selected_paths = Vec::<String>::new();
+        let mut selected_paths = CopyPathInfoT::new();
         for selected_inx in selected_items_inx {
             selected_paths.push(get_selected_path_from_inx(siv, a_name, selected_inx).unwrap());
         }
@@ -412,7 +417,7 @@ fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
         .unwrap();
     current_dir
 }
-fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<String> {
+fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT,PathT,IndexT)> {
     /*Todo repeat*/
     let current_dir = get_current_dir(siv, a_name);
     let new_path = siv
@@ -424,7 +429,7 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
                     if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
                         selected_item.insert(0, std::path::MAIN_SEPARATOR);
                     }
-                    Some(current_dir + &selected_item)
+                    Some((a_name.to_owned(),current_dir + &selected_item, index))
                 }
             };
             whole_path
@@ -504,7 +509,8 @@ fn copying_already_exists(siv: &mut Cursive, path_from: PathBuf, path_to: PathBu
     .title("File Exists")
     .button("Overwrite", move |siv| {
         siv.pop_layer();
-        ok_cpy_callback(siv, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
+        todo!();
+        //        ok_cpy_callback(siv, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
     })
     .button("Older", |siv| {})
     .button("Smaller", |siv| {})
@@ -551,7 +557,7 @@ fn cannot_suspend_copy(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn end_copying_helper(siv: &mut Cursive,title:&str,text:&str) {
+fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {
     let g_file_manager = GLOBAL_FileManager.get();
     g_file_manager.lock().unwrap().borrow_mut().cpy_data = None;
     show_progress_cpy(siv, 0, false);
@@ -559,18 +565,13 @@ fn end_copying_helper(siv: &mut Cursive,title:&str,text:&str) {
     if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
         siv.pop_layer();
     }
-    siv.add_layer(
-        Dialog::new()
-            .title(title)
-            .content(TextView::new(text).center())
-            .dismiss_button("OK"),
-    );
+    siv.add_layer(Dialog::new().title(title).content(TextView::new(text).center()).dismiss_button("OK"));
 }
 fn copying_finished_success(siv: &mut Cursive) {
-    end_copying_helper(siv,"Copying finished","Copying finished successfully");
+    end_copying_helper(siv, "Copying finished", "Copying finished successfully");
 }
 fn copying_cancelled(siv: &mut Cursive) {
-    end_copying_helper(siv,"User request cancel","Copying cancelled");
+    end_copying_helper(siv, "User request cancel", "Copying cancelled");
 }
 
 fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String, current_inx: usize) {
@@ -599,10 +600,15 @@ struct file_transfer_context {
     bps: u64,
     bps_time: u64,
 }
+fn unselect_inx(siv: &mut Cursive,a_table_name: Arc<String>, inx: Arc<usize>) {
+siv.call_on_name(a_table_name.as_str(), |a_table: &mut tableViewType| {
+         a_table.clear_selected_item(*inx);
+    });
 
-fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {
+}
+fn cpy_task(selected_paths: CopyPathInfoT, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {
     let start = std::time::Instant::now();
-    for (current_inx, current_file) in chnk.iter().enumerate() {
+    for (current_inx, (table_name, current_file, inx)) in selected_paths.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
             let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
@@ -637,7 +643,9 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex
         let full_path_to = path_to.clone() + "/" + current_file_name;
         match fs_extra::file::copy_with_progress(current_file, full_path_to, &options, progres_handler) {
             Ok(val) => {
-                //  println!("val from copy_with_progress: {}", val)
+                let inx_clone = Arc::new(*inx);
+                let table_name_clone = Arc::new(table_name.clone());
+                cb.send(Box::new(|s| unselect_inx(s,table_name_clone, inx_clone))).unwrap();
             }
             Err(err) => {
                 println!("err: {}", err)
@@ -648,7 +656,6 @@ fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex
     println!("Copying finished:{}", duration.as_secs());
 }
 const a_const: i128 = 0;
-use crate::internals::literals::copy_progress_dlg;
 fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) {
     let mut resume_thread = cond_var.0.lock().unwrap();
     *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
@@ -709,7 +716,7 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Co
 
     cpy_progress_dlg
 }
-fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
+fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
     let cond_var = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_clone = Arc::clone(&cond_var);
     let paths_from_clone = paths_from.clone();
@@ -734,7 +741,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_
     }
 }
 
-fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, false);
 }
 fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {
@@ -752,12 +759,12 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         hideable_bracket.set_visible(show_progress_bar);
     });
 }
-fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
     show_progress_cpy(siv, selected_paths_from.len(), true);
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
-fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dialog> {
+fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
