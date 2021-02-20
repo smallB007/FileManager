@@ -694,9 +694,9 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Co
                 .child(buttons),
         ),
     )
-    .fixed_width(80);
+    .fixed_width(80)
+    .with_name("ProgressDlg");
 
-    let cpy_progress_dlg = cpy_progress_dlg.with_name("ProgressDlg");
     cpy_progress_dlg
 }
 fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
@@ -839,42 +839,53 @@ fn cancel_operation(siv: &mut cursive::Cursive) {
     v.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
 }
 fn show_hide_cpy(siv: &mut cursive::Cursive) {
-        if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+    if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
         siv.pop_layer(); //trouble
-    }
-        else {
-    let g_file_manager = GLOBAL_FileManager.get();
-    match &g_file_manager.lock().unwrap().borrow().cpy_data {
-        Some(cpy_data) => {
-        let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
-        siv.add_layer(cpy_progress_dlg);
-        siv.set_autorefresh(true);}
-        None => {}
-    }
+    } else {
+        let g_file_manager = GLOBAL_FileManager.get();
+        match &g_file_manager.lock().unwrap().borrow().cpy_data {
+            Some(cpy_data) => {
+                let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
+                siv.add_layer(cpy_progress_dlg);
+                siv.set_autorefresh(true);
+            }
+            None => {}
         }
+    }
 }
 fn menu(siv: &mut cursive::Cursive) {}
 fn view(siv: &mut cursive::Cursive) {}
 fn edit(siv: &mut cursive::Cursive) {}
 fn cpy(siv: &mut cursive::Cursive) {
-    let left_panel_last_focus_time = siv
-        .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-        .unwrap();
-
-    let right_panel_last_focus_time = siv
-        .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-        .unwrap();
-    let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
-        ("LeftPanel", "RightPanel")
-    } else {
-        ("RightPanel", "LeftPanel")
-    };
-    match get_selected_path(siv, from) {
-        Some(selected_paths_from) => {
-            let selected_path_to = get_current_dir(siv, to);
-            siv.add_layer(create_cpy_dialog(selected_paths_from, selected_path_to));
+    /*First, check if copying is in the progress:*/
+    if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
+        if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+            siv.pop_layer();
+        } else {
+            let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var.clone());
+            siv.add_layer(cpy_progress_dlg);
+            siv.set_autorefresh(true);
         }
-        None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
+    } else {/*No copying, let's start it then ;)*/
+        let left_panel_last_focus_time = siv
+            .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+            .unwrap();
+
+        let right_panel_last_focus_time = siv
+            .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+            .unwrap();
+        let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
+            ("LeftPanel", "RightPanel")
+        } else {
+            ("RightPanel", "LeftPanel")
+        };
+        match get_selected_path(siv, from) {
+            Some(selected_paths_from) => {
+                let selected_path_to = get_current_dir(siv, to);
+                siv.add_layer(create_cpy_dialog(selected_paths_from, selected_path_to));
+            }
+            None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
+        }
     }
 }
 fn ren_mov(siv: &mut cursive::Cursive) {}
