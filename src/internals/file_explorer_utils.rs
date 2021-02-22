@@ -673,8 +673,7 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var: Arc<(Mutex<bool>, Co
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
-            .child(
-                ProgressBar::new()
+            .child(ProgressBar::new()
                     .range(0, files_total)
                     .with_name(copy_progress_dlg::widget_names::progress_bar_total),
             )
@@ -736,6 +735,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
 
     if !is_background_cpy {
         let cpy_progress_dlg = create_cpy_progress_dialog(paths_from.len(), cond_var);
+        let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
         siv.add_layer(cpy_progress_dlg);
         siv.set_autorefresh(true);
     }
@@ -764,7 +764,7 @@ fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
-fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
+fn create_cpy_dialog(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
@@ -872,6 +872,67 @@ fn show_hide_cpy(siv: &mut cursive::Cursive) {
         }
     }
 }
+fn create_themed_view<T>(siv: &mut Cursive, view: T) -> ThemedView<Layer<T>>
+where
+    T: View,
+{
+    /*theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
+            theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
+            theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
+    *//*
+     /// Color used for the application background.
+        Background,
+        /// Color used for View shadows.
+        Shadow,
+        /// Color used for View backgrounds.
+        View,
+        /// Primary color used for the text.
+        Primary,
+        /// Secondary color used for the text.
+        Secondary,
+        /// Tertiary color used for the text.
+        Tertiary,
+        /// Primary color used for title text.
+        TitlePrimary,
+        /// Secondary color used for title text.
+        TitleSecondary,
+        /// Color used for highlighting text.
+        Highlight,
+        /// Color used for highlighting inactive text.
+        HighlightInactive,
+        /// Color used for highlighted text
+        HighlightText,*/
+    let curr_theme = siv.current_theme().clone();
+    let theme = siv.current_theme().clone().with(|theme| {
+        let color_view = match curr_theme.palette[theme::PaletteColor::View] {
+            theme::Color::Dark(BaseColor) => BaseColor.light(),
+            theme::Color::Light(BaseColor) => BaseColor.dark(),
+            theme::Color::Rgb(R, G, B) => theme::Color::Rgb(R + 1, G + 1, B + 1),
+            theme::Color::RgbLowRes(R, G, B) => theme::Color::RgbLowRes(R + 1, G + 1, B + 1),
+            TerminalDefault => theme::Color::Rgb(1, 1, 1),
+        };
+        let color_highlight_text = match curr_theme.palette[theme::PaletteColor::HighlightText] {
+            theme::Color::Dark(BaseColor) => BaseColor.light(),
+            theme::Color::Light(BaseColor) => BaseColor.dark(),
+            theme::Color::Rgb(R, G, B) => theme::Color::Rgb(R + 1, G + 1, B + 1),
+            theme::Color::RgbLowRes(R, G, B) => theme::Color::RgbLowRes(R + 1, G + 1, B + 1),
+            TerminalDefault => theme::Color::Rgb(1, 1, 1),
+        };
+        theme.palette[theme::PaletteColor::View] = color_view;
+        theme.palette[theme::PaletteColor::HighlightText] = color_highlight_text;
+        /*theme.palette[theme::PaletteColor::Background] = color_primary;
+                            theme.palette[theme::PaletteColor::Shadow] = color_primary;
+                            theme.palette[theme::PaletteColor::Primary] = color_primary;
+                            theme.palette[theme::PaletteColor::Secondary] = color_primary;
+                            theme.palette[theme::PaletteColor::Tertiary] = color_primary;
+                            theme.palette[theme::PaletteColor::TitlePrimary] = color_primary;
+                            theme.palette[theme::PaletteColor::TitleSecondary] = color_primary;
+        //                    theme.palette[theme::PaletteColor::Highlight] = color_primary;
+                            theme.palette[theme::PaletteColor::HighlightInactive] = color_primary;
+        //                    theme.palette[theme::PaletteColor::Highlight] = color_primary;*/
+    });
+    views::ThemedView::new(theme, Layer::new(view))
+}
 fn menu(siv: &mut cursive::Cursive) {}
 fn view(siv: &mut cursive::Cursive) {}
 fn edit(siv: &mut cursive::Cursive) {}
@@ -900,42 +961,9 @@ fn cpy(siv: &mut cursive::Cursive) {
         match get_selected_path(siv, from) {
             Some(selected_paths_from) => {
                 let selected_path_to = get_current_dir(siv, to);
-                let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
-                let curr_theme = siv.current_theme().clone();
-                let theme = siv.current_theme().clone().with(|theme| {
-                    let col = match curr_theme.palette[theme::PaletteColor::View] {
-                        /// One of the 8 base colors.
-                        ///
-                        /// These colors should work on any terminal.
-                        ///
-                        /// Note: the actual color used depends on the terminal configuration.
-                        theme::Color::Dark(BaseColor) => BaseColor.light(),
-
-                        /// Lighter version of a base color.
-                        ///
-                        /// The native linux TTY usually doesn't support these colors, but almost
-                        /// all terminal emulators should.
-                        ///
-                        /// Note: the actual color used depends on the terminal configuration.
-                        theme::Color::Light(BaseColor) => BaseColor.dark(),
-
-                        /// True-color, 24-bit.
-                        ///
-                        /// On terminals that don't support this, the color will be "downgraded"
-                        /// to the closest one available.
-                        theme::Color::Rgb(R, G, B) => theme::Color::Rgb(R + 1, G + 1, B + 1),
-
-                        /// Low-resolution color.
-                        ///
-                        /// Each value should be `<= 5` (you'll get panics otherwise).
-                        ///
-                        /// These 216 possible colors are part of the default color palette (256 colors).
-                        theme::Color::RgbLowRes(R, G, B) => theme::Color::RgbLowRes(R + 1, G + 1, B + 1),
-                        TerminalDefault => theme::Color::Rgb(1, 1, 1),
-                    };
-                    theme.palette[theme::PaletteColor::View] = col;
-                });
-                siv.add_layer(views::ThemedView::new(theme, Layer::new(cpy_dlg)));
+                let cpy_dlg = create_cpy_dialog(siv, selected_paths_from, selected_path_to);
+                let themed_cpy_dlg = create_themed_view(siv, cpy_dlg);
+                siv.add_layer(themed_cpy_dlg);
             }
             None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
         }
