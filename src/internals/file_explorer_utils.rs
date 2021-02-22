@@ -9,6 +9,7 @@ use cursive::view::Boxable;
 use cursive::views::*;
 use cursive::*;
 use cursive::{Cursive, CursiveExt};
+use theme::BaseColor;
 // STD Dependencies -----------------------------------------------------------
 use super::cursive_table_view::{TableView, TableViewItem};
 use chrono::offset::Utc;
@@ -390,8 +391,8 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
 type TableNameT = String;
 type PathT = String;
 type IndexT = usize;
-type CopyPathInfoT = Vec<(TableNameT,PathT,IndexT)>;
-fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT > {
+type CopyPathInfoT = Vec<(TableNameT, PathT, IndexT)>;
+fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
     let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
         selected_items_inx = a_table.get_selected_items();
@@ -417,7 +418,7 @@ fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
         .unwrap();
     current_dir
 }
-fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT,PathT,IndexT)> {
+fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {
     /*Todo repeat*/
     let current_dir = get_current_dir(siv, a_name);
     let new_path = siv
@@ -429,7 +430,7 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
                     if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
                         selected_item.insert(0, std::path::MAIN_SEPARATOR);
                     }
-                    Some((a_name.to_owned(),current_dir + &selected_item, index))
+                    Some((a_name.to_owned(), current_dir + &selected_item, index))
                 }
             };
             whole_path
@@ -600,11 +601,10 @@ struct file_transfer_context {
     bps: u64,
     bps_time: u64,
 }
-fn unselect_inx(siv: &mut Cursive,a_table_name: Arc<String>, inx: Arc<usize>) {
-siv.call_on_name(a_table_name.as_str(), |a_table: &mut tableViewType| {
-         a_table.clear_selected_item(*inx);
+fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
+    siv.call_on_name(a_table_name.as_str(), |a_table: &mut tableViewType| {
+        a_table.clear_selected_item(*inx);
     });
-
 }
 fn cpy_task(selected_paths: CopyPathInfoT, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {
     let start = std::time::Instant::now();
@@ -645,7 +645,7 @@ fn cpy_task(selected_paths: CopyPathInfoT, path_to: String, cb: CbSink, cond_var
             Ok(val) => {
                 let inx_clone = Arc::new(*inx);
                 let table_name_clone = Arc::new(table_name.clone());
-                cb.send(Box::new(|s| unselect_inx(s,table_name_clone, inx_clone))).unwrap();
+                cb.send(Box::new(|s| unselect_inx(s, table_name_clone, inx_clone))).unwrap();
             }
             Err(err) => {
                 println!("err: {}", err)
@@ -900,7 +900,42 @@ fn cpy(siv: &mut cursive::Cursive) {
         match get_selected_path(siv, from) {
             Some(selected_paths_from) => {
                 let selected_path_to = get_current_dir(siv, to);
-                siv.add_layer(create_cpy_dialog(selected_paths_from, selected_path_to));
+                let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
+                let curr_theme = siv.current_theme().clone();
+                let theme = siv.current_theme().clone().with(|theme| {
+                    let col = match curr_theme.palette[theme::PaletteColor::View] {
+                        /// One of the 8 base colors.
+                        ///
+                        /// These colors should work on any terminal.
+                        ///
+                        /// Note: the actual color used depends on the terminal configuration.
+                        theme::Color::Dark(BaseColor) => BaseColor.light(),
+
+                        /// Lighter version of a base color.
+                        ///
+                        /// The native linux TTY usually doesn't support these colors, but almost
+                        /// all terminal emulators should.
+                        ///
+                        /// Note: the actual color used depends on the terminal configuration.
+                        theme::Color::Light(BaseColor) => BaseColor.dark(),
+
+                        /// True-color, 24-bit.
+                        ///
+                        /// On terminals that don't support this, the color will be "downgraded"
+                        /// to the closest one available.
+                        theme::Color::Rgb(R, G, B) => theme::Color::Rgb(R + 1, G + 1, B + 1),
+
+                        /// Low-resolution color.
+                        ///
+                        /// Each value should be `<= 5` (you'll get panics otherwise).
+                        ///
+                        /// These 216 possible colors are part of the default color palette (256 colors).
+                        theme::Color::RgbLowRes(R, G, B) => theme::Color::RgbLowRes(R + 1, G + 1, B + 1),
+                        TerminalDefault => theme::Color::Rgb(1, 1, 1),
+                    };
+                    theme.palette[theme::PaletteColor::View] = col;
+                });
+                siv.add_layer(views::ThemedView::new(theme, Layer::new(cpy_dlg)));
             }
             None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
         }
