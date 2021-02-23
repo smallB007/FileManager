@@ -566,7 +566,9 @@ fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {
     if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
         siv.pop_layer();
     }
-    siv.add_layer(Dialog::new().title(title).content(TextView::new(text).center()).dismiss_button("OK"));
+    let success_dlg = Dialog::new().title(title).content(TextView::new(text).center()).dismiss_button("OK");
+    let success_dlg = create_themed_view(siv,success_dlg);
+    siv.add_layer(success_dlg);
 }
 fn copying_finished_success(siv: &mut Cursive) {
     end_copying_helper(siv, "Copying finished", "Copying finished successfully");
@@ -764,7 +766,7 @@ fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT
     copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
 }
 
-fn create_cpy_dialog(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
+fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
@@ -797,52 +799,52 @@ fn create_cpy_dialog(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: Stri
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", move |siv| {
-        let selected_mask_from: Rc<String> = siv
+    .button("[ OK ]", move |s| {
+        let selected_mask_from: Rc<String> = s
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
 
-        let selected_path_to: Rc<String> = siv
+        let selected_path_to: Rc<String> = s
             .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
-        let is_recursive = siv
+        let is_recurse = s
             .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
-        let is_overwrite = siv
+        let is_overwrite = s
             .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
         /*Close our dialog*/
-        siv.pop_layer();
+        s.pop_layer();
 
-        ok_cpy_callback(siv, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
+        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recurse, is_overwrite)
     })
-    .button("[ Background ]", move |siv| {
-        let selected_mask_from: Rc<String> = siv
+    .button("[ Background ]", move |s| {
+        let selected_mask_from: Rc<String> = s
             .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
 
-        let selected_path_to: Rc<String> = siv
+        let selected_path_to: Rc<String> = s
             .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
-        let is_recursive = siv
+        let is_recurse = s
             .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
-        let is_overwrite = siv
+        let is_overwrite = s
             .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
         /*Close our dialog*/
-        siv.pop_layer();
+        s.pop_layer();
 
         background_cpy_callback(
-            siv,
+            s,
             paths_from_clone.clone(),
             PathBuf::from((*selected_path_to).clone()),
-            is_recursive,
+            is_recurse,
             is_overwrite,
         )
     })
-    .button("[ Cancel ]", |siv| {
-        siv.pop_layer();
+    .button("[ Cancel ]", |s| {
+        s.pop_layer();
     });
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
@@ -961,7 +963,7 @@ fn cpy(siv: &mut cursive::Cursive) {
         match get_selected_path(siv, from) {
             Some(selected_paths_from) => {
                 let selected_path_to = get_current_dir(siv, to);
-                let cpy_dlg = create_cpy_dialog(siv, selected_paths_from, selected_path_to);
+                let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
                 let themed_cpy_dlg = create_themed_view(siv, cpy_dlg);
                 siv.add_layer(themed_cpy_dlg);
             }
