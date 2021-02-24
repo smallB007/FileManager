@@ -450,7 +450,7 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
+fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
     let (lock_flag, cond_var, file_action) = &**cond_var; //todo pretty certain, no mutex is needed here
     *lock_flag.lock().unwrap() = false;
     *file_action.lock().unwrap() = action;
@@ -470,7 +470,7 @@ enum FileExistsAction {
     Skip,
     Append,
 }
-fn copying_already_exists<'a>(
+fn copying_already_exists(
     siv: &mut Cursive,
     path_from: PathBuf,
     path_to: PathBuf,
@@ -478,7 +478,8 @@ fn copying_already_exists<'a>(
     is_recursive: bool,
     cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>,
 ) {
-    let cond_var_skip_clone = cond_var_skip.clone();//todo remove
+    let cond_var_skip_clone = cond_var_skip.clone(); //todo remove
+    let cond_var_clone_1 = cond_var_skip.clone(); //todo remove
     let theme = siv.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
@@ -535,14 +536,9 @@ fn copying_already_exists<'a>(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite", move|s| {
+    .button("Overwrite", move |s| {
         s.pop_layer();
-/*        let (lock, cond_var, skip_file) = &*cond_var_skip; //todo pretty certain, no mutex is needed here
-        let mut keep_waiting = lock.lock().unwrap();
-        *skip_file.lock().unwrap() = FileExistsAction::Override(OverrideCase::JustDoIt);
-        *keep_waiting = false;
-        cond_var.notify_all();*/
-        assign_action_and_notify(&cond_var_skip,FileExistsAction::Override(OverrideCase::JustDoIt));
+        assign_action_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::JustDoIt));
     })
     .button("Older", |s| {})
     .button("Smaller", |s| {})
@@ -550,14 +546,12 @@ fn copying_already_exists<'a>(
     .button("Append", |s| {})
     .button("Skip", move |s| {
         s.pop_layer();
-        assign_action_and_notify(&cond_var_skip_clone,FileExistsAction::Skip);
-/*        let (lock, cond_var, skip_file) = &*cond_var_skip_clone; //todo pretty certain, no mutex is needed here
-        let mut keep_waiting = lock.lock().unwrap();
-        *skip_file.lock().unwrap() = FileExistsAction::Skip;
-        *keep_waiting = false;
-        cond_var.notify_all();*/
+        assign_action_and_notify(&cond_var_skip_clone, FileExistsAction::Skip);
     })
-    .button("Abort", |s| {});
+    .button("Abort", move |s| {
+        s.pop_layer();
+        assign_action_and_notify(&cond_var_clone_1, FileExistsAction::Abort);
+    });
 
     siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
@@ -659,7 +653,7 @@ fn cpy_task(
     is_recursive: bool,
     is_overwrite: bool,
 ) {
-    for (current_inx, (table_name, current_file, inx)) in selected_paths.iter().enumerate() {
+    'main_for: for (current_inx, (table_name, current_file, inx)) in selected_paths.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
             let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
@@ -726,7 +720,6 @@ fn cpy_task(
                         Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
                         _ => {}
                     }
-                    //                    if skip_file.lock().unwrap().cmp(&false) == std::cmp::Ordering::Equal {
                     match *skip_file.lock().unwrap() {
                         FileExistsAction::Override(OverrideCase::JustDoIt) => {
                             cpy_task(
@@ -738,6 +731,9 @@ fn cpy_task(
                                 is_recursive,
                                 true, //override
                             );
+                        }
+                        FileExistsAction::Abort => {
+                            break 'main_for;
                         }
                         _ => {}
                     }
