@@ -450,13 +450,27 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
+enum OverrideCase
+{
+    JustDoIt,
+    Older,
+    Newer,
+    DifferentSize,
+}
+enum FileExistsAction
+{
+    Abort,
+    Override(OverrideCase),
+    Skip,
+    Append,
+}
 fn copying_already_exists(
     siv: &mut Cursive,
     path_from: PathBuf,
     path_to: PathBuf,
     is_overwrite: bool,
     is_recursive: bool,
-    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<bool>)>,
+    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>,
 ) {
     let cond_var_skip_clone = cond_var_skip.clone();
     let theme = siv.current_theme().clone().with(|theme| {
@@ -516,22 +530,22 @@ fn copying_already_exists(
     )
     .title("File Exists")
     .button("Overwrite", move |s| {
+        s.pop_layer();
         let (lock, cond_var, skip_file) = &*cond_var_skip; //todo pretty certain, no mutex is needed here
         let mut keep_waiting = lock.lock().unwrap();
-        *skip_file.lock().unwrap() = false;
+        *skip_file.lock().unwrap() =FileExistsAction::Override(OverrideCase::JustDoIt);
         *keep_waiting = false;
         cond_var.notify_all();
-        //siv.pop_layer();
-        //        ok_cpy_callback(siv, vec![String::from(path_from.to_str().unwrap())], path_to.clone(), is_recursive, true)
     })
     .button("Older", |s| {})
     .button("Smaller", |s| {})
     .button("Different size", |s| {})
     .button("Append", |s| {})
     .button("Skip", move |s| {
+        s.pop_layer();
         let (lock, cond_var, skip_file) = &*cond_var_skip_clone; //todo pretty certain, no mutex is needed here
         let mut keep_waiting = lock.lock().unwrap();
-        *skip_file.lock().unwrap() = true;
+        *skip_file.lock().unwrap() = FileExistsAction::Skip;
         *keep_waiting = false;
         cond_var.notify_all();
     })
@@ -633,7 +647,7 @@ fn cpy_task(
     path_to: String,
     cb: CbSink,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
-    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<bool>)>, //todo not sure, most likely on demand only
+    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, //todo not sure, most likely on demand only
     is_recursive: bool,
     is_overwrite: bool,
 ) {
@@ -704,16 +718,20 @@ fn cpy_task(
                         Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
                         _ => {}
                     }
-                    if skip_file.lock().unwrap().cmp(&false) == std::cmp::Ordering::Equal {
-                        cpy_task(
+//                    if skip_file.lock().unwrap().cmp(&false) == std::cmp::Ordering::Equal {
+                        match *skip_file.lock().unwrap() {
+                        FileExistsAction::Override(OverrideCase::JustDoIt) =>{
+                            cpy_task(
                             vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
                             path_to_clone,
                             cb_clone,
                             cond_var_suspend_clone,
                             cond_var_skip_clone_internal,
                             is_recursive,
-                            true,
+                            true,//override
                         );
+                        },
+                        _=>{}
                     }
                 }
                 fs_extra::error::ErrorKind::Interrupted => {}
@@ -794,7 +812,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_suspend_clone = Arc::clone(&cond_var_suspend);
 
-    let cond_var_skip = Arc::new((Mutex::new(true), Condvar::new(), Mutex::new(!is_overwrite)));
+    let cond_var_skip = Arc::new((Mutex::new(true), Condvar::new(), Mutex::new(FileExistsAction::Abort)));
     let cond_var_skip_clone = Arc::clone(&cond_var_skip);
 
     let paths_from_clone = paths_from.clone();
