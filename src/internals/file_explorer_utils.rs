@@ -450,21 +450,27 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-enum OverrideCase
-{
+fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
+    let (lock_flag, cond_var, file_action) = &**cond_var; //todo pretty certain, no mutex is needed here
+    *lock_flag.lock().unwrap() = false;
+    *file_action.lock().unwrap() = action;
+    cond_var.notify_all();
+}
+#[derive(Copy, Clone)]
+enum OverrideCase {
     JustDoIt,
     Older,
     Newer,
     DifferentSize,
 }
-enum FileExistsAction
-{
+#[derive(Copy, Clone)]
+enum FileExistsAction {
     Abort,
     Override(OverrideCase),
     Skip,
     Append,
 }
-fn copying_already_exists(
+fn copying_already_exists<'a>(
     siv: &mut Cursive,
     path_from: PathBuf,
     path_to: PathBuf,
@@ -472,7 +478,7 @@ fn copying_already_exists(
     is_recursive: bool,
     cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>,
 ) {
-    let cond_var_skip_clone = cond_var_skip.clone();
+    let cond_var_skip_clone = cond_var_skip.clone();//todo remove
     let theme = siv.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
@@ -529,13 +535,14 @@ fn copying_already_exists(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite", move |s| {
+    .button("Overwrite", move|s| {
         s.pop_layer();
-        let (lock, cond_var, skip_file) = &*cond_var_skip; //todo pretty certain, no mutex is needed here
+/*        let (lock, cond_var, skip_file) = &*cond_var_skip; //todo pretty certain, no mutex is needed here
         let mut keep_waiting = lock.lock().unwrap();
-        *skip_file.lock().unwrap() =FileExistsAction::Override(OverrideCase::JustDoIt);
+        *skip_file.lock().unwrap() = FileExistsAction::Override(OverrideCase::JustDoIt);
         *keep_waiting = false;
-        cond_var.notify_all();
+        cond_var.notify_all();*/
+        assign_action_and_notify(&cond_var_skip,FileExistsAction::Override(OverrideCase::JustDoIt));
     })
     .button("Older", |s| {})
     .button("Smaller", |s| {})
@@ -543,11 +550,12 @@ fn copying_already_exists(
     .button("Append", |s| {})
     .button("Skip", move |s| {
         s.pop_layer();
-        let (lock, cond_var, skip_file) = &*cond_var_skip_clone; //todo pretty certain, no mutex is needed here
+        assign_action_and_notify(&cond_var_skip_clone,FileExistsAction::Skip);
+/*        let (lock, cond_var, skip_file) = &*cond_var_skip_clone; //todo pretty certain, no mutex is needed here
         let mut keep_waiting = lock.lock().unwrap();
         *skip_file.lock().unwrap() = FileExistsAction::Skip;
         *keep_waiting = false;
-        cond_var.notify_all();
+        cond_var.notify_all();*/
     })
     .button("Abort", |s| {});
 
@@ -713,25 +721,25 @@ fn cpy_task(
                         )
                     }))
                     .unwrap();
-                    let (lock, cvar,skip_file) = &*cond_var_skip; //todo repeat
+                    let (lock, cvar, skip_file) = &*cond_var_skip; //todo repeat
                     match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
                         Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
                         _ => {}
                     }
-//                    if skip_file.lock().unwrap().cmp(&false) == std::cmp::Ordering::Equal {
-                        match *skip_file.lock().unwrap() {
-                        FileExistsAction::Override(OverrideCase::JustDoIt) =>{
+                    //                    if skip_file.lock().unwrap().cmp(&false) == std::cmp::Ordering::Equal {
+                    match *skip_file.lock().unwrap() {
+                        FileExistsAction::Override(OverrideCase::JustDoIt) => {
                             cpy_task(
-                            vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
-                            path_to_clone,
-                            cb_clone,
-                            cond_var_suspend_clone,
-                            cond_var_skip_clone_internal,
-                            is_recursive,
-                            true,//override
-                        );
-                        },
-                        _=>{}
+                                vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
+                                path_to_clone,
+                                cb_clone,
+                                cond_var_suspend_clone,
+                                cond_var_skip_clone_internal,
+                                is_recursive,
+                                true, //override
+                            );
+                        }
+                        _ => {}
                     }
                 }
                 fs_extra::error::ErrorKind::Interrupted => {}
