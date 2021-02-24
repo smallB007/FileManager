@@ -480,6 +480,12 @@ macro_rules! with_clones {
         }
     }
 }
+fn assign_and_notify(arc:&Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)> , action: FileExistsAction) -> impl Fn(&mut Cursive)  {
+    let cloned = arc.clone();
+    move |s| {
+        assign_action_and_notify(&cloned,action)
+    }
+}
 fn copying_already_exists(
     siv: &mut Cursive,
     path_from: PathBuf,
@@ -544,24 +550,13 @@ fn copying_already_exists(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite", with_clones!(cond_var_skip;move|s|{
-        s.pop_layer();
-        assign_action_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::JustDoIt));
-    }))
+    .button("Overwrite",assign_and_notify(&cond_var_skip,FileExistsAction::Skip))
     .button("Older", |s| {})
     .button("Smaller", |s| {})
     .button("Different size", |s| {})
     .button("Append", |s| {})
-    .button("Skip",with_clones!(cond_var_skip;move|s|{
-        s.pop_layer();
-        assign_action_and_notify(&cond_var_skip, FileExistsAction::Skip);
-    }))
-    .button("Abort", {
-        let cond_var_clone = cond_var_skip.clone();
-        move |s| {
-        s.pop_layer();
-        assign_action_and_notify(&cond_var_clone, FileExistsAction::Abort);
-    }});
+    .button("Skip",assign_and_notify(&cond_var_skip,FileExistsAction::Skip))
+    .button("Abort",assign_and_notify(&cond_var_skip,FileExistsAction::Abort) );
 
     siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
