@@ -450,7 +450,7 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
+fn assign_action_and_notify(cond_var:& Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
     let (lock_flag, cond_var, file_action) = &**cond_var; //todo pretty certain, no mutex is needed here
     *lock_flag.lock().unwrap() = false;
     *file_action.lock().unwrap() = action;
@@ -470,6 +470,16 @@ enum FileExistsAction {
     Skip,
     Append,
 }
+macro_rules! with_clones {
+    ($($capture:ident),+; $e:expr) => {
+        {
+        $(
+            let $capture = $capture.clone();
+        )+
+            $e
+        }
+    }
+}
 fn copying_already_exists(
     siv: &mut Cursive,
     path_from: PathBuf,
@@ -478,8 +488,6 @@ fn copying_already_exists(
     is_recursive: bool,
     cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>,
 ) {
-    let cond_var_skip_clone = cond_var_skip.clone(); //todo remove
-    let cond_var_clone_1 = cond_var_skip.clone(); //todo remove
     let theme = siv.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
@@ -536,22 +544,24 @@ fn copying_already_exists(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite", move |s| {
+    .button("Overwrite", with_clones!(cond_var_skip;move|s|{
         s.pop_layer();
         assign_action_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::JustDoIt));
-    })
+    }))
     .button("Older", |s| {})
     .button("Smaller", |s| {})
     .button("Different size", |s| {})
     .button("Append", |s| {})
-    .button("Skip", move |s| {
+    .button("Skip",with_clones!(cond_var_skip;move|s|{
         s.pop_layer();
-        assign_action_and_notify(&cond_var_skip_clone, FileExistsAction::Skip);
-    })
-    .button("Abort", move |s| {
+        assign_action_and_notify(&cond_var_skip, FileExistsAction::Skip);
+    }))
+    .button("Abort", {
+        let cond_var_clone = cond_var_skip.clone();
+        move |s| {
         s.pop_layer();
-        assign_action_and_notify(&cond_var_clone_1, FileExistsAction::Abort);
-    });
+        assign_action_and_notify(&cond_var_clone, FileExistsAction::Abort);
+    }});
 
     siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
@@ -732,6 +742,36 @@ fn cpy_task(
                                 true, //override
                             );
                         }
+                        /*                    FileExistsAction::Override(OverrideCase::DifferentSize) => {
+                                                    let size_left = current_file_clone_internal.metadata().unwrap().len();
+                                                    let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
+                                                    if size_left != size_right {
+                                                        cpy_task(
+                                                            vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
+                                                            path_to_clone,
+                                                            cb_clone,
+                                                            cond_var_suspend_clone,
+                                                            cond_var_skip_clone_internal,
+                                                            is_recursive,
+                                                            true, //override
+                                                        );
+                                                    }
+                                                }*/
+                        /*                        FileExistsAction::Override(OverrideCase::Older) => {
+                                                    let date_left = current_file_clone_internal.metadata().unwrap().modified().unwrap();
+                                                    let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
+                                                    if date_right < date_left {
+                                                        cpy_task(
+                                                            vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
+                                                            path_to_clone,
+                                                            cb_clone,
+                                                            cond_var_suspend_clone,
+                                                            cond_var_skip_clone_internal,
+                                                            is_recursive,
+                                                            true, //override
+                                                        );
+                                                    }
+                                                }*/
                         FileExistsAction::Abort => {
                             break 'main_for;
                         }
