@@ -540,7 +540,7 @@ fn copying_already_exists(
             .child(DummyView)
             .child(new_to_layout)
             .child(DummyView)
-            .child(Delimiter::default())
+            //.child(Delimiter::default())
             .child(DummyView)
             .child(
                 LinearLayout::vertical()
@@ -569,7 +569,8 @@ fn copying_already_exists(
     .button("Append", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Append)))
     .button("Skip", clone_and_notify(&cond_var_skip, FileExistsAction::Skip))
     .button("Abort", clone_and_notify(&cond_var_skip, FileExistsAction::Abort));
-
+/*let buttons = LinearLayout::horizontal().child(Button::new("A bu",|s|{}));
+let dlg_and_buttons = LinearLayout::vertical().child(file_exist_dlg).child(buttons);*/
     siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
 fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf) {
