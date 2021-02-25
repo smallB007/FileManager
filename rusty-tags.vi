@@ -67,9 +67,10 @@ ConfigKind	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.
 ConfigSerializer	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/ser.rs	/^pub struct ConfigSerializer {$/;"	s
 Container	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/container.rs	/^pub struct Container {$/;"	s
 Context	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/context.rs	/^pub struct Context {$/;"	s
-CopyOptions	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub struct CopyOptions {$/;"	s
-CopyOptions	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub struct CopyOptions {$/;"	s
+CopyPathInfoT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type CopyPathInfoT = Vec<(TableNameT, PathT, IndexT)>;$/;"	T
+CopyProgressDlgT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;$/;"	T
 Counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^struct Counter<C> {$/;"	s
+CpyData	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^struct CpyData {$/;"	s
 CursiveExt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_ext.rs	/^pub trait CursiveExt {$/;"	t
 CursiveRunnable	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^pub struct CursiveRunnable {$/;"	s
 D	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/internals.rs	/^pub const D: YearFlags = YearFlags(0o12);$/;"	c
@@ -90,10 +91,6 @@ DebouncedEvent	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notif
 DelayedFormat	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/mod.rs	/^pub struct DelayedFormat<I> {$/;"	s
 Delimiter	/home/artie/Documents/Projects/rust/FileManager/src/internals/delimiter.rs	/^pub struct Delimiter {$/;"	s
 DialogFocus	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^pub enum DialogFocus {$/;"	g
-DirContent	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub struct DirContent {$/;"	s
-DirEntryAttr	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub enum DirEntryAttr {$/;"	g
-DirEntryValue	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub enum DirEntryValue {$/;"	g
-DirOptions	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub struct DirOptions {$/;"	s
 DistIter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/distributions/mod.rs	/^pub struct DistIter<D, R, T> {$/;"	s
 Distribution	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/distributions/mod.rs	/^pub trait Distribution<T> {$/;"	t
 Duration	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/oldtime.rs	/^pub struct Duration {$/;"	s
@@ -130,8 +127,6 @@ Err	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src
 Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/de.rs	/^    type Error = ConfigError;$/;"	T
 Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/ser.rs	/^    type Error = ConfigError;$/;"	T
 Error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^pub enum Error {$/;"	g
-Error	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^pub struct Error {$/;"	s
-ErrorKind	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^pub enum ErrorKind {$/;"	g
 EventLoop	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^struct EventLoop {$/;"	s
 EventLoopMsg	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^enum EventLoopMsg {$/;"	g
 EventTx	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/debounce/mod.rs	/^pub enum EventTx {$/;"	g
@@ -146,6 +141,7 @@ FE	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src
 FLAGS	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/internals.rs	/^    const FLAGS: [YearFlags; 14] = [A, B, C, D, E, F, G, AG, BA, CB, DC, ED, FE, GF];$/;"	c
 FMT_NONE	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/strftime.rs	/^        static FMT_NONE: &'static [Item<'static>; 0] = &[];$/;"	c
 File	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/file/mod.rs	/^pub struct File<T>$/;"	s
+FileExistsAction	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^enum FileExistsAction {$/;"	g
 FileFormat	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/file/format/mod.rs	/^pub enum FileFormat {$/;"	g
 FileManager	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^pub struct FileManager {$/;"	s
 FileMangerConfig	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^struct FileMangerConfig {$/;"	s
@@ -203,6 +199,7 @@ ITEMS	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/
 ITEMS	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/time.rs	/^        const ITEMS: &'static [Item<'static>] = &[$/;"	c
 IdentHash	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/ident_hash.rs	/^pub struct IdentHash(u64);$/;"	s
 IndexCallback	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^type IndexCallback = Rc<dyn Fn(&mut Cursive, usize, usize)>;$/;"	T
+IndexT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type IndexT = usize;$/;"	T
 IndexVec	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^pub enum IndexVec {$/;"	g
 IndexVecIntoIter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^pub enum IndexVecIntoIter {$/;"	g
 IndexVecIter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^pub enum IndexVecIter<'a> {$/;"	g
@@ -246,7 +243,6 @@ LocalResult	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0
 LocalStorage	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/tls.rs	/^pub struct LocalStorage<T> {$/;"	s
 LocalValue	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/tls.rs	/^pub struct LocalValue<T> {$/;"	s
 Locale	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/mod.rs	/^struct Locale;$/;"	s
-LsResult	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub struct LsResult {$/;"	s
 MARK_BIT	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/list.rs	/^const MARK_BIT: usize = 1;$/;"	c
 MAX	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/oldtime.rs	/^pub const MAX: Duration = Duration {$/;"	c
 MAX	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/duration.rs	/^pub const MAX: Duration = Duration {$/;"	c
@@ -388,6 +384,7 @@ Output	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/s
 Output	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        type Output = Duration;$/;"	T
 Output	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        type Output = SteadyTime;$/;"	T
 Output	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    type Output = Option<ObservedCell>;$/;"	T
+OverrideCase	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^enum OverrideCase {$/;"	g
 OwningHandle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^pub struct OwningHandle<O, H>$/;"	s
 OwningRef	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^pub struct OwningRef<O, T: ?Sized> {$/;"	s
 OwningRefMut	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^pub struct OwningRefMut<O, T: ?Sized> {$/;"	s
@@ -406,9 +403,11 @@ ParseResult	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0
 ParseWeekdayError	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/lib.rs	/^pub struct ParseWeekdayError {$/;"	s
 Parsed	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/parsed.rs	/^pub struct Parsed {$/;"	s
 PathData	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/poll.rs	/^struct PathData {$/;"	s
+PathT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type PathT = String;$/;"	T
 PollWatcher	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/poll.rs	/^pub struct PollWatcher {$/;"	s
 Position	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/list.rs	/^struct Position<T> {$/;"	s
 PreciseTime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub struct PreciseTime(u64);$/;"	s
+ProgressDlgT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type ProgressDlgT = ResizedView<Dialog>;$/;"	T
 RANGE	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/distributions/other.rs	/^        const RANGE: u32 = 26 + 26 + 10;$/;"	c
 READ	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/list.rs	/^const READ: usize = 2;$/;"	c
 RECONS	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/strftime.rs	/^                            const RECONS: &'static [Item<'static>] = &[$($tail),+];$/;"	c
@@ -451,7 +450,6 @@ ReseedingCore	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0
 ReseedingRng	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/rngs/adapter/reseeding.rs	/^pub struct ReseedingRng<R, Rsdr>(BlockRng<ReseedingCore<R, Rsdr>>)$/;"	s
 Result	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/error.rs	/^pub type Result<T> = result::Result<T, ConfigError>;$/;"	T
 Result	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^pub type Result<T> = StdResult<T, Error>;$/;"	T
-Result	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^pub type Result<T> = ::std::result::Result<T, Error>;$/;"	T
 Results	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/rngs/adapter/reseeding.rs	/^    type Results = <R as BlockRngCore>::Results;$/;"	T
 Rng	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/rng.rs	/^pub trait Rng: RngCore {$/;"	t
 Rng	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/rngs/small.rs	/^type Rng = super::xoshiro128plusplus::Xoshiro128PlusPlus;$/;"	T
@@ -556,6 +554,7 @@ Table	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/sr
 TableColumn	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^pub struct TableColumn<H> {$/;"	s
 TableColumnWidth	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^enum TableColumnWidth {$/;"	g
 TableEntry	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^struct TableEntry<T> {$/;"	s
+TableNameT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type TableNameT = String;$/;"	T
 TableView	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^pub struct TableView<T, H> {$/;"	s
 TableViewItem	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^pub trait TableViewItem<H>: Clone + Sized$/;"	t
 Target	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/datetime.rs	/^        type Target = DateTime<Tz>;$/;"	T
@@ -589,11 +588,6 @@ TmFmt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/sr
 ToHandle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^pub trait ToHandle {$/;"	t
 ToHandleMut	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^pub trait ToHandleMut {$/;"	t
 Token	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^pub struct Token {$/;"	s
-TransitProcess	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub struct TransitProcess {$/;"	s
-TransitProcess	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub struct TransitProcess {$/;"	s
-TransitProcess	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub struct TransitProcess {$/;"	s
-TransitProcessResult	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub enum TransitProcessResult {$/;"	g
-TransitState	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub enum TransitState {$/;"	g
 TryIter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^pub struct TryIter<'a, T> {$/;"	s
 TryReadyError	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/err.rs	/^pub struct TryReadyError;$/;"	s
 TryRecvError	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/err.rs	/^pub enum TryRecvError {$/;"	g
@@ -674,7 +668,6 @@ YTAB	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/s
 YearFlags	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/internals.rs	/^pub struct YearFlags(pub u8);$/;"	s
 ZeroToken	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/zero.rs	/^pub type ZeroToken = usize;$/;"	T
 _LEN	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select_macro.rs	/^        const _LEN: usize = $crate::crossbeam_channel_internal!(@count ($($cases)*));$/;"	c
-_get_dir_content	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^fn _get_dir_content<P>(path: P, mut depth: u64) -> Result<DirContent>$/;"	f
 _ytab	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        static _ytab: [[i64; 12]; 2] = [$/;"	c
 a_const	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^const a_const: i128 = 0;$/;"	c
 abs	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/oldtime.rs	/^    pub fn abs(&self) -> Duration {$/;"	f
@@ -777,15 +770,15 @@ as_owner_mut	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_
 as_ref	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^    fn as_ref(&self) -> &T {$/;"	f
 as_str	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^        fn as_str(&self) -> &str {$/;"	f
 as_str	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^    fn as_str(&self) -> &str {$/;"	f
-as_str	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn as_str(&self) -> &str {$/;"	f
 as_strings	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    fn as_strings(&self) -> Vec<String> {$/;"	f
 as_usize	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^    fn as_usize(self) -> usize {$/;"	f
 as_usize	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^    fn as_usize(self) -> usize;$/;"	f
 asctime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^    pub fn asctime(&self) -> TmFmt {$/;"	f
+assign_action_and_notify	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn assign_action_and_notify(cond_var: &Arc<(\/*lock flag*\/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {$/;"	f
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^pub fn at(when: Instant) -> Receiver<Instant> {$/;"	f
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at(clock: Timespec) -> Tm {$/;"	f
 at_utc	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at_utc(clock: Timespec) -> Tm {$/;"	f
-background_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
+background_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^    pub fn blt() -> Self {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/lib.rs	/^pub fn blt() -> CursiveRunnable {$/;"	f
 blt_colour_to_colour	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/blt.rs	/^fn blt_colour_to_colour(c: BltColor) -> Color {$/;"	f
@@ -817,7 +810,7 @@ call	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src
 call_on_any	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    fn call_on_any<'a>(&mut self, selector: &Selector<'_>, callback: AnyCb<'a>) {$/;"	f
 can_select	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/waker.rs	/^    pub fn can_select(&self) -> bool {$/;"	f
 cancel_operation	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cancel_operation(siv: &mut cursive::Cursive) {$/;"	f
-cannot_suspend_copy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cannot_suspend_copy(s: &mut Cursive) {$/;"	f
+cannot_suspend_copy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cannot_suspend_copy(siv: &mut Cursive) {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/array.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
 capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/at.rs	/^    pub fn capacity(&self) -> Option<usize> {$/;"	f
@@ -883,6 +876,7 @@ clear	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/mod
 clear	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    pub fn clear(&mut self, style: &Rc<ObservedStyle>) {$/;"	f
 clear	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/termion.rs	/^    fn clear(&self, color: theme::Color) {$/;"	f
 clear_buttons	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    pub fn clear_buttons(&mut self) {$/;"	f
+clear_selected_item	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn clear_selected_item(&mut self, inx: usize) {$/;"	f
 clear_selected_items	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn clear_selected_items(&mut self) {$/;"	f
 clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/mod.rs	/^    fn clone(&self) -> Self {$/;"	f
 clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/source.rs	/^    fn clone(&self) -> Box<Source + Send + Sync> {$/;"	f
@@ -894,8 +888,7 @@ clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src
 clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/storage.rs	/^    fn clone(&self) -> Storage<T> {$/;"	f
 clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn clone(&self) -> TableEntry<T> {$/;"	f
 clone	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^            fn clone(&self) -> SteadyTime {$/;"	f
-clone	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^    fn clone(&self) -> TransitProcess {$/;"	f
-clone	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^    fn clone(&self) -> TransitProcess {$/;"	f
+clone_and_notify	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn clone_and_notify(arc: &Arc<(\/*lock flag*\/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) -> impl Fn(&mut Cursive) {$/;"	f
 clone_into_box	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/config.rs	/^    fn clone_into_box(&self) -> Box<Source + Send + Sync> {$/;"	f
 clone_into_box	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/env.rs	/^    fn clone_into_box(&self) -> Box<Source + Send + Sync> {$/;"	f
 clone_into_box	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/file/mod.rs	/^    fn clone_into_box(&self) -> Box<Source + Send + Sync> {$/;"	f
@@ -930,31 +923,24 @@ compute_rows	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomi
 content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    pub fn content<V: IntoBoxedView>(self, view: V) -> Self {$/;"	f
 content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn content<S>(self, content: S) -> Self$/;"	f
 content_required_size	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn content_required_size(&mut self, req: Vec2) -> Vec2 {$/;"	f
-copy	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn copy<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
-copy	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn copy<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
-copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: Vec<String>, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {$/;"	f
-copy_items	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn copy_items<P, Q>(from: &[P], to: Q, options: &dir::CopyOptions) -> Result<u64>$/;"	f
-copy_items_with_progress	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn copy_items_with_progress<P, Q, F>($/;"	f
-copy_with_progress	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn copy_with_progress<P, Q, F>($/;"	f
-copy_with_progress	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn copy_with_progress<P, Q, F>($/;"	f
-copying_already_exists	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_already_exists(s: &mut Cursive, path_from: PathBuf, path_to: PathBuf, is_overwrite: bool, is_recursive: bool) {$/;"	f
-copying_cancelled	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_cancelled(s: &mut Cursive) {$/;"	f
-copying_error	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_error(s: &mut Cursive) {$/;"	f
-copying_finished_success	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_finished_success(s: &mut Cursive) {$/;"	f
+copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {$/;"	f
+copying_already_exists	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_already_exists($/;"	f
+copying_cancelled	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_cancelled(siv: &mut Cursive) {$/;"	f
+copying_error	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_error(siv: &mut Cursive) {$/;"	f
+copying_finished_success	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_finished_success(siv: &mut Cursive) {$/;"	f
 copying_progress_total	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^    pub static copying_progress_total: &str = "Copying total progress:";$/;"	c
 copying_progress_total_background	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^    pub static copying_progress_total_background: &str = "Copying...";$/;"	c
 counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^    fn counter(&self) -> &Counter<C> {$/;"	f
 cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy(siv: &mut cursive::Cursive) {$/;"	f
-cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task(chnk: Vec<String>, path_to: String, cb: CbSink, cond_var: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
+cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task($/;"	f
 create	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/windows.rs	/^    pub fn create($/;"	f
-create	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn create<P>(path: P, erase: bool) -> Result<()>$/;"	f
-create_all	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn create_all<P>(path: P, erase: bool) -> Result<()>$/;"	f
 create_basic_table_core	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {$/;"	f
-create_cpy_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_dialog(paths_from: Vec<String>, path_to: String) -> NamedView<Dialog> {$/;"	f
-create_cpy_progress_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_progress_dialog($/;"	f
+create_cpy_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {$/;"	f
+create_cpy_progress_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_progress_dialog(files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {$/;"	f
 create_debounced	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/windows.rs	/^    pub fn create_debounced($/;"	f
 create_main_layout	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {$/;"	f
 create_main_menu	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwaysVisible: bool) {$/;"	f
+create_themed_view	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_themed_view<T>(siv: &mut Cursive, view: T) -> ThemedView<Layer<T>>$/;"	f
 crossbeam_channel_internal	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select_macro.rs	/^macro_rules! crossbeam_channel_internal {$/;"	d
 crossterm	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^    pub fn crossterm() -> Self {$/;"	f
 crossterm	/home/artie/Documents/Repos/smallB_cursive/cursive/src/lib.rs	/^pub fn crossterm() -> CursiveRunnable {$/;"	f
@@ -1018,8 +1004,6 @@ default	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dia
 default	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn default() -> Self {$/;"	f
 default	/home/artie/Documents/Projects/rust/FileManager/src/internals/delimiter.rs	/^    fn default() -> Self {$/;"	f
 default	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^    fn default() -> Self {$/;"	f
-default	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^    fn default() -> Self {$/;"	f
-default	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^    fn default() -> Self {$/;"	f
 default	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^    pub fn default() -> Self {$/;"	f
 default	/home/artie/Documents/Repos/smallB_cursive/cursive/src/lib.rs	/^pub fn default() -> CursiveRunnable {$/;"	f
 default_column	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn default_column(mut self, column: H) -> Self {$/;"	f
@@ -1051,7 +1035,6 @@ description	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0
 description	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^    fn description(&self) -> &str {$/;"	f
 description	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/duration.rs	/^    fn description(&self) -> &str {$/;"	f
 description	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^    fn description(&self) -> &str {$/;"	f
-description	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn description(&self) -> &str {$/;"	f
 deserialize	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/datetime.rs	/^        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>$/;"	f
 deserialize	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/datetime.rs	/^        pub fn deserialize<'de, D>(d: D) -> Result<DateTime<Utc>, D::Error>$/;"	f
 deserialize	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/datetime.rs	/^        pub fn deserialize<'de, D>(d: D) -> Result<Option<DateTime<Utc>>, D::Error>$/;"	f
@@ -1081,6 +1064,7 @@ deserialize_u32	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/conf
 deserialize_u64	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/de.rs	/^    fn deserialize_u64<V: de::Visitor<'de>>(self, visitor: V) -> Result<V::Value> {$/;"	f
 deserialize_u8	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/de.rs	/^    fn deserialize_u8<V: de::Visitor<'de>>(self, visitor: V) -> Result<V::Value> {$/;"	f
 destroy	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/list.rs	/^    unsafe fn destroy(this: *mut Block<T>, start: usize) {$/;"	f
+dialog_name	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_dlg.rs	/^    pub static dialog_name: &str = "CopyDlg";$/;"	c
 digits	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/scan.rs	/^    fn digits(s: &str) -> ParseResult<(u8, u8)> {$/;"	f
 disable	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn disable(&mut self) {$/;"	f
 disconnect	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/array.rs	/^    pub fn disconnect(&self) -> bool {$/;"	f
@@ -1158,6 +1142,7 @@ encode	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19
 encode	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/datetime.rs	/^        fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {$/;"	f
 encode	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/time.rs	/^        fn encode<S: Encoder>(&self, s: &mut S) -> Result<(), S::Error> {$/;"	f
 end	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/ser.rs	/^    fn end(self) -> Result<Self::Ok> {$/;"	f
+end_copying_helper	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {$/;"	f
 eq	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/date.rs	/^    fn eq(&self, other: &Date<Tz2>) -> bool {$/;"	f
 eq	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/datetime.rs	/^    fn eq(&self, other: &DateTime<Tz2>) -> bool {$/;"	f
 eq	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/mod.rs	/^    fn eq(&self, _other: &InternalNumeric) -> bool {$/;"	f
@@ -1173,7 +1158,6 @@ equals	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19
 erase_owner	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^    pub fn erase_owner<'a>(self) -> OwningRef<O::Erased, T>$/;"	f
 erase_owner	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^    pub fn erase_owner<'a>(self) -> OwningRefMut<O::Erased, T>$/;"	f
 erased_owner	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^        fn erased_owner() {$/;"	f
-err	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^macro_rules! err {$/;"	d
 error	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/lib.rs	/^macro_rules! error { ($($x:tt)*) => ($/;"	d
 event	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/debounce/mod.rs	/^    pub fn event(&mut self, path: PathBuf, mut op: op::Op, cookie: Option<u32>) {$/;"	f
 event_loop_thread	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^    fn event_loop_thread(mut self) {$/;"	f
@@ -1266,7 +1250,6 @@ fmt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/
 fmt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {$/;"	f
 fmt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {$/;"	f
 fmt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^            fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {$/;"	f
-fmt	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {$/;"	f
 fmt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {$/;"	f
 fmt_debug	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^        fn fmt_debug() {$/;"	f
 fmt_rfc2822_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/parse.rs	/^    fn fmt_rfc2822_datetime(dt: DateTime<FixedOffset>) -> String {$/;"	f
@@ -1341,9 +1324,6 @@ from	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/
 from	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^    fn from(v: Vec<u32>) -> Self {$/;"	f
 from	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/index.rs	/^    fn from(v: Vec<usize>) -> Self {$/;"	f
 from	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/storage.rs	/^    fn from(value: T) -> Storage<T> {$/;"	f
-from	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn from(err: IoError) -> Error {$/;"	f
-from	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn from(err: OsString) -> Error {$/;"	f
-from	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    fn from(err: StripPrefixError) -> Error {$/;"	f
 from_hjson_value	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/file/format/hjson.rs	/^fn from_hjson_value(uri: Option<&String>, value: &serde_hjson::Value) -> Value {$/;"	f
 from_hms	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/time.rs	/^    pub fn from_hms(hour: u32, min: u32, sec: u32) -> NaiveTime {$/;"	f
 from_hms_micro	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/time.rs	/^    pub fn from_hms_micro(hour: u32, min: u32, sec: u32, micro: u32) -> NaiveTime {$/;"	f
@@ -1437,10 +1417,6 @@ get_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic
 get_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn get_content(&self) -> TextContentRef {$/;"	f
 get_content_mut	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    pub fn get_content_mut(&mut self) -> &mut dyn View {$/;"	f
 get_current_dir	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {$/;"	f
-get_details_entry	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn get_details_entry<P>($/;"	f
-get_details_entry_with_meta	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^fn get_details_entry_with_meta<P>($/;"	f
-get_dir_content	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn get_dir_content<P>(path: P) -> Result<DirContent>$/;"	f
-get_dir_content2	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn get_dir_content2<P>(path: P, options: &DirOptions) -> Result<DirContent>$/;"	f
 get_fast	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn get_fast(&self, id: usize) -> Option<&T> {$/;"	f
 get_float	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/config.rs	/^    pub fn get_float(&self, key: &str) -> Result<f64> {$/;"	f
 get_fork_counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/rngs/adapter/reseeding.rs	/^    pub fn get_fork_counter() -> usize {$/;"	f
@@ -1459,10 +1435,9 @@ get_or_try	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        pub fn get_precise_ns() -> u64 {$/;"	f
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    pub fn get_precise_ns() -> u64 {$/;"	f
 get_selected_items	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> \/*todo, why not by &*\/ {$/;"	f
-get_selected_path	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<Vec<String>> {$/;"	f
-get_selected_path_from_inx	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<String> {$/;"	f
+get_selected_path	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {$/;"	f
+get_selected_path_from_inx	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {$/;"	f
 get_shared_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn get_shared_content(&mut self) -> TextContent {$/;"	f
-get_size	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn get_size<P>(path: P) -> Result<u64>$/;"	f
 get_slow	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn get_slow(&self, id: usize, table_top: &Table<T>) -> Option<&T> {$/;"	f
 get_str	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/config.rs	/^    pub fn get_str(&self, key: &str) -> Result<String> {$/;"	f
 get_table	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/config.rs	/^    pub fn get_table(&self, key: &str) -> Result<HashMap<String, Value>> {$/;"	f
@@ -1641,6 +1616,7 @@ iter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/
 iter_days	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/date.rs	/^    pub fn iter_days(&self) -> NaiveDateDaysIterator {$/;"	f
 iter_weeks	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/date.rs	/^    pub fn iter_weeks(&self) -> NaiveDateWeeksIterator {$/;"	f
 label	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_button.rs	/^    pub fn label(&self) -> &str {$/;"	f
+labels	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_dlg.rs	/^pub mod labels {$/;"	m
 labels	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^pub mod labels {$/;"	m
 lanes	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/distributions/utils.rs	/^    fn lanes() -> usize {$/;"	f
 large_integer_to_i64	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    fn large_integer_to_i64(l: LARGE_INTEGER) -> i64 {$/;"	f
@@ -1672,7 +1648,6 @@ local_tm_to_time	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/tim
 lock	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/utils.rs	/^    pub fn lock(&self) -> SpinlockGuard<'_, T> {$/;"	f
 lock	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/container.rs	/^    fn lock(&self) {$/;"	f
 lookup	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn lookup(id: usize, table: &Table<T>) -> Option<&UnsafeCell<Option<Box<T>>>> {$/;"	f
-ls	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn ls<P>(path: P, config: &HashSet<DirEntryAttr>) -> Result<LsResult>$/;"	f
 mac	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    mod mac {$/;"	m
 main	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/owning_ref-0.4.1/src/lib.rs	/^fn main() {$/;"	f
 main	/home/artie/Documents/Projects/rust/FileManager/src/main.rs	/^fn main() {$/;"	f
@@ -1748,12 +1723,6 @@ month0	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19
 month0	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/date.rs	/^    fn month0(&self) -> u32 {$/;"	f
 month0	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/datetime.rs	/^    fn month0(&self) -> u32 {$/;"	f
 month_serde	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/lib.rs	/^mod month_serde {$/;"	m
-move_dir	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn move_dir<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
-move_dir_with_progress	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn move_dir_with_progress<P, Q, F>($/;"	f
-move_file	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn move_file<P, Q>(from: P, to: Q, options: &CopyOptions) -> Result<u64>$/;"	f
-move_file_with_progress	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn move_file_with_progress<P, Q, F>($/;"	f
-move_items	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn move_items<P, Q>(from_items: &[P], to: Q, options: &dir::CopyOptions) -> Result<u64>$/;"	f
-move_items_with_progress	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn move_items_with_progress<P, Q, F>($/;"	f
 move_last	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/mod.rs	/^        fn move_last(slice: &mut [usize], pos: usize) {$/;"	f
 mul	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/oldtime.rs	/^    fn mul(self, rhs: i32) -> Duration {$/;"	f
 mul	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/duration.rs	/^    fn mul(self, rhs: i32) -> Duration {$/;"	f
@@ -1859,10 +1828,6 @@ new	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_
 new	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn new() -> Self {$/;"	f
 new	/home/artie/Documents/Projects/rust/FileManager/src/internals/delimiter.rs	/^    pub fn new(title: &str) -> Self {$/;"	f
 new	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^    pub fn new(mut siv: &mut cursive::CursiveRunnable) {$/;"	f
-new	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^    pub fn new() -> CopyOptions {$/;"	f
-new	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^    pub fn new() -> DirOptions {$/;"	f
-new	/home/artie/Documents/Repos/fs_extra/src/error.rs	/^    pub fn new(kind: ErrorKind, message: &str) -> Error {$/;"	f
-new	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^    pub fn new() -> CopyOptions {$/;"	f
 new	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    fn new($/;"	f
 new	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    fn new(parent: &'a ObservedScreen, min: Vec2, max: Vec2) -> Self {$/;"	f
 new	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/puppet/observed.rs	/^    pub fn new($/;"	f
@@ -1993,7 +1958,7 @@ offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9e
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/local.rs	/^    fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> FixedOffset {$/;"	f
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/mod.rs	/^    fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> Self::Offset;$/;"	f
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/utc.rs	/^    fn offset_from_utc_datetime(&self, _utc: &NaiveDateTime) -> Utc {$/;"	f
-ok_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: Vec<String>, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
+ok_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
 old_bitflags_form	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^    fn old_bitflags_form() {$/;"	f
 on_event	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_button.rs	/^    fn on_event(&mut self, event: Event) -> EventResult {$/;"	f
 on_event	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    fn on_event(&mut self, event: Event) -> EventResult {$/;"	f
@@ -2135,7 +2100,6 @@ read	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-chann
 read_char	/home/artie/Documents/Repos/smallB_cursive/cursive/src/utf8.rs	/^pub fn read_char<F>(first: u8, next: F) -> Result<char, String>$/;"	f
 read_config	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn read_config() -> FileMangerConfig {$/;"	f
 read_directory	/home/artie/Documents/Projects/rust/FileManager/src/internals/utils.rs	/^pub fn read_directory(a_dir: &path::PathBuf) -> io::Result<Vec<path::PathBuf>> {$/;"	f
-read_to_string	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn read_to_string<P>(path: P) -> Result<String>$/;"	f
 ready	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^    pub fn ready(&mut self) -> usize {$/;"	f
 ready_deadline	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^    pub fn ready_deadline(&mut self, deadline: Instant) -> Result<usize, ReadyTimeoutError> {$/;"	f
 ready_timeout	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^    pub fn ready_timeout(&mut self, timeout: Duration) -> Result<usize, ReadyTimeoutError> {$/;"	f
@@ -2186,13 +2150,10 @@ register_fork_handler	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec82
 register_with_packet	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/waker.rs	/^    pub fn register_with_packet(&mut self, oper: Operation, packet: usize, cx: &Context) {$/;"	f
 release	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^    pub unsafe fn release<F: FnOnce(&C) -> bool>(&self, disconnect: F) {$/;"	f
 remove	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^    pub fn remove(&mut self, index: usize) {$/;"	f
-remove	/home/artie/Documents/Repos/fs_extra/src/dir.rs	/^pub fn remove<P: AsRef<Path>>(path: P) -> Result<()> {$/;"	f
-remove	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn remove<P>(path: P) -> Result<()>$/;"	f
 remove_all_watches	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^    fn remove_all_watches(&mut self) -> Result<()> {$/;"	f
 remove_button	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    pub fn remove_button(&mut self, i: usize) {$/;"	f
 remove_column	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn remove_column(&mut self, i: usize) {$/;"	f
 remove_item	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn remove_item(&mut self, item_index: usize) -> Option<T> {$/;"	f
-remove_items	/home/artie/Documents/Repos/fs_extra/src/lib.rs	/^pub fn remove_items<P>(from_items: &[P]) -> Result<()>$/;"	f
 remove_path	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/fsevent.rs	/^    fn remove_path<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {$/;"	f
 remove_repeated_events	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/debounce/mod.rs	/^fn remove_repeated_events(mut op: op::Op, prev_op: Option<op::Op>) -> op::Op {$/;"	f
 remove_watch	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/inotify.rs	/^    fn remove_watch(&mut self, path: PathBuf, remove_recursive: bool) -> Result<()> {$/;"	f
@@ -2480,7 +2441,7 @@ short_or_long_weekday	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec82
 short_weekday	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/scan.rs	/^pub fn short_weekday(s: &str) -> ParseResult<(&str, Weekday)> {$/;"	f
 should_insert_into_empty_table	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn should_insert_into_empty_table() {$/;"	f
 should_insert_into_existing_table	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn should_insert_into_existing_table() {$/;"	f
-show_hide_cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn show_hide_cpy(siv: &mut cursive::Cursive) {$/;"	f
+show_progress_cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {$/;"	f
 shuffle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/utils.rs	/^pub fn shuffle<T>(v: &mut [T]) {$/;"	f
 shuffle	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/rand-0.8.3/src/seq/mod.rs	/^    fn shuffle<R>(&mut self, rng: &mut R)$/;"	f
 signed_duration_since	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/date.rs	/^    pub fn signed_duration_since<Tz2: TimeZone>(self, rhs: Date<Tz2>) -> OldDuration {$/;"	f
@@ -2575,8 +2536,8 @@ succ	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/s
 succ	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/internals.rs	/^    pub fn succ(&self) -> Of {$/;"	f
 succ_opt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/date.rs	/^    pub fn succ_opt(&self) -> Option<Date<Tz>> {$/;"	f
 succ_opt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/naive/date.rs	/^    pub fn succ_opt(&self) -> Option<NaiveDate> {$/;"	f
-suspend_cpy_thread	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn suspend_cpy_thread(siv: &mut Cursive, cond_var: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
-switch_panel	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn switch_panel(s: &mut cursive::Cursive) {$/;"	f
+suspend_cpy_thread	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {$/;"	f
+switch_panel	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn switch_panel(siv: &mut cursive::Cursive) {$/;"	f
 system_time_to_file_time	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/sys/windows.rs	/^fn system_time_to_file_time(sys: &SYSTEMTIME) -> FILETIME {$/;"	f
 system_time_to_file_time	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    fn system_time_to_file_time(sys: &SYSTEMTIME) -> FILETIME {$/;"	f
 system_time_to_tm	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/sys/windows.rs	/^fn system_time_to_tm(sys: &SYSTEMTIME, tm: &mut Tm) {$/;"	f
@@ -3116,6 +3077,7 @@ unregister	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam
 unregister	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/select.rs	/^    fn unregister(&self, oper: Operation);$/;"	f
 unregister	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/waker.rs	/^    pub fn unregister(&mut self, oper: Operation) -> Option<Entry> {$/;"	f
 unregister	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/waker.rs	/^    pub fn unregister(&self, oper: Operation) -> Option<Entry> {$/;"	f
+unselect_inx	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {$/;"	f
 unset_effect	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/blt.rs	/^    fn unset_effect(&self, effect: Effect) {$/;"	f
 unset_effect	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/crossterm.rs	/^    fn unset_effect(&self, effect: theme::Effect) {$/;"	f
 unset_effect	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/curses/n.rs	/^    fn unset_effect(&self, effect: Effect) {$/;"	f
@@ -3237,6 +3199,7 @@ weeks	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/
 weeks	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/duration.rs	/^    pub fn weeks(weeks: i64) -> Duration {$/;"	f
 west	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/fixed.rs	/^    pub fn west(secs: i32) -> FixedOffset {$/;"	f
 west_opt	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/fixed.rs	/^    pub fn west_opt(secs: i32) -> Option<FixedOffset> {$/;"	f
+widget_names	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_dlg.rs	/^pub mod widget_names {$/;"	m
 widget_names	/home/artie/Documents/Projects/rust/FileManager/src/internals/literals/copy_progress_dlg.rs	/^pub mod widget_names {$/;"	m
 width	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/unicode-width-0.1.8/src/lib.rs	/^    fn width(&self) -> usize {$/;"	f
 width	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/unicode-width-0.1.8/src/lib.rs	/^    fn width(self) -> Option<usize> { cw::width(self, false) }$/;"	f
@@ -3251,6 +3214,7 @@ width_cjk	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/unicode-wi
 width_percent	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn width_percent(mut self, width: usize) -> Self {$/;"	f
 with	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/context.rs	/^    pub fn with<F, R>(f: F) -> R$/;"	f
 with_capacity	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/array.rs	/^    pub fn with_capacity(cap: usize) -> Self {$/;"	f
+with_clones	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^macro_rules! with_clones {$/;"	d
 with_color	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/termion.rs	/^fn with_color<F, R>(clr: theme::Color, f: F) -> R$/;"	f
 with_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn with_content<F, O>(&self, f: F) -> O$/;"	f
 with_content_inner	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    fn with_content_inner<F, O>(&self, f: F) -> O$/;"	f
@@ -3337,7 +3301,6 @@ write	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-chan
 write	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/flavors/zero.rs	/^    pub unsafe fn write(&self, token: &mut Token, msg: T) -> Result<(), T> {$/;"	f
 write	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/ident_hash.rs	/^    fn write(&mut self, bytes: &[u8]) {$/;"	f
 write	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/termion.rs	/^    fn write<T>(&self, content: T)$/;"	f
-write_all	/home/artie/Documents/Repos/fs_extra/src/file.rs	/^pub fn write_all<P>(path: P, content: &str) -> Result<()>$/;"	f
 write_local_minus_utc	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/format/mod.rs	/^            fn write_local_minus_utc($/;"	f
 write_to_tty	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/curses/n.rs	/^fn write_to_tty(bytes: &[u8]) -> io::Result<()> {$/;"	f
 write_u64	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/ident_hash.rs	/^    fn write_u64(&mut self, i: u64) {$/;"	f

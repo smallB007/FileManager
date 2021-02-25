@@ -34,6 +34,7 @@ use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::atomic_dialog_try::AtomicDialog;
 use crate::internals::atomic_text_view::AtomicTextView;
+use crate::internals::literals::copy_dlg;
 use crate::internals::literals::copy_progress_dlg;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
@@ -608,14 +609,24 @@ fn cannot_suspend_copy(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
+fn remove_view(siv: &mut Cursive, view_name: &str) {
+    match siv.screen_mut().find_layer_from_name(view_name) {
+        Some(layer_position) => {
+            siv.screen_mut().remove_layer(layer_position);
+        }
+        None => {}
+    }
+}
 fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {
     let g_file_manager = GLOBAL_FileManager.get();
     g_file_manager.lock().unwrap().borrow_mut().cpy_data = None;
+
     show_progress_cpy(siv, 0, false);
+
     siv.set_autorefresh(false);
-    /*if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
-        siv.pop_layer();
-    }*/
+
+    remove_view(siv, copy_progress_dlg::labels::dialog_name);
+
     let success_dlg = Dialog::new().title(title).content(TextView::new(text).center()).dismiss_button("OK");
     let success_dlg = create_themed_view(siv, success_dlg);
     siv.add_layer(success_dlg);
@@ -903,8 +914,8 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var_suspend: Arc<(Mutex<b
 
     let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone())).with_name("Suspend_Resume_Btn");
     let background_button = Button::new("Background", move |siv| {
-        show_progress_cpy(siv, files_total, true);
         siv.pop_layer();
+        show_progress_cpy(siv, files_total, true);
     });
     let cancel_button = Button::new("Cancel", |siv| {
         siv.pop_layer(); //yes but make sure that update isn't proceeding ;)
@@ -931,7 +942,7 @@ fn create_cpy_progress_dialog(files_total: usize, cond_var_suspend: Arc<(Mutex<b
         ),
     )
     .fixed_width(80)
-    .with_name("ProgressDlg");
+    .with_name(copy_progress_dlg::labels::dialog_name);
 
     cpy_progress_dlg
 }
@@ -1082,7 +1093,7 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
 
-    cpy_dialog.with_name("DLG")
+    cpy_dialog.with_name(copy_dlg::labels::dialog_name)
 }
 fn help(siv: &mut cursive::Cursive) {}
 fn cancel_operation(siv: &mut cursive::Cursive) {
