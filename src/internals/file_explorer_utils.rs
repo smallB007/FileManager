@@ -450,7 +450,7 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn assign_action_and_notify(cond_var:& Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
+fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
     let (lock_flag, cond_var, file_action) = &**cond_var; //todo pretty certain, no mutex is needed here
     *lock_flag.lock().unwrap() = false;
     *file_action.lock().unwrap() = action;
@@ -461,7 +461,10 @@ enum OverrideCase {
     JustDoIt,
     Older,
     Newer,
+    Larger,
+    Smaller,
     DifferentSize,
+    Append,
 }
 #[derive(Copy, Clone)]
 enum FileExistsAction {
@@ -480,11 +483,11 @@ macro_rules! with_clones {
         }
     }
 }
-fn clone_and_notify(arc:&Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)> , action: FileExistsAction) -> impl Fn(&mut Cursive)  {
+fn clone_and_notify(arc: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) -> impl Fn(&mut Cursive) {
     let cloned = arc.clone();
     move |s| {
         s.pop_layer();
-        assign_action_and_notify(&cloned,action)
+        assign_action_and_notify(&cloned, action)
     }
 }
 fn copying_already_exists(
@@ -551,13 +554,21 @@ fn copying_already_exists(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite",clone_and_notify(&cond_var_skip,FileExistsAction::Override(OverrideCase::JustDoIt)))
-    .button("Older", |s| {})
-    .button("Smaller", |s| {})
-    .button("Different size", |s| {})
-    .button("Append", |s| {})
-    .button("Skip",clone_and_notify(&cond_var_skip,FileExistsAction::Skip))
-    .button("Abort",clone_and_notify(&cond_var_skip,FileExistsAction::Abort) );
+    .button(
+        "Overwrite",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::JustDoIt)),
+    )
+    .button("Older", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Older)))
+    .button("Newer", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Newer)))
+    .button("Larger", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Larger)))
+    .button("Smaller", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Smaller)))
+    .button(
+        "Different size",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::DifferentSize)),
+    )
+    .button("Append", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Append)))
+    .button("Skip", clone_and_notify(&cond_var_skip, FileExistsAction::Skip))
+    .button("Abort", clone_and_notify(&cond_var_skip, FileExistsAction::Abort));
 
     siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
 }
@@ -710,11 +721,12 @@ fn cpy_task(
                 fs_extra::error::ErrorKind::AlreadyExists => {
                     let current_file_clone_internal = current_file_clone.clone();
                     let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
+                    let full_path_to_clone = full_path_to.clone();
                     cb.send(Box::new(move |s| {
                         copying_already_exists(
                             s,
                             current_file_clone,
-                            PathBuf::from(full_path_to),
+                            PathBuf::from(full_path_to_clone),
                             is_overwrite,
                             is_recursive,
                             cond_var_skip_clone,
@@ -738,36 +750,36 @@ fn cpy_task(
                                 true, //override
                             );
                         }
-                        /*                    FileExistsAction::Override(OverrideCase::DifferentSize) => {
-                                                    let size_left = current_file_clone_internal.metadata().unwrap().len();
-                                                    let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
-                                                    if size_left != size_right {
-                                                        cpy_task(
-                                                            vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
-                                                            path_to_clone,
-                                                            cb_clone,
-                                                            cond_var_suspend_clone,
-                                                            cond_var_skip_clone_internal,
-                                                            is_recursive,
-                                                            true, //override
-                                                        );
-                                                    }
-                                                }*/
-                        /*                        FileExistsAction::Override(OverrideCase::Older) => {
-                                                    let date_left = current_file_clone_internal.metadata().unwrap().modified().unwrap();
-                                                    let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
-                                                    if date_right < date_left {
-                                                        cpy_task(
-                                                            vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
-                                                            path_to_clone,
-                                                            cb_clone,
-                                                            cond_var_suspend_clone,
-                                                            cond_var_skip_clone_internal,
-                                                            is_recursive,
-                                                            true, //override
-                                                        );
-                                                    }
-                                                }*/
+                        FileExistsAction::Override(OverrideCase::DifferentSize) => {
+                            let size_left = current_file_clone_internal.metadata().unwrap().len();
+                            let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
+                            if size_left != size_right {
+                                cpy_task(
+                                    vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
+                                    path_to_clone,
+                                    cb_clone,
+                                    cond_var_suspend_clone,
+                                    cond_var_skip_clone_internal,
+                                    is_recursive,
+                                    true, //override
+                                );
+                            }
+                        }
+                        FileExistsAction::Override(OverrideCase::Older) => {
+                            let date_left = current_file_clone_internal.metadata().unwrap().modified().unwrap();
+                            let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
+                            if date_right < date_left {
+                                cpy_task(
+                                    vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
+                                    path_to_clone,
+                                    cb_clone,
+                                    cond_var_suspend_clone,
+                                    cond_var_skip_clone_internal,
+                                    is_recursive,
+                                    true, //override
+                                );
+                            }
+                        }
                         FileExistsAction::Abort => {
                             break 'main_for;
                         }
