@@ -551,7 +551,7 @@ fn copying_already_exists(
             .child(DummyView),
     )
     .title("File Exists")
-    .button("Overwrite",clone_and_notify(&cond_var_skip,FileExistsAction::Skip))
+    .button("Overwrite",clone_and_notify(&cond_var_skip,FileExistsAction::Override(OverrideCase::JustDoIt)))
     .button("Older", |s| {})
     .button("Smaller", |s| {})
     .button("Different size", |s| {})
