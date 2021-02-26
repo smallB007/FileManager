@@ -899,7 +899,13 @@ fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Con
     cond_var_suspend.1.notify_one();
 }
 type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;
-fn create_cpy_progress_dialog(files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {
+fn create_thmd_cpy_pgrss_dlg(siv: &mut Cursive, files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> ThemedView<Layer<CopyProgressDlgT>>
+{
+    let cpy_progress_dlg = create_cpy_progress_dialog_priv(files_total, cond_var_suspend);
+    let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
+    cpy_progress_dlg
+}
+fn create_cpy_progress_dialog_priv(files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
@@ -980,8 +986,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
     });
 
     if !is_background_cpy {
-        let cpy_progress_dlg = create_cpy_progress_dialog(paths_from.len(), cond_var_suspend);
-        let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
+        let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv,paths_from.len(), cond_var_suspend);
         siv.add_layer(cpy_progress_dlg);
         siv.set_autorefresh(true);
     }
@@ -1186,7 +1191,7 @@ fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
         if let None = siv.find_name::<ProgressDlgT>("ProgressDlg") {
-            let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var_suspend.clone());
+            let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv,cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
         }
