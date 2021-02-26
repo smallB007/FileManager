@@ -36,6 +36,7 @@ use crate::internals::atomic_dialog_try::AtomicDialog;
 use crate::internals::atomic_text_view::AtomicTextView;
 use crate::internals::literals::copy_dlg;
 use crate::internals::literals::copy_progress_dlg;
+use crate::internals::literals::file_exists_dlg;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -451,10 +452,18 @@ fn copying_error(siv: &mut Cursive) {
             .dismiss_button("OK"),
     );
 }
-fn assign_action_and_notify(cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) {
+fn assign_action_and_notify(
+    cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>,
+    action: FileExistsAction,
+    apply_to_all: bool,
+    dont_overwrite_with_zero: bool,
+) {
     let (lock_flag, cond_var, file_action) = &**cond_var; //todo pretty certain, no mutex is needed here
     *lock_flag.lock().unwrap() = false;
-    *file_action.lock().unwrap() = action;
+    let action_with_options = &mut *file_action.lock().unwrap();
+    action_with_options.action = action;
+    action_with_options.apply_to_all = apply_to_all;
+    action_with_options.dont_overwrite_with_zero = dont_overwrite_with_zero;
     cond_var.notify_all();
 }
 #[derive(Copy, Clone)]
@@ -473,6 +482,11 @@ enum FileExistsAction {
     Override(OverrideCase),
     Skip,
 }
+struct FileExistsActionWithOptions {
+    action: FileExistsAction,
+    apply_to_all: bool,
+    dont_overwrite_with_zero: bool,
+}
 macro_rules! with_clones {
     ($($capture:ident),+; $e:expr) => {
         {
@@ -483,11 +497,21 @@ macro_rules! with_clones {
         }
     }
 }
-fn clone_and_notify(arc: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, action: FileExistsAction) -> impl Fn(&mut Cursive) {
+fn clone_and_notify(arc: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>, action: FileExistsAction) -> impl Fn(&mut Cursive) {
     let cloned = arc.clone();
     move |s| {
+        let is_apply_to_all = s
+            .call_on_name(file_exists_dlg::widget_names::apply_to_all_chckbx, |a_checkbox: &mut Checkbox| {
+                a_checkbox.is_checked()
+            })
+            .unwrap();
+        let is_dont_overwrite_with_zero = s
+            .call_on_name(file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx, |a_checkbox: &mut Checkbox| {
+                a_checkbox.is_checked()
+            })
+            .unwrap();
         s.pop_layer();
-        assign_action_and_notify(&cloned, action)
+        assign_action_and_notify(&cloned, action, is_apply_to_all, is_dont_overwrite_with_zero)
     }
 }
 fn copying_already_exists(
@@ -496,9 +520,9 @@ fn copying_already_exists(
     path_to: PathBuf,
     is_overwrite: bool,
     is_recursive: bool,
-    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>,
+    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>,
 ) {
-    let theme = siv.current_theme().clone().with(|theme| {
+    let theme_error = siv.current_theme().clone().with(|theme| {
         theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
         theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
         theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
@@ -544,10 +568,14 @@ fn copying_already_exists(
             .child(DummyView)
             .child(
                 LinearLayout::vertical()
-                    .child(LinearLayout::horizontal().child(Checkbox::new()).child(TextView::new(" Apply to all")))
                     .child(
                         LinearLayout::horizontal()
-                            .child(Checkbox::new())
+                            .child(Checkbox::new().with_name(file_exists_dlg::widget_names::apply_to_all_chckbx))
+                            .child(TextView::new(" Apply to all")),
+                    )
+                    .child(
+                        LinearLayout::horizontal()
+                            .child(Checkbox::new().with_name(file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx))
                             .child(TextView::new(" Don't overwrite with zero length file")),
                     ),
             )
@@ -571,7 +599,7 @@ fn copying_already_exists(
     .button("Abort", clone_and_notify(&cond_var_skip, FileExistsAction::Abort));
     /*let buttons = LinearLayout::horizontal().child(Button::new("A bu",|s|{}));
     let dlg_and_buttons = LinearLayout::vertical().child(file_exist_dlg).child(buttons);*/
-    siv.add_layer(views::ThemedView::new(theme, Layer::new(file_exist_dlg)));
+    siv.add_layer(views::ThemedView::new(theme_error, Layer::new(file_exist_dlg)));
 }
 fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf) {
     let mut res = Option::<std::io::Error>::default();
@@ -678,12 +706,16 @@ fn cpy_task(
     path_to: String,
     cb: CbSink,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
-    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsAction>)>, //todo not sure, most likely on demand only
+    cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>, //todo not sure, most likely on demand only
     is_recursive: bool,
     is_overwrite: bool,
     is_append: bool,
-    is_all: bool,
 ) {
+    /*globals ;)*/
+    let mut already_exists_apply_to_all = false;
+    let mut already_exists_dont_overwrite_with_zero = false;
+    let mut already_exists_last_action = FileExistsAction::Abort;
+    /**/
     'main_for: for (current_inx, (table_name, current_file, inx)) in selected_paths.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
             let v = GLOBAL_FileManager.get();
@@ -737,23 +769,34 @@ fn cpy_task(
                     let current_file_clone_internal = current_file_clone.clone();
                     let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
                     let full_path_to_clone = full_path_to.clone();
-                    cb.send(Box::new(move |s| {
-                        copying_already_exists(
-                            s,
-                            current_file_clone,
-                            PathBuf::from(full_path_to_clone),
-                            is_overwrite,
-                            is_recursive,
-                            cond_var_skip_clone,
-                        )
-                    }))
-                    .unwrap();
+
                     let (lock, cvar, skip_file) = &*cond_var_skip; //todo repeat
-                    match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
-                        Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
-                        _ => {}
+
+                    if !already_exists_apply_to_all {
+                        cb.send(Box::new(move |s| {
+                            copying_already_exists(
+                                s,
+                                current_file_clone,
+                                PathBuf::from(full_path_to_clone),
+                                is_overwrite,
+                                is_recursive,
+                                cond_var_skip_clone,
+                            )
+                        }))
+                        .unwrap();
+
+                        match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
+                            Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
+                            _ => {}
+                        }
+                        /*put the flag down ;)*/
+                        *lock.lock().unwrap() = true;
                     }
-                    match *skip_file.lock().unwrap() {
+
+                    already_exists_last_action = skip_file.lock().unwrap().action;
+                    already_exists_apply_to_all = skip_file.lock().unwrap().apply_to_all;
+                    already_exists_dont_overwrite_with_zero = skip_file.lock().unwrap().dont_overwrite_with_zero;
+                    match already_exists_last_action {
                         FileExistsAction::Override(OverrideCase::JustDoIt) => {
                             cpy_task(
                                 vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
@@ -764,7 +807,6 @@ fn cpy_task(
                                 is_recursive,
                                 true, //override
                                 is_append,
-                                is_all,
                             );
                         }
                         FileExistsAction::Override(OverrideCase::DifferentSize) => {
@@ -780,7 +822,6 @@ fn cpy_task(
                                     is_recursive,
                                     true, //override
                                     is_append,
-                                    is_all,
                                 );
                             }
                         }
@@ -797,7 +838,6 @@ fn cpy_task(
                                     is_recursive,
                                     true, //override
                                     is_append,
-                                    is_all,
                                 );
                             }
                         }
@@ -814,7 +854,6 @@ fn cpy_task(
                                     is_recursive,
                                     true, //override
                                     is_append,
-                                    is_all,
                                 );
                             }
                         }
@@ -831,7 +870,6 @@ fn cpy_task(
                                     is_recursive,
                                     true, //override
                                     is_append,
-                                    is_all,
                                 );
                             }
                         }
@@ -848,7 +886,6 @@ fn cpy_task(
                                     is_recursive,
                                     true, //override
                                     is_append,
-                                    is_all,
                                 );
                             }
                         }
@@ -861,8 +898,7 @@ fn cpy_task(
                                 cond_var_skip_clone_internal,
                                 is_recursive,
                                 true, //override
-                                true, //append
-                                is_all,
+                                true, //append todo check
                             );
                         }
 
@@ -899,8 +935,7 @@ fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Con
     cond_var_suspend.1.notify_one();
 }
 type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;
-fn create_thmd_cpy_pgrss_dlg(siv: &mut Cursive, files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> ThemedView<Layer<CopyProgressDlgT>>
-{
+fn create_thmd_cpy_pgrss_dlg(siv: &mut Cursive, files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> ThemedView<Layer<CopyProgressDlgT>> {
     let cpy_progress_dlg = create_cpy_progress_dialog_priv(files_total, cond_var_suspend);
     let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
     cpy_progress_dlg
@@ -956,7 +991,15 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_suspend_clone = Arc::clone(&cond_var_suspend);
 
-    let cond_var_skip = Arc::new((Mutex::new(true), Condvar::new(), Mutex::new(FileExistsAction::Abort)));
+    let cond_var_skip = Arc::new((
+        Mutex::new(true),
+        Condvar::new(),
+        Mutex::new(FileExistsActionWithOptions {
+            action: FileExistsAction::Abort,
+            apply_to_all: false,
+            dont_overwrite_with_zero: false,
+        }),
+    ));
     let cond_var_skip_clone = Arc::clone(&cond_var_skip);
 
     let paths_from_clone = paths_from.clone();
@@ -973,8 +1016,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
             cond_var_skip_clone,
             is_recursive,
             is_overwrite,
-            false, //todo check
-            false,
+            false, //append todo check
         );
         cb.send(Box::new(|siv| copying_finished_success(siv)));
     });
@@ -986,7 +1028,7 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
     });
 
     if !is_background_cpy {
-        let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv,paths_from.len(), cond_var_suspend);
+        let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv, paths_from.len(), cond_var_suspend);
         siv.add_layer(cpy_progress_dlg);
         siv.set_autorefresh(true);
     }
@@ -1191,7 +1233,7 @@ fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
         if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
-            let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv,cpy_data.files_total, cpy_data.cond_var_suspend.clone());
+            let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
         }
