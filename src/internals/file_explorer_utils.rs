@@ -506,7 +506,7 @@ fn copying_already_exists(
     });
     siv.set_autorefresh(false); //todo repeat
                                 /*todo!("Dialog type changed");
-                                if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
+                                if let Some(_) = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
                                     siv.pop_layer();
                                 }*/
     let name_from = path_from.to_str().unwrap();
@@ -599,7 +599,7 @@ fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
 }
 fn cannot_suspend_copy(siv: &mut Cursive) {
     siv.set_autorefresh(false);
-    if let Some(_) = siv.find_name::<ResizedView<Dialog>>("ProgressDlg") {
+    if let Some(_) = siv.find_name::<ResizedView<Dialog>>(copy_progress_dlg::labels::dialog_name) {
         siv.pop_layer();
     }
     siv.add_layer(
@@ -1109,7 +1109,7 @@ fn cancel_operation(siv: &mut cursive::Cursive) {
 }
 type ProgressDlgT = ResizedView<Dialog>;
 /*fn show_hide_cpy(siv: &mut cursive::Cursive) {
-    if let Some(_) = siv.find_name::<ProgressDlgT>("ProgressDlg") {
+    if let Some(_) = siv.find_name::<ProgressDlgT>("Pcopy_progress_dlg::labels::dialog_namerogressDlg") {
         siv.pop_layer(); //trouble
     } else {
         let g_file_manager = GLOBAL_FileManager.get();
@@ -1190,7 +1190,7 @@ fn edit(siv: &mut cursive::Cursive) {}
 fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
-        if let None = siv.find_name::<ProgressDlgT>("ProgressDlg") {
+        if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
             let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv,cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
