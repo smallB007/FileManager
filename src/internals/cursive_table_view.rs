@@ -18,6 +18,7 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::rc::Rc;
 
+use chrono::format::Item;
 // External Dependencies ------------------------------------------------------
 use cursive::{
     align::HAlign,
@@ -128,8 +129,7 @@ pub struct TableView<T, H> {
     pub rows_selected: std::collections::BTreeSet<usize>,
     focus: usize,
     items: Vec<T>,
-    rows_to_items: Vec<usize>,
-
+    //rows_to_items: Vec<usize>,
     on_sort: Option<OnSortCallback<H>>,
     // TODO Pass drawing offsets into the handlers so a popup menu
     // can be created easily?
@@ -168,8 +168,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             /*--artie*/
             focus: 0,
             items: Vec::new(),
-            rows_to_items: Vec::new(),
-
+            //rows_to_items: Vec::new(),
             on_sort: None,
             on_submit: None,
             on_select: None,
@@ -430,7 +429,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     /// Removes all items from this view.
     pub fn clear(&mut self) {
         self.items.clear();
-        self.rows_to_items.clear();
+        //self.rows_to_items.clear();
         self.focus = 0;
         self.needs_relayout = true;
     }
@@ -473,11 +472,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     /// items.
     pub fn set_items(&mut self, items: Vec<T>) {
         self.items = items;
-        self.rows_to_items = Vec::with_capacity(self.items.len());
+        //self.rows_to_items = Vec::with_capacity(self.items.len());
 
-        for i in 0..self.items.len() {
-            self.rows_to_items.push(i);
-        }
+        //for i in 0..self.items.len() {
+        //    self.rows_to_items.push(i);
+        //}
 
         if let Some((column, order)) = self.order() {
             self.sort_by(column, order);
@@ -527,7 +526,8 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         if self.items.is_empty() {
             None
         } else {
-            Some(self.rows_to_items[self.focus])
+            //Some(self.rows_to_items[self.focus])
+            Some(self.focus)
         }
     }
     //++artie
@@ -548,13 +548,14 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     pub fn set_selected_item(&mut self, item_index: usize) {
         // TODO optimize the performance for very large item lists
         if item_index < self.items.len() {
-            for (row, item) in self.rows_to_items.iter().enumerate() {
+            self.focus = item_index;
+            /*for (row, item) in self.rows_to_items.iter().enumerate() {
                 if *item == item_index {
                     self.focus = row;
                     self.scroll_core.scroll_to_y(row);
                     break;
                 }
-            }
+            }*/
         }
     }
 
@@ -573,7 +574,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     pub fn insert_item(&mut self, item: T) {
         self.items.push(item);
         // Here we know self.items.len() > 0
-        self.rows_to_items.push(self.items.len() - 1);
+        //self.rows_to_items.push(self.items.len() - 1);
 
         if let Some((column, order)) = self.order() {
             self.sort_by(column, order);
@@ -591,7 +592,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                     self.focus_up(1);
                 }
             }
-
+            /*
             // Remove the sorted reference to the item
             self.rows_to_items.retain(|i| *i != item_index);
 
@@ -601,6 +602,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                     *ref_index -= 1;
                 }
             }
+            */
             self.needs_relayout = true;
 
             // Remove actual item from the underlying storage
@@ -613,7 +615,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     /// Removes all items from the underlying storage and returns them.
     pub fn take_items(&mut self) -> Vec<T> {
         self.set_selected_row(0);
-        self.rows_to_items.clear();
+        //self.rows_to_items.clear();
         self.needs_relayout = true;
         self.items.drain(0..).collect()
     }
@@ -639,17 +641,19 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     fn sort_items(&mut self, column: H, order: Ordering) {
         if !self.is_empty() {
             let old_item = self.item();
-
-            let mut rows_to_items = self.rows_to_items.clone();
-            rows_to_items.sort_by(|a, b| {
-                if order == Ordering::Less {
-                    self.items[*a].cmp(&self.items[*b], column)
-                } else {
-                    self.items[*b].cmp(&self.items[*a], column)
-                }
-            });
-            self.rows_to_items = rows_to_items;
-
+            /*
+                        let mut rows_to_items = self.rows_to_items.clone();
+                        rows_to_items.sort_by(|a, b| {
+                            if order == Ordering::Less {
+                                self.items[*a].cmp(&self.items[*b], column)
+                            } else {
+                                self.items[*b].cmp(&self.items[*a], column)
+                            }
+                        });
+                        self.rows_to_items = rows_to_items;
+            */
+            self.items
+                .sort_by(|a, b| if order == Ordering::Less { a.cmp(b, column) } else { b.cmp(a, column) });
             if let Some(old_item) = old_item {
                 self.set_selected_item(old_item);
             }
@@ -658,7 +662,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
 
     fn draw_item(&self, printer: &Printer, i: usize) {
         self.draw_columns(printer, "┆ ", |printer, column| {
-            let value = self.items[self.rows_to_items[i]].to_column(column.column);
+            let value = self.items[/*self.rows_to_items[i]*/i].to_column(column.column);
             //++artie
             if self.rows_selected.contains(&i) && self.focus != i {
                 let color = theme::ColorStyle::secondary();
@@ -758,7 +762,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
 
     fn draw_content(&self, printer: &Printer) {
         //++artie
-        for i in 0..self.rows_to_items.len() {
+        for i in 0..self./*rows_to_items*/items.len() {
             let printer = printer.offset((0, i));
             let color = if i == self.focus && self.enabled {
                 if !self.column_select && self.enabled && printer.focused {
@@ -770,11 +774,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                 theme::ColorStyle::primary()
             };
 
-            if i < self.items.len() {
-                printer.with_color(color, |printer| {
-                    self.draw_item(printer, i);
-                });
-            }
+            // if i < self.items.len() {
+            printer.with_color(color, |printer| {
+                self.draw_item(printer, i);
+            });
+            //}
         }
     }
 
@@ -807,7 +811,8 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     }
 
     fn content_required_size(&mut self, req: Vec2) -> Vec2 {
-        Vec2::new(req.x, self.rows_to_items.len())
+        //Vec2::new(req.x, self.rows_to_items.len())
+        Vec2::new(req.x, self.items.len())
     }
 
     fn on_inner_event(&mut self, event: Event) -> EventResult {
@@ -894,7 +899,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                 offset,
                 event: MouseEvent::Press(_),
             } if !self.is_empty() => match position.checked_sub(offset) {
-                Some(position) if position.y < self.rows_to_items.len() => {
+                /*Some(position) if position.y < self.rows_to_items.len() => {
+                    self.column_cancel();
+                    self.focus = position.y;
+                }*/
+                Some(position) if position.y < self.items.len() => {
                     self.column_cancel();
                     self.focus = position.y;
                 }

@@ -438,7 +438,8 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
             let whole_path = match selected_item.as_str() {
                 ".." => None,
                 _ => {
-                    if selected_item.chars().nth(0).unwrap() != std::path::MAIN_SEPARATOR {
+                    let s = selected_item.chars().nth(0).unwrap();
+                    if s != std::path::MAIN_SEPARATOR {
                         selected_item.insert(0, std::path::MAIN_SEPARATOR);
                     }
                     Some((a_name.to_owned(), current_dir + &selected_item, index))
