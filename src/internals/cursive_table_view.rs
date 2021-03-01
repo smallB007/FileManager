@@ -532,7 +532,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     }
     //++artie
     pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> /*todo, why not by &*/ {
-        let focused_inx = self.rows_to_items[self.focus];
+        let focused_inx = self.focus;
         self.rows_selected.insert(focused_inx);
         self.rows_selected.clone()
     }
