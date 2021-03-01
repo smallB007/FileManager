@@ -404,10 +404,18 @@ fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
     if selected_items_inx.len() != 0 {
         let mut selected_paths = CopyPathInfoT::new();
         for selected_inx in selected_items_inx {
-            selected_paths.push(get_selected_path_from_inx(siv, a_name, selected_inx).unwrap());
+            match get_selected_path_from_inx(siv, a_name, selected_inx) {
+                Some(path) => {
+                    selected_paths.push(path);
+                }
+                None => {}
+            }
         }
-
-        Some(selected_paths)
+        if selected_paths.len() != 0 {
+            Some(selected_paths)
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -711,11 +719,6 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
 ) {
-    /*globals ;)*/
-    let mut already_exists_apply_to_all = false;
-    let mut already_exists_dont_overwrite_with_zero = false;
-    let mut already_exists_last_action = FileExistsAction::Abort;
-    /**/
     'main_for: for (current_inx, (table_name, current_file, inx)) in selected_paths.iter().enumerate() {
         let progres_handler = |process_info: fs_extra::file::TransitProcess| {
             let v = GLOBAL_FileManager.get();
@@ -772,7 +775,7 @@ fn cpy_task(
 
                     let (lock, cvar, skip_file) = &*cond_var_skip; //todo repeat
 
-                    if !already_exists_apply_to_all {
+                    if !skip_file.lock().unwrap().apply_to_all {
                         cb.send(Box::new(move |s| {
                             copying_already_exists(
                                 s,
@@ -793,10 +796,10 @@ fn cpy_task(
                         *lock.lock().unwrap() = true;
                     }
 
-                    already_exists_last_action = skip_file.lock().unwrap().action;
-                    already_exists_apply_to_all = skip_file.lock().unwrap().apply_to_all;
-                    already_exists_dont_overwrite_with_zero = skip_file.lock().unwrap().dont_overwrite_with_zero;
-                    match already_exists_last_action {
+                    if skip_file.lock().unwrap().dont_overwrite_with_zero && current_file_clone_internal.metadata().unwrap().len() == 0 {
+                        continue;
+                    }
+                    match skip_file.lock().unwrap().action {
                         FileExistsAction::Override(OverrideCase::JustDoIt) => {
                             cpy_task(
                                 vec![(table_name_clone, String::from(current_file_clone_internal.to_str().unwrap()), *inx)],
