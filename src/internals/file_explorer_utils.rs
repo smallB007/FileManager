@@ -675,7 +675,7 @@ fn copying_cancelled(siv: &mut Cursive) {
     end_copying_helper(siv, "User request cancel", "Copying cancelled");
 }
 
-fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::file::TransitProcess, file_name: String, current_inx: usize) {
+fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::TransitProcess, file_name: String, current_inx: usize) {
     /*   siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
@@ -709,260 +709,7 @@ fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
 /* let start = std::time::Instant::now();
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
-enum FinishCode {
-    Ok,
-    Abort,
-}
-fn copy_file(
-    table_name: &String,
-    current_path: &String,
-    current_inx: usize, //inx of file copied, not in the table
-    inx: &usize,
-    path_to: &String,
-    cb: &CbSink,
-    cond_var_suspend: &Arc<(Mutex<bool>, Condvar)>,
-    cond_var_skip: &Arc<(Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>, //todo not sure, most likely on demand only
-    is_recursive: bool,
-    is_overwrite: bool,
-    is_append: bool,
-) -> Option<FinishCode> {
-    let progres_handler_file = |process_info: fs_extra::file::TransitProcess| {
-        //file
-        let v = GLOBAL_FileManager.get();
-        match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
-            Ok(ref val) => {
-                if *val as usize == AtomicFileTransitFlags::Abort as usize {
-                    //                        std::thread::park();
-                    cb.send(Box::new(copying_cancelled)).unwrap();
-                    return fs_extra::dir::TransitProcessResult::Abort;
-                }
-            }
-            _ => { /*Do nothing, we are only interested in handling Abort*/ }
-        }
 
-        let (lock, cvar) = &**cond_var_suspend;
-        match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
-            Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
-            _ => {}
-        }
-
-        let current_path_clone = current_path.clone();
-        cb.send(Box::new(move |siv| update_cpy_dlg(siv, process_info, current_path_clone, current_inx)));
-        TransitProcessResult::ContinueOrAbort
-    };
-
-    let mut options = fs_extra::file::CopyOptions::new(); //Initialize default values for CopyOptions
-    options.overwrite = is_overwrite;
-    options.append = is_append;
-    let current_path_name = PathBuf::from(current_path.clone());
-    let current_path_name = current_path_name.file_name().unwrap().to_str().unwrap();
-    let full_path_to = path_to.clone() + "/" + current_path_name; //todo main separator
-                                                                  /*clones*/
-    let current_path_clone = PathBuf::from(current_path.clone());
-    let cond_var_skip_clone = cond_var_skip.clone();
-    let cond_var_suspend_clone = cond_var_suspend.clone();
-    let path_to_clone = path_to.clone();
-    let cb_clone = cb.clone();
-    let table_name_clone = table_name.clone();
-
-    /**/
-    match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
-        Ok(val) => {
-            let inx_clone = Arc::new(*inx);
-            let table_name_clone = Arc::new(table_name.clone());
-            cb.send(Box::new(|s| unselect_inx(s, table_name_clone, inx_clone))).unwrap();
-            return None;
-        }
-        Err(err) => match err.kind {
-            fs_extra::error::ErrorKind::NotFound => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::PermissionDenied => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::AlreadyExists => {
-                let current_path_clone_internal = current_path_clone.clone();
-                let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
-                let full_path_to_clone = full_path_to.clone();
-
-                let (lock, cvar, skip_file) = &**cond_var_skip; //todo repeat
-
-                if !skip_file.lock().unwrap().apply_to_all {
-                    cb.send(Box::new(move |s| {
-                        copying_already_exists(
-                            s,
-                            current_path_clone,
-                            PathBuf::from(full_path_to_clone),
-                            is_overwrite,
-                            is_recursive,
-                            cond_var_skip_clone,
-                        )
-                    }))
-                    .unwrap();
-
-                    match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
-                        Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
-                        _ => {}
-                    }
-                    /*put the flag down ;)*/
-                    *lock.lock().unwrap() = true;
-                }
-
-                if !(skip_file.lock().unwrap().dont_overwrite_with_zero && current_path_clone_internal.metadata().unwrap().len() == 0) {
-                    match skip_file.lock().unwrap().action {
-                        FileExistsAction::Override(OverrideCase::JustDoIt) => {
-                            cpy_task(
-                                vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                path_to_clone,
-                                cb_clone,
-                                cond_var_suspend_clone,
-                                cond_var_skip_clone_internal,
-                                is_recursive,
-                                true, //override
-                                is_append,
-                            );
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::DifferentSize) => {
-                            let size_left = current_path_clone_internal.metadata().unwrap().len();
-                            let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
-                            if size_left != size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
-                            }
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::Larger) => {
-                            let size_left = current_path_clone_internal.metadata().unwrap().len();
-                            let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
-                            if size_left < size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
-                            }
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::Smaller) => {
-                            let size_left = current_path_clone_internal.metadata().unwrap().len();
-                            let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
-                            if size_left > size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
-                            }
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::Older) => {
-                            let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
-                            let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
-                            if date_right < date_left {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
-                            }
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::Newer) => {
-                            let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
-                            let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
-                            if date_right > date_left {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
-                            }
-                            return None;
-                        }
-                        FileExistsAction::Override(OverrideCase::Append) => {
-                            cpy_task(
-                                vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                path_to_clone,
-                                cb_clone,
-                                cond_var_suspend_clone,
-                                cond_var_skip_clone_internal,
-                                is_recursive,
-                                true, //override
-                                true, //append todo check
-                            );
-                            return None;
-                        }
-
-                        FileExistsAction::Abort => {
-                            return Some(FinishCode::Abort);
-                        }
-                        FileExistsAction::Skip => {
-                            return None;
-                        }
-                    }
-                } else {
-                    return None;
-                }
-            }
-            fs_extra::error::ErrorKind::Interrupted => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::InvalidFolder => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::InvalidFile => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::InvalidFileName => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::InvalidPath => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::Io(IoError) => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::OsString(OsString) => {
-                return Some(FinishCode::Abort);
-            }
-            fs_extra::error::ErrorKind::Other => {
-                return Some(FinishCode::Abort);
-            }
-        },
-    } //file
-}
 
 fn cpy_task(
     selected_paths: CopyPathInfoT,
@@ -975,31 +722,232 @@ fn cpy_task(
     is_append: bool,
 ) {
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        if PathBuf::from(current_path).metadata().unwrap().is_dir() {
-            let options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
-            let handle = |process_info: fs_extra::TransitProcess| {
-                println!("{}", process_info.total_bytes);
-                fs_extra::dir::TransitProcessResult::ContinueOrAbort
-            };
-            fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, handle).unwrap();
-        } else {
-            match copy_file(
-                table_name,
-                current_path,
-                current_inx,
-                inx,
-                &path_to,
-                &cb,
-                &cond_var_suspend,
-                &cond_var_skip, //todo not sure, most likely on demand only
-                is_recursive,
-                is_overwrite,
-                is_append,
-            ) {
-                Some(FinishCode::Abort) => break 'main_for,
+        let progress_handler_path = |process_info: fs_extra::TransitProcess| {
+            let v = GLOBAL_FileManager.get();
+            match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
+                Ok(ref val) => {
+                    if *val as usize == AtomicFileTransitFlags::Abort as usize {
+                        //                        std::thread::park();
+                        cb.send(Box::new(copying_cancelled)).unwrap();
+                        return fs_extra::dir::TransitProcessResult::Abort;
+                    }
+                }
+                _ => { /*Do nothing, we are only interested in handling Abort*/ }
+            }
+    
+            let (lock, cvar) = &*cond_var_suspend;
+            match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
+                Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
                 _ => {}
             }
-        }
+    
+            let current_path_clone = current_path.clone();
+            cb.send(Box::new(move |siv| update_cpy_dlg(siv, process_info, current_path_clone, current_inx)));
+            TransitProcessResult::ContinueOrAbort
+        };
+    
+        let mut options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
+        options.overwrite = is_overwrite;
+        options.append = is_append;
+        let current_path_name = PathBuf::from(current_path.clone());
+        let current_path_name = current_path_name.file_name().unwrap().to_str().unwrap();
+        let full_path_to = path_to.clone() + "/" + current_path_name; //todo main separator
+                                                                      /*clones*/
+        let current_path_clone = PathBuf::from(current_path.clone());
+        let cond_var_skip_clone = cond_var_skip.clone();
+        let cond_var_suspend_clone = cond_var_suspend.clone();
+        let path_to_clone = path_to.clone();
+        let cb_clone = cb.clone();
+        let table_name_clone = table_name.clone();
+    
+        /**/
+        //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
+            match fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, progress_handler_path){
+            Ok(val) => {
+                let inx_clone = Arc::new(*inx);
+                let table_name_clone = Arc::new(table_name.clone());
+                cb.send(Box::new(|s| unselect_inx(s, table_name_clone, inx_clone))).unwrap();
+            }
+            Err(err) => match err.kind {
+                fs_extra::error::ErrorKind::NotFound => {
+                  
+                }
+                fs_extra::error::ErrorKind::PermissionDenied => {
+                  
+                }
+                fs_extra::error::ErrorKind::AlreadyExists => {
+                    let current_path_clone_internal = current_path_clone.clone();
+                    let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
+                    let full_path_to_clone = full_path_to.clone();
+    
+                    let (lock, cvar, skip_file) = &*cond_var_skip; //todo repeat
+    
+                    if !skip_file.lock().unwrap().apply_to_all {
+                        cb.send(Box::new(move |s| {
+                            copying_already_exists(
+                                s,
+                                current_path_clone,
+                                PathBuf::from(full_path_to_clone),
+                                is_overwrite,
+                                is_recursive,
+                                cond_var_skip_clone,
+                            )
+                        }))
+                        .unwrap();
+    
+                        match cvar.wait_while(lock.lock().unwrap(), |pending| *pending) {
+                            Err(err) => cb.send(Box::new(cannot_suspend_copy)).unwrap(),
+                            _ => {}
+                        }
+                        /*put the flag down ;)*/
+                        *lock.lock().unwrap() = true;
+                    }
+    
+                    if skip_file.lock().unwrap().dont_overwrite_with_zero && current_path_clone_internal.metadata().unwrap().len() == 0 {
+                        continue;
+                    }
+                        match skip_file.lock().unwrap().action {
+                            FileExistsAction::Override(OverrideCase::JustDoIt) => {
+                                cpy_task(
+                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                    path_to_clone,
+                                    cb_clone,
+                                    cond_var_suspend_clone,
+                                    cond_var_skip_clone_internal,
+                                    is_recursive,
+                                    true, //override
+                                    is_append,
+                                );
+                            }
+                            FileExistsAction::Override(OverrideCase::DifferentSize) => {
+                                let size_left = current_path_clone_internal.metadata().unwrap().len();
+                                let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
+                                if size_left != size_right {
+                                    cpy_task(
+                                        vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                        path_to_clone,
+                                        cb_clone,
+                                        cond_var_suspend_clone,
+                                        cond_var_skip_clone_internal,
+                                        is_recursive,
+                                        true, //override
+                                        is_append,
+                                    );
+                                }
+                            }
+                            FileExistsAction::Override(OverrideCase::Larger) => {
+                                let size_left = current_path_clone_internal.metadata().unwrap().len();
+                                let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
+                                if size_left < size_right {
+                                    cpy_task(
+                                        vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                        path_to_clone,
+                                        cb_clone,
+                                        cond_var_suspend_clone,
+                                        cond_var_skip_clone_internal,
+                                        is_recursive,
+                                        true, //override
+                                        is_append,
+                                    );
+                                }
+                            }
+                            FileExistsAction::Override(OverrideCase::Smaller) => {
+                                let size_left = current_path_clone_internal.metadata().unwrap().len();
+                                let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
+                                if size_left > size_right {
+                                    cpy_task(
+                                        vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                        path_to_clone,
+                                        cb_clone,
+                                        cond_var_suspend_clone,
+                                        cond_var_skip_clone_internal,
+                                        is_recursive,
+                                        true, //override
+                                        is_append,
+                                    );
+                                }
+                            }
+                            FileExistsAction::Override(OverrideCase::Older) => {
+                                let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
+                                let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
+                                if date_right < date_left {
+                                    cpy_task(
+                                        vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                        path_to_clone,
+                                        cb_clone,
+                                        cond_var_suspend_clone,
+                                        cond_var_skip_clone_internal,
+                                        is_recursive,
+                                        true, //override
+                                        is_append,
+                                    );
+                                }
+                            }
+                            FileExistsAction::Override(OverrideCase::Newer) => {
+                                let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
+                                let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
+                                if date_right > date_left {
+                                    cpy_task(
+                                        vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                        path_to_clone,
+                                        cb_clone,
+                                        cond_var_suspend_clone,
+                                        cond_var_skip_clone_internal,
+                                        is_recursive,
+                                        true, //override
+                                        is_append,
+                                    );
+                                }
+                            }
+                            FileExistsAction::Override(OverrideCase::Append) => {
+                                cpy_task(
+                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
+                                    path_to_clone,
+                                    cb_clone,
+                                    cond_var_suspend_clone,
+                                    cond_var_skip_clone_internal,
+                                    is_recursive,
+                                    true, //override
+                                    true, //append todo check
+                                );
+                            }
+    
+                            FileExistsAction::Abort => {
+                                break 'main_for;
+                            }
+                            FileExistsAction::Skip => {
+                            }
+                        }
+                }
+                fs_extra::error::ErrorKind::Interrupted => {
+                    
+                }
+                fs_extra::error::ErrorKind::InvalidFolder => {
+                    
+                }
+                fs_extra::error::ErrorKind::InvalidFile => {
+                    
+                }
+                fs_extra::error::ErrorKind::InvalidFileName => {
+                    
+                }
+                fs_extra::error::ErrorKind::InvalidPath => {
+                    
+                }
+                fs_extra::error::ErrorKind::Io(IoError) => {
+                    
+                }
+                fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {
+                    
+                }
+                fs_extra::error::ErrorKind::OsString(OsString) => {
+                    
+                }
+                fs_extra::error::ErrorKind::Other => {
+                    
+                }
+            },
+        } //file
     }
 }
 const a_const: i128 = 0;
