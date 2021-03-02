@@ -709,8 +709,7 @@ fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
 /* let start = std::time::Instant::now();
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
-enum FinishCode
-{
+enum FinishCode {
     Ok,
     Abort,
 }
@@ -726,7 +725,7 @@ fn copy_file(
     is_recursive: bool,
     is_overwrite: bool,
     is_append: bool,
-) ->Option<FinishCode> {
+) -> Option<FinishCode> {
     let progres_handler_file = |process_info: fs_extra::file::TransitProcess| {
         //file
         let v = GLOBAL_FileManager.get();
@@ -775,8 +774,12 @@ fn copy_file(
             return None;
         }
         Err(err) => match err.kind {
-            fs_extra::error::ErrorKind::NotFound => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::PermissionDenied => {return Some(FinishCode::Abort);}
+            fs_extra::error::ErrorKind::NotFound => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::PermissionDenied => {
+                return Some(FinishCode::Abort);
+            }
             fs_extra::error::ErrorKind::AlreadyExists => {
                 let current_path_clone_internal = current_path_clone.clone();
                 let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
@@ -922,26 +925,45 @@ fn copy_file(
                         FileExistsAction::Abort => {
                             return Some(FinishCode::Abort);
                         }
-                        FileExistsAction::Skip => { return None;}
+                        FileExistsAction::Skip => {
+                            return None;
+                        }
                     }
-                }
-                else
-                {
+                } else {
                     return None;
                 }
             }
-            fs_extra::error::ErrorKind::Interrupted => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::InvalidFolder => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::InvalidFile => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::InvalidFileName => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::InvalidPath => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::Io(IoError) => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::OsString(OsString) => {return Some(FinishCode::Abort);}
-            fs_extra::error::ErrorKind::Other => {return Some(FinishCode::Abort);}
+            fs_extra::error::ErrorKind::Interrupted => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::InvalidFolder => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::InvalidFile => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::InvalidFileName => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::InvalidPath => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::Io(IoError) => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::StripPrefix(StripPrefixError) => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::OsString(OsString) => {
+                return Some(FinishCode::Abort);
+            }
+            fs_extra::error::ErrorKind::Other => {
+                return Some(FinishCode::Abort);
+            }
         },
     } //file
 }
+
 fn cpy_task(
     selected_paths: CopyPathInfoT,
     path_to: String,
@@ -953,21 +975,30 @@ fn cpy_task(
     is_append: bool,
 ) {
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        match copy_file(
-            table_name,
-            current_path,
-            current_inx,
-            inx,
-            &path_to,
-            &cb,
-            &cond_var_suspend,
-            &cond_var_skip, //todo not sure, most likely on demand only
-            is_recursive,
-            is_overwrite,
-            is_append,
-        ) {
-            Some(FinishCode::Abort) => {break 'main_for},
-            _ => {}
+        if PathBuf::from(current_path).metadata().unwrap().is_dir() {
+            let options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
+            let handle = |process_info: fs_extra::TransitProcess| {
+                println!("{}", process_info.total_bytes);
+                fs_extra::dir::TransitProcessResult::ContinueOrAbort
+            };
+            fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, handle).unwrap();
+        } else {
+            match copy_file(
+                table_name,
+                current_path,
+                current_inx,
+                inx,
+                &path_to,
+                &cb,
+                &cond_var_suspend,
+                &cond_var_skip, //todo not sure, most likely on demand only
+                is_recursive,
+                is_overwrite,
+                is_append,
+            ) {
+                Some(FinishCode::Abort) => break 'main_for,
+                _ => {}
+            }
         }
     }
 }
