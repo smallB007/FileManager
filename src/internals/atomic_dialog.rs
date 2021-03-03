@@ -457,7 +457,10 @@ impl Atomic_Dialog {
 
     // An event is received while the content is in focus
     fn on_event_content(&mut self, event: Event) -> EventResult {
-        match self.content.on_event(event.relativized((self.padding + self.borders).top_left())) {
+        match self
+            .content
+            .on_event(event.relativized((self.padding + self.borders).top_left()))
+        {
             EventResult::Ignored => {
                 if self.buttons.is_empty() {
                     EventResult::Ignored
@@ -544,7 +547,8 @@ impl Atomic_Dialog {
         // Current horizontal position of the next button we'll draw.
 
         // Sum of the sizes + len-1 for margins
-        let width = self.buttons.iter().map(|button| button.button.size.x).sum::<usize>() + self.buttons.len().saturating_sub(1);
+        let width = self.buttons.iter().map(|button| button.button.size.x).sum::<usize>()
+            + self.buttons.len().saturating_sub(1);
         let overhead = self.padding + self.borders;
         if printer.size.x < overhead.horizontal() {
             return None;
@@ -563,9 +567,12 @@ impl Atomic_Dialog {
             // Add some special effect to the focused button
             let position = Vec2::new(offset, y);
             button.offset.set(position);
-            button
-                .button
-                .draw(&printer.offset(position).cropped(size).focused(self.focus == DialogFocus::Button(i)));
+            button.button.draw(
+                &printer
+                    .offset(position)
+                    .cropped(size)
+                    .focused(self.focus == DialogFocus::Button(i)),
+            );
             // Keep 1 blank between two buttons
             offset += size.x + 1;
             // Also keep 1 blank above the buttons
@@ -623,7 +630,11 @@ impl Atomic_Dialog {
                 0
             };
             //--artie
-            let x = spacing + self.title_position.0.get_offset(len, printer.size.x - spacing_both_ends);
+            let x = spacing
+                + self
+                    .title_position
+                    .0
+                    .get_offset(len, printer.size.x - spacing_both_ends);
             printer.with_low_border(false, |printer| {
                 printer.print((x - 2, y), "┤ ");
                 printer.print((x + len, y), " ├");
@@ -652,7 +663,11 @@ impl Atomic_Dialog {
                 0
             };
             //--artie
-            let x = spacing + self.title_position_bottom.0.get_offset(len, printer.size.x - spacing_both_ends);
+            let x = spacing
+                + self
+                    .title_position_bottom
+                    .0
+                    .get_offset(len, printer.size.x - spacing_both_ends);
             printer.with_low_border(false, |printer| {
                 printer.print((x - 2, y), "┤ ");
                 printer.print((x + len, y), " ├");
@@ -663,7 +678,12 @@ impl Atomic_Dialog {
     }
 
     fn check_focus_grab(&mut self, event: &Event) {
-        if let Event::Mouse { offset, position, event } = *event {
+        if let Event::Mouse {
+            offset,
+            position,
+            event,
+        } = *event
+        {
             if !event.grabs_focus() {
                 return;
             }
@@ -681,7 +701,9 @@ impl Atomic_Dialog {
                 position.fits_in_rect(btn.offset.get(), btn.button.size)
             }) {
                 self.focus = DialogFocus::Button(i);
-            } else if position.fits_in_rect((self.padding + self.borders).top_left(), self.content.size) && self.content.take_focus(Direction::none()) {
+            } else if position.fits_in_rect((self.padding + self.borders).top_left(), self.content.size)
+                && self.content.take_focus(Direction::none())
+            {
                 // Or did we click the content?
                 self.focus = DialogFocus::Content;
             }
@@ -733,7 +755,8 @@ impl View for Atomic_Dialog {
             palette: Palette::default(),
         };
         //thm.palette.set_basic_color("Tertiary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Green));
-        thm.palette.set_color("Primary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Red));
+        thm.palette
+            .set_color("Primary", cursive::theme::Color::Dark(cursive::theme::BaseColor::Red));
 
         // let printer = printer.theme(&thm);
         self.draw_content(&printer, buttons_height);
@@ -776,8 +799,9 @@ impl View for Atomic_Dialog {
 
         // On the Y axis, we add buttons and content.
         // On the X axis, we take the max.
-        let mut inner_size =
-            Vec2::new(max(content_size.x, buttons_size.x), content_size.y + buttons_size.y) + self.padding.combined() + self.borders.combined();
+        let mut inner_size = Vec2::new(max(content_size.x, buttons_size.x), content_size.y + buttons_size.y)
+            + self.padding.combined()
+            + self.borders.combined();
 
         if !self.title.is_empty() {
             // If we have a title, we have to fit it too!
@@ -828,7 +852,10 @@ impl View for Atomic_Dialog {
         // TODO: This may depend on button position relative to the content?
         //
         match source {
-            Direction::Abs(Absolute::None) | Direction::Rel(Relative::Front) | Direction::Abs(Absolute::Left) | Direction::Abs(Absolute::Up) => {
+            Direction::Abs(Absolute::None)
+            | Direction::Rel(Relative::Front)
+            | Direction::Abs(Absolute::Left)
+            | Direction::Abs(Absolute::Up) => {
                 // Forward focus: content, then buttons
                 if self.content.take_focus(source) {
                     self.focus = DialogFocus::Content;

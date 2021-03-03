@@ -180,7 +180,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     ///
     /// The provided callback can be used to further configure the
     /// created [`TableColumn`](struct.TableColumn.html).
-    pub fn column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(mut self, column: H, title: S, callback: C) -> Self {
+    pub fn column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(
+        mut self,
+        column: H,
+        title: S,
+        callback: C,
+    ) -> Self {
         self.add_column(column, title, callback);
         self
     }
@@ -190,7 +195,12 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     ///
     /// The provided callback can be used to further configure the
     /// created [`TableColumn`](struct.TableColumn.html).
-    pub fn add_column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(&mut self, column: H, title: S, callback: C) {
+    pub fn add_column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(
+        &mut self,
+        column: H,
+        title: S,
+        callback: C,
+    ) {
         self.insert_column(self.columns.len(), column, title, callback);
     }
 
@@ -211,7 +221,13 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     ///
     /// The provided callback can be used to further configure the
     /// created [`TableColumn`](struct.TableColumn.html).
-    pub fn insert_column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(&mut self, i: usize, column: H, title: S, callback: C) {
+    pub fn insert_column<S: Into<String>, C: FnOnce(TableColumn<H>) -> TableColumn<H>>(
+        &mut self,
+        i: usize,
+        column: H,
+        title: S,
+        callback: C,
+    ) {
         // Update all existing indices
         for column in &self.columns[i..] {
             *self.column_indicies.get_mut(&column.column).unwrap() += 1;
@@ -652,8 +668,13 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                         });
                         self.rows_to_items = rows_to_items;
             */
-            self.items
-                .sort_by(|a, b| if order == Ordering::Less { a.cmp(b, column) } else { b.cmp(a, column) });
+            self.items.sort_by(|a, b| {
+                if order == Ordering::Less {
+                    a.cmp(b, column)
+                } else {
+                    b.cmp(a, column)
+                }
+            });
             if let Some(old_item) = old_item {
                 self.set_selected_item(old_item);
             }
@@ -678,7 +699,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     fn on_focus_change(&self) -> EventResult {
         let row = self.row().unwrap();
         let index = self.item().unwrap();
-        EventResult::Consumed(self.on_select.clone().map(|cb| Callback::from_fn(move |s| cb(s, row, index))))
+        EventResult::Consumed(
+            self.on_select
+                .clone()
+                .map(|cb| Callback::from_fn(move |s| cb(s, row, index))),
+        )
     }
 
     fn focus_up(&mut self, n: usize) {
@@ -725,7 +750,11 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
     fn column_select(&mut self) -> EventResult {
         let next = self.active_column();
         let column = self.columns[next].column;
-        let current = self.columns.iter().position(|c| c.order != Ordering::Equal).unwrap_or(0);
+        let current = self
+            .columns
+            .iter()
+            .position(|c| c.order != Ordering::Equal)
+            .unwrap_or(0);
 
         let order = if current != next {
             self.columns[next].default_order
@@ -786,7 +815,8 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         let column_count = self.columns.len();
 
         // Split up all columns into sized / unsized groups
-        let (mut sized, mut usized): (Vec<&mut TableColumn<H>>, Vec<&mut TableColumn<H>>) = self.columns.iter_mut().partition(|c| c.requested_width.is_some());
+        let (mut sized, mut usized): (Vec<&mut TableColumn<H>>, Vec<&mut TableColumn<H>>) =
+            self.columns.iter_mut().partition(|c| c.requested_width.is_some());
 
         // Subtract one for the seperators between our columns (that's column_count - 1)
         let available_width = size.x.saturating_sub(column_count.saturating_sub(1) * 3);
@@ -795,7 +825,9 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         let mut remaining_width = available_width;
         for column in &mut sized {
             column.width = match *column.requested_width.as_ref().unwrap() {
-                TableColumnWidth::Percent(width) => cmp::min((size.x as f32 / 100.0 * width as f32).ceil() as usize, remaining_width),
+                TableColumnWidth::Percent(width) => {
+                    cmp::min((size.x as f32 / 100.0 * width as f32).ceil() as usize, remaining_width)
+                }
                 TableColumnWidth::Absolute(width) => width,
             };
             remaining_width = remaining_width.saturating_sub(column.width);
@@ -1008,7 +1040,12 @@ impl<T: TableViewItem<H> + 'static, H: Eq + Hash + Copy + Clone + 'static> View 
                 }
                 EventResult::Ignored
             }
-            event => scroll::on_event(self, event.relativized((0, 2)), Self::on_inner_event, Self::inner_important_area),
+            event => scroll::on_event(
+                self,
+                event.relativized((0, 2)),
+                Self::on_inner_event,
+                Self::inner_important_area,
+            ),
         }
     }
 
@@ -1082,9 +1119,24 @@ impl<H: Copy + Clone + 'static> TableColumn<H> {
         };
 
         let header = match self.alignment {
-            HAlign::Left => format!("{:<width$} [{}]", self.title, order, width = self.width.saturating_sub(4)),
-            HAlign::Right => format!("{:>width$} [{}]", self.title, order, width = self.width.saturating_sub(4)),
-            HAlign::Center => format!("{:^width$} [{}]", self.title, order, width = self.width.saturating_sub(4)),
+            HAlign::Left => format!(
+                "{:<width$} [{}]",
+                self.title,
+                order,
+                width = self.width.saturating_sub(4)
+            ),
+            HAlign::Right => format!(
+                "{:>width$} [{}]",
+                self.title,
+                order,
+                width = self.width.saturating_sub(4)
+            ),
+            HAlign::Center => format!(
+                "{:^width$} [{}]",
+                self.title,
+                order,
+                width = self.width.saturating_sub(4)
+            ),
         };
 
         printer.print((0, 0), header.as_str());
@@ -1162,14 +1214,18 @@ mod tests {
         let mut simple_items = Vec::new();
 
         for i in 1..=10 {
-            simple_items.push(SimpleItem { name: format!("{} - Name", i) });
+            simple_items.push(SimpleItem {
+                name: format!("{} - Name", i),
+            });
         }
 
         // Insert First Batch of Items
         simple_table.set_items(simple_items);
 
         // Test for Additional item insertion
-        simple_table.insert_item(SimpleItem { name: format!("{} Name", 11) });
+        simple_table.insert_item(SimpleItem {
+            name: format!("{} Name", 11),
+        });
 
         assert!(simple_table.len() == 11);
     }
@@ -1179,7 +1235,9 @@ mod tests {
         let mut simple_table = setup_test_table();
 
         // Test for First item insertion
-        simple_table.insert_item(SimpleItem { name: format!("{} Name", 1) });
+        simple_table.insert_item(SimpleItem {
+            name: format!("{} Name", 1),
+        });
 
         assert!(simple_table.len() == 1);
     }

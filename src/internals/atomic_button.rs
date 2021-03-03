@@ -174,7 +174,9 @@ impl View for Atomic_Button {
                 event: MouseEvent::Release(MouseButton::Left),
                 position,
                 offset,
-            } if position.fits_in_rect(offset + (self_offset, 0), self.req_size()) => EventResult::Consumed(Some(self.callback.clone())),
+            } if position.fits_in_rect(offset + (self_offset, 0), self.req_size()) => {
+                EventResult::Consumed(Some(self.callback.clone()))
+            }
             _ => EventResult::Ignored,
         }
     }

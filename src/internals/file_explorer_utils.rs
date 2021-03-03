@@ -248,12 +248,20 @@ impl TableViewItem<ExplorerColumn> for ExplorerColumnData {
     }
 }
 type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
-pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {
+pub fn create_basic_table_core(
+    siv: &mut Cursive,
+    a_name: &'static str,
+    initial_path: &str,
+) -> NamedView<tableViewType> {
     let mut table = tableViewType::new()
         .column(ExplorerColumn::Name, "Name", |c| c.width_percent(60))
-        .column(ExplorerColumn::Size, "Size", |c| c.align(cursive::align::HAlign::Center))
+        .column(ExplorerColumn::Size, "Size", |c| {
+            c.align(cursive::align::HAlign::Center)
+        })
         .column(ExplorerColumn::LastModifyTime, "LastModifyTime", |c| {
-            c.ordering(std::cmp::Ordering::Greater).align(HAlign::Right).width_percent(20)
+            c.ordering(std::cmp::Ordering::Greater)
+                .align(HAlign::Right)
+                .width_percent(20)
         });
     /*
     let v = GLOBAL_FileManager.get();
@@ -267,7 +275,9 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
     let mut watcher = watcher(tx, Duration::from_secs(2)).unwrap();
     // Add a path to be watched. All files and directories at that path and
     // below will be monitored for changes.
-    watcher.watch(initial_path.clone(), RecursiveMode::NonRecursive).unwrap();
+    watcher
+        .watch(initial_path.clone(), RecursiveMode::NonRecursive)
+        .unwrap();
 
     start_dir_watcher_thread(siv, String::from(a_name), String::from(initial_path), rx);
     let watcher = Arc::new(Mutex::new(watcher));
@@ -292,10 +302,13 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
             })
             .unwrap();
         let _value = siv
-            .call_on_name(&(String::from(a_name) + &String::from("InfoItem")), move |a_dlg: &mut TextView| {
-                //                a_dlg.set_title(current_item.name.clone());
-                a_dlg.set_content(current_item.name.clone());
-            })
+            .call_on_name(
+                &(String::from(a_name) + &String::from("InfoItem")),
+                move |a_dlg: &mut TextView| {
+                    //                a_dlg.set_title(current_item.name.clone());
+                    a_dlg.set_content(current_item.name.clone());
+                },
+            )
             .unwrap();
 
         /*        siv.add_layer(
@@ -316,10 +329,13 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
         });
 
         let current_dir = siv
-            .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
-                //format!("{:?}", a_table.borrow_item(index).unwrap())
-                a_dlg.get_title()
-            })
+            .call_on_name(
+                &(String::from(a_name) + &String::from("Dlg")),
+                move |a_dlg: &mut Atomic_Dialog| {
+                    //format!("{:?}", a_table.borrow_item(index).unwrap())
+                    a_dlg.get_title()
+                },
+            )
             .unwrap();
         let path_to_stop_watching = current_dir.clone();
         let new_path = siv
@@ -347,7 +363,11 @@ pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_
             .unwrap();
         if new_path.is_dir() {
             watcher.lock().unwrap().unwatch(path_to_stop_watching);
-            watcher.lock().unwrap().watch(new_path.clone(), RecursiveMode::NonRecursive).unwrap();
+            watcher
+                .lock()
+                .unwrap()
+                .watch(new_path.clone(), RecursiveMode::NonRecursive)
+                .unwrap();
             /*            let new_path_clone = new_path.clone();
             let a_table_name_clone = a_name.clone();*/
 
@@ -423,9 +443,10 @@ fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
 
 fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
     let current_dir = siv
-        .call_on_name(&(String::from(a_name) + &String::from("Dlg")), move |a_dlg: &mut Atomic_Dialog| {
-            a_dlg.get_title()
-        })
+        .call_on_name(
+            &(String::from(a_name) + &String::from("Dlg")),
+            move |a_dlg: &mut Atomic_Dialog| a_dlg.get_title(),
+        )
         .unwrap();
     current_dir
 }
@@ -462,7 +483,11 @@ fn copying_error(siv: &mut Cursive) {
     );
 }
 fn assign_action_and_notify(
-    cond_var: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>,
+    cond_var: &Arc<(
+        /*lock flag*/ Mutex<bool>,
+        Condvar,
+        Mutex<FileExistsActionWithOptions>,
+    )>,
     action: FileExistsAction,
     apply_to_all: bool,
     dont_overwrite_with_zero: bool,
@@ -506,18 +531,27 @@ macro_rules! with_clones {
         }
     }
 }
-fn clone_and_notify(arc: &Arc<(/*lock flag*/ Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>, action: FileExistsAction) -> impl Fn(&mut Cursive) {
+fn clone_and_notify(
+    arc: &Arc<(
+        /*lock flag*/ Mutex<bool>,
+        Condvar,
+        Mutex<FileExistsActionWithOptions>,
+    )>,
+    action: FileExistsAction,
+) -> impl Fn(&mut Cursive) {
     let cloned = arc.clone();
     move |s| {
         let is_apply_to_all = s
-            .call_on_name(file_exists_dlg::widget_names::apply_to_all_chckbx, |a_checkbox: &mut Checkbox| {
-                a_checkbox.is_checked()
-            })
+            .call_on_name(
+                file_exists_dlg::widget_names::apply_to_all_chckbx,
+                |a_checkbox: &mut Checkbox| a_checkbox.is_checked(),
+            )
             .unwrap();
         let is_dont_overwrite_with_zero = s
-            .call_on_name(file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx, |a_checkbox: &mut Checkbox| {
-                a_checkbox.is_checked()
-            })
+            .call_on_name(
+                file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx,
+                |a_checkbox: &mut Checkbox| a_checkbox.is_checked(),
+            )
             .unwrap();
         s.pop_layer();
         assign_action_and_notify(&cloned, action, is_apply_to_all, is_dont_overwrite_with_zero)
@@ -584,7 +618,10 @@ fn copying_already_exists(
                     )
                     .child(
                         LinearLayout::horizontal()
-                            .child(Checkbox::new().with_name(file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx))
+                            .child(
+                                Checkbox::new()
+                                    .with_name(file_exists_dlg::widget_names::dont_overwrite_with_zero_chckbx),
+                            )
                             .child(TextView::new(" Don't overwrite with zero length file")),
                     ),
             )
@@ -595,15 +632,30 @@ fn copying_already_exists(
         "Overwrite",
         clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::JustDoIt)),
     )
-    .button("Older", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Older)))
-    .button("Newer", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Newer)))
-    .button("Larger", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Larger)))
-    .button("Smaller", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Smaller)))
+    .button(
+        "Older",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Older)),
+    )
+    .button(
+        "Newer",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Newer)),
+    )
+    .button(
+        "Larger",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Larger)),
+    )
+    .button(
+        "Smaller",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Smaller)),
+    )
     .button(
         "Different size",
         clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::DifferentSize)),
     )
-    .button("Append", clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Append)))
+    .button(
+        "Append",
+        clone_and_notify(&cond_var_skip, FileExistsAction::Override(OverrideCase::Append)),
+    )
     .button("Skip", clone_and_notify(&cond_var_skip, FileExistsAction::Skip))
     .button("Abort", clone_and_notify(&cond_var_skip, FileExistsAction::Abort));
     /*let buttons = LinearLayout::horizontal().child(Button::new("A bu",|s|{}));
@@ -621,9 +673,12 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: Pa
         }
         None => {
             let _value = siv
-                .call_on_name(&(String::from(a_name) + &String::from("Dlg")), |a_dlg: &mut Atomic_Dialog| {
-                    a_dlg.set_title(new_path.clone().to_str().unwrap());
-                })
+                .call_on_name(
+                    &(String::from(a_name) + &String::from("Dlg")),
+                    |a_dlg: &mut Atomic_Dialog| {
+                        a_dlg.set_title(new_path.clone().to_str().unwrap());
+                    },
+                )
                 .unwrap();
         }
     }
@@ -664,7 +719,10 @@ fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {
 
     remove_view(siv, copy_progress_dlg::labels::dialog_name);
 
-    let success_dlg = Dialog::new().title(title).content(TextView::new(text).center()).dismiss_button("OK");
+    let success_dlg = Dialog::new()
+        .title(title)
+        .content(TextView::new(text).center())
+        .dismiss_button("OK");
     let success_dlg = create_themed_view(siv, success_dlg);
     siv.add_layer(success_dlg);
 }
@@ -680,20 +738,33 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::TransitProcess, fil
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
     .unwrap();*/
-    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, |a_progress_bar: &mut ProgressBar| {
-        a_progress_bar.set_value(current_inx);
-        a_progress_bar.set_label(|val, (_min, max)| format!("Copied {} of {}", val, max));
-    });
-    siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
-        hideable_view_total.get_inner_mut().get_inner_mut().set_value(current_inx);
-    });
+    siv.call_on_name(
+        copy_progress_dlg::widget_names::progress_bar_total,
+        |a_progress_bar: &mut ProgressBar| {
+            a_progress_bar.set_value(current_inx);
+            a_progress_bar.set_label(|val, (_min, max)| format!("Copied {} of {}", val, max));
+        },
+    );
+    siv.call_on_name(
+        "hideable_cpy_prgrs_br",
+        |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
+            hideable_view_total
+                .get_inner_mut()
+                .get_inner_mut()
+                .set_value(current_inx);
+        },
+    );
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying:\n {}", file_name));
     });
-    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_current, |a_progress_bar: &mut ProgressBar| {
-        let current_path_percent = ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
-        a_progress_bar.set_value(current_path_percent);
-    });
+    siv.call_on_name(
+        copy_progress_dlg::widget_names::progress_bar_current,
+        |a_progress_bar: &mut ProgressBar| {
+            let current_path_percent =
+                ((process_info.copied_bytes as f64 / process_info.total_bytes as f64) * 100_f64) as usize;
+            a_progress_bar.set_value(current_path_percent);
+        },
+    );
 }
 #[cfg(ETA)]
 struct file_transfer_context {
@@ -709,7 +780,6 @@ fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
 /* let start = std::time::Instant::now();
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
-
 fn cpy_task(
     selected_paths: CopyPathInfoT,
     path_to: String,
@@ -741,7 +811,9 @@ fn cpy_task(
             }
 
             let current_path_clone = current_path.clone();
-            cb.send(Box::new(move |siv| update_cpy_dlg(siv, process_info, current_path_clone, current_inx)));
+            cb.send(Box::new(move |siv| {
+                update_cpy_dlg(siv, process_info, current_path_clone, current_inx)
+            }));
             TransitProcessResult::ContinueOrAbort
         };
 
@@ -749,33 +821,34 @@ fn cpy_task(
         options.overwrite = is_overwrite;
         options.append = is_append;
         options.copy_inside = is_recursive;
-        if !is_recursive
-        {
+        if !is_recursive {
             options.depth = 1;
         }
         let current_path_name = PathBuf::from(current_path.clone());
         let current_path_name = current_path_name.file_name().unwrap().to_str().unwrap();
         let full_path_to = path_to.clone() + &std::path::MAIN_SEPARATOR.to_string() + current_path_name;
-                                                                      /*clones*/
+        /*clones*/
         let current_path_clone = PathBuf::from(current_path.clone());
         let cond_var_skip_clone = cond_var_skip.clone();
         let cond_var_suspend_clone = cond_var_suspend.clone();
         let path_to_clone = path_to.clone();
         let cb_clone = cb.clone();
         let table_name_clone = table_name.clone();
-
+        
         /**/
         //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
         match fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, progress_handler_path) {
             Ok(val) => {
                 let inx_clone = Arc::new(*inx);
                 let table_name_clone = Arc::new(table_name.clone());
-                cb.send(Box::new(|s| unselect_inx(s, table_name_clone, inx_clone))).unwrap();
+                cb.send(Box::new(|s| unselect_inx(s, table_name_clone, inx_clone)))
+                    .unwrap();
             }
             Err(err) => match err.kind {
                 fs_extra::error::ErrorKind::NotFound => {}
                 fs_extra::error::ErrorKind::PermissionDenied => {}
                 fs_extra::error::ErrorKind::AlreadyExists => {
+                    let mut proceed_with_copy = false;
                     let current_path_clone_internal = current_path_clone.clone();
                     let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
                     let full_path_to_clone = full_path_to.clone();
@@ -803,119 +876,74 @@ fn cpy_task(
                         *lock.lock().unwrap() = true;
                     }
 
-                    if skip_file.lock().unwrap().dont_overwrite_with_zero && current_path_clone_internal.metadata().unwrap().len() == 0 {
+                    if skip_file.lock().unwrap().dont_overwrite_with_zero
+                        && current_path_clone_internal.metadata().unwrap().len() == 0
+                    {
                         continue;
                     }
                     match skip_file.lock().unwrap().action {
                         FileExistsAction::Override(OverrideCase::JustDoIt) => {
-                            cpy_task(
-                                vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                path_to_clone,
-                                cb_clone,
-                                cond_var_suspend_clone,
-                                cond_var_skip_clone_internal,
-                                is_recursive,
-                                true, //override
-                                is_append,
-                            );
+                            proceed_with_copy = true;
                         }
                         FileExistsAction::Override(OverrideCase::DifferentSize) => {
                             let size_left = current_path_clone_internal.metadata().unwrap().len();
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left != size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
+                                proceed_with_copy = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Larger) => {
                             let size_left = current_path_clone_internal.metadata().unwrap().len();
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left < size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
+                                proceed_with_copy = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Smaller) => {
                             let size_left = current_path_clone_internal.metadata().unwrap().len();
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left > size_right {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
+                                proceed_with_copy = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Older) => {
                             let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
                             let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
                             if date_right < date_left {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
+                                proceed_with_copy = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Newer) => {
                             let date_left = current_path_clone_internal.metadata().unwrap().modified().unwrap();
                             let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
                             if date_right > date_left {
-                                cpy_task(
-                                    vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                    path_to_clone,
-                                    cb_clone,
-                                    cond_var_suspend_clone,
-                                    cond_var_skip_clone_internal,
-                                    is_recursive,
-                                    true, //override
-                                    is_append,
-                                );
+                                proceed_with_copy = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Append) => {
-                            cpy_task(
-                                vec![(table_name_clone, String::from(current_path_clone_internal.to_str().unwrap()), *inx)],
-                                path_to_clone,
-                                cb_clone,
-                                cond_var_suspend_clone,
-                                cond_var_skip_clone_internal,
-                                is_recursive,
-                                true, //override
-                                true, //append todo check
-                            );
+                            proceed_with_copy = true;
                         }
 
                         FileExistsAction::Abort => {
                             break 'main_for;
                         }
                         FileExistsAction::Skip => {}
+                    }
+                    if proceed_with_copy {
+                        cpy_task(
+                            vec![(
+                                table_name_clone,
+                                String::from(current_path_clone_internal.to_str().unwrap()),
+                                *inx,
+                            )],
+                            path_to_clone,
+                            cb_clone,
+                            cond_var_suspend_clone,
+                            cond_var_skip_clone_internal,
+                            is_recursive,
+                            is_overwrite,
+                            is_append,
+                        );
                     }
                 }
                 fs_extra::error::ErrorKind::Interrupted => {}
@@ -935,25 +963,39 @@ const a_const: i128 = 0;
 fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
     let mut resume_thread = cond_var_suspend.0.lock().unwrap();
     *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
-        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| a_button.set_label("Suspend"))
-            .unwrap();
+        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
+            a_button.set_label("Suspend")
+        })
+        .unwrap();
         false
     } else {
-        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| a_button.set_label("Resume"));
+        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
+            a_button.set_label("Resume")
+        });
         true
     };
     cond_var_suspend.1.notify_one();
 }
 type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;
-fn create_thmd_cpy_pgrss_dlg(siv: &mut Cursive, files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> ThemedView<Layer<CopyProgressDlgT>> {
+fn create_thmd_cpy_pgrss_dlg(
+    siv: &mut Cursive,
+    files_total: usize,
+    cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
+) -> ThemedView<Layer<CopyProgressDlgT>> {
     let cpy_progress_dlg = create_cpy_progress_dialog_priv(files_total, cond_var_suspend);
     let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
     cpy_progress_dlg
 }
-fn create_cpy_progress_dialog_priv(files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {
+fn create_cpy_progress_dialog_priv(
+    files_total: usize,
+    cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
+) -> CopyProgressDlgT {
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
-            .child(TextView::new(copy_progress_dlg::labels::copying_progress_total).with_name(copy_progress_dlg::widget_names::text_view_copying_total))
+            .child(
+                TextView::new(copy_progress_dlg::labels::copying_progress_total)
+                    .with_name(copy_progress_dlg::widget_names::text_view_copying_total),
+            )
             .child(
                 ProgressBar::new()
                     .range(0, files_total)
@@ -963,7 +1005,8 @@ fn create_cpy_progress_dialog_priv(files_total: usize, cond_var_suspend: Arc<(Mu
     )
     .visible(files_total > 1);
 
-    let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone())).with_name("Suspend_Resume_Btn");
+    let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone()))
+        .with_name("Suspend_Resume_Btn");
     let background_button = Button::new("Background", move |siv| {
         siv.pop_layer();
         show_progress_cpy(siv, files_total, true);
@@ -997,7 +1040,14 @@ fn create_cpy_progress_dialog_priv(files_total: usize, cond_var_suspend: Arc<(Mu
 
     cpy_progress_dlg
 }
-fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {
+fn copy_engine(
+    siv: &mut Cursive,
+    paths_from: CopyPathInfoT,
+    path_to: PathBuf,
+    is_recursive: bool,
+    is_overwrite: bool,
+    is_background_cpy: bool,
+) {
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_suspend_clone = Arc::clone(&cond_var_suspend);
 
@@ -1044,27 +1094,65 @@ fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, i
     }
 }
 
-fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
-    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, false);
+fn ok_cpy_callback(
+    siv: &mut Cursive,
+    selected_paths_from: CopyPathInfoT,
+    selected_path_to: PathBuf,
+    is_recursive: bool,
+    is_overwrite: bool,
+) {
+    copy_engine(
+        siv,
+        selected_paths_from,
+        selected_path_to,
+        is_recursive,
+        is_overwrite,
+        false,
+    );
 }
 fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {
     siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
         hideable_cpy_btn.set_visible(!show_progress_bar);
     });
-    siv.call_on_name("left_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
-        hideable_bracket.set_visible(show_progress_bar);
-    });
-    siv.call_on_name("hideable_cpy_prgrs_br", |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
-        hideable_view_total.set_visible(show_progress_bar);
-        hideable_view_total.get_inner_mut().get_inner_mut().set_range(0, total_files);
-    });
-    siv.call_on_name("right_bracket_hideable", |hideable_bracket: &mut HideableView<TextView>| {
-        hideable_bracket.set_visible(show_progress_bar);
-    });
+    siv.call_on_name(
+        "left_bracket_hideable",
+        |hideable_bracket: &mut HideableView<TextView>| {
+            hideable_bracket.set_visible(show_progress_bar);
+        },
+    );
+    siv.call_on_name(
+        "hideable_cpy_prgrs_br",
+        |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
+            hideable_view_total.set_visible(show_progress_bar);
+            hideable_view_total
+                .get_inner_mut()
+                .get_inner_mut()
+                .set_range(0, total_files);
+        },
+    );
+    siv.call_on_name(
+        "right_bracket_hideable",
+        |hideable_bracket: &mut HideableView<TextView>| {
+            hideable_bracket.set_visible(show_progress_bar);
+        },
+    );
 }
-fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {
+fn background_cpy_callback(
+    siv: &mut Cursive,
+    selected_paths_from: CopyPathInfoT,
+    selected_path_to: PathBuf,
+    is_recursive: bool,
+    is_overwrite: bool,
+) {
     show_progress_cpy(siv, selected_paths_from.len(), true);
-    copy_engine(siv, selected_paths_from, selected_path_to, is_recursive, is_overwrite, true);
+    copy_engine(
+        siv,
+        selected_paths_from,
+        selected_path_to,
+        is_recursive,
+        is_overwrite,
+        true,
+    );
 }
 
 fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
@@ -1072,10 +1160,20 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
             .child(TextView::new(format!("Copy {} items with mask:", paths_from.len())))
-            .child(EditView::new().content("*").with_name("cpy_from_edit_view").min_width(100))
+            .child(
+                EditView::new()
+                    .content("*")
+                    .with_name("cpy_from_edit_view")
+                    .min_width(100),
+            )
             .child(DummyView)
             .child(TextView::new("Copy to:"))
-            .child(EditView::new().content(path_to).with_name("cpy_to_edit_view").min_width(100))
+            .child(
+                EditView::new()
+                    .content(path_to)
+                    .with_name("cpy_to_edit_view")
+                    .min_width(100),
+            )
             .child(DummyView)
             .child(
                 LinearLayout::horizontal()
@@ -1102,41 +1200,64 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
     .title("Copy")
     .button("[ OK ]", move |s| {
         let selected_mask_from: Rc<String> = s
-            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
+                an_edit_view.get_content()
+            })
             .unwrap();
 
         let selected_path_to: Rc<String> = s
-            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| {
+                an_edit_view.get_content()
+            })
             .unwrap();
         let is_recursive = s
-            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| {
+                an_chck_bx.is_checked()
+            })
             .unwrap();
         let is_overwrite = s
-            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| {
+                an_chck_bx.is_checked()
+            })
             .unwrap();
         /*Close our dialog*/
         s.pop_layer();
 
-        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
+        ok_cpy_callback(
+            s,
+            paths_from.clone(),
+            PathBuf::from((*selected_path_to).clone()),
+            is_recursive,
+            is_overwrite,
+        )
     })
     .button("[ Background ]", move |s| {
         let selected_mask_from: Rc<String> = s
-            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
+                an_edit_view.get_content()
+            })
             .unwrap();
 
         let selected_path_to: Rc<String> = s
-            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
+            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| {
+                an_edit_view.get_content()
+            })
             .unwrap();
         let is_recurse = s
-            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| {
+                an_chck_bx.is_checked()
+            })
             .unwrap();
         let is_overwrite = s
-            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
+            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| {
+                an_chck_bx.is_checked()
+            })
             .unwrap();
         /*Close our dialog*/
         s.pop_layer();
 
-        background_cpy_callback(//todo refactor to ok_cpy_callback
+        background_cpy_callback(
+            //todo refactor to ok_cpy_callback
             s,
             paths_from_clone.clone(),
             PathBuf::from((*selected_path_to).clone()),
@@ -1243,7 +1364,8 @@ fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
         if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
-            let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
+            let cpy_progress_dlg =
+                create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
             siv.set_autorefresh(true);
         }
@@ -1268,7 +1390,8 @@ fn cpy(siv: &mut cursive::Cursive) {
                 let cpy_dlg = create_themed_view(siv, cpy_dlg);
                 siv.add_layer(cpy_dlg);
             }
-            None => siv.add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
+            None => siv
+                .add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
         }
     }
 }
@@ -1279,7 +1402,12 @@ fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
 }
-fn start_dir_watcher_thread(siv: &mut Cursive, a_table_name: String, a_path: String, rx: Receiver<notify::DebouncedEvent>) {
+fn start_dir_watcher_thread(
+    siv: &mut Cursive,
+    a_table_name: String,
+    a_path: String,
+    rx: Receiver<notify::DebouncedEvent>,
+) {
     let cb_panel_update = siv.cb_sink().clone();
     let cb_panel_update_clone = cb_panel_update.clone();
 
@@ -1301,7 +1429,9 @@ fn start_dir_watcher_thread(siv: &mut Cursive, a_table_name: String, a_path: Str
                     let name = a_table_name.clone();
                     let path = a_path.clone(); //todo optimize
                                                //println!("{:?}", event);
-                    cb_panel_update_clone.send(Box::new(|siv| update_table(siv, name, path))).unwrap();
+                    cb_panel_update_clone
+                        .send(Box::new(|siv| update_table(siv, name, path)))
+                        .unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
@@ -1364,8 +1494,12 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     )
     .visible(false)
     .with_name("hideable_cpy_prgrs_br");
-    let left_bracket_hideable = HideableView::new(TextView::new("[")).visible(false).with_name("left_bracket_hideable");
-    let right_bracket_hideable = HideableView::new(TextView::new("]")).visible(false).with_name("right_bracket_hideable");
+    let left_bracket_hideable = HideableView::new(TextView::new("["))
+        .visible(false)
+        .with_name("left_bracket_hideable");
+    let right_bracket_hideable = HideableView::new(TextView::new("]"))
+        .visible(false)
+        .with_name("right_bracket_hideable");
     let button_cpy = HideableView::new(Button::new_raw("[ Copy ]", cpy))
         .visible(true)
         .with_name("hideable_cpy_button");
@@ -1384,7 +1518,9 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     let button_Del = Button::new_raw("[ Del ]", del);
     let del_layout = LinearLayout::horizontal().child(TextView::new("8")).child(button_Del);
     let button_PullDn = Button::new_raw("[ PullDn ]", pull_dn);
-    let pulldn_layout = LinearLayout::horizontal().child(TextView::new("9")).child(button_PullDn);
+    let pulldn_layout = LinearLayout::horizontal()
+        .child(TextView::new("9"))
+        .child(button_PullDn);
     let button_quit = Button::new_raw("[ Quit ]", quit);
     let quit_layout = LinearLayout::horizontal().child(TextView::new("10")).child(button_quit);
     let buttons_layout = LinearLayout::horizontal()
@@ -1398,7 +1534,11 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
         .child(del_layout.full_width())
         .child(pulldn_layout.full_width())
         .child(quit_layout);
-    let left_right_layout = CircularFocus::new(LinearLayout::horizontal().child(left_layout).child(right_layout), true, true);
+    let left_right_layout = CircularFocus::new(
+        LinearLayout::horizontal().child(left_layout).child(right_layout),
+        true,
+        true,
+    );
     let whole_layout = LinearLayout::vertical().child(left_right_layout).child(buttons_layout);
     siv.add_fullscreen_layer(whole_layout);
     /*    let paths_from = vec!["file.txt".to_owned(),"file.txt".to_owned()];
