@@ -748,6 +748,11 @@ fn cpy_task(
         let mut options = fs_extra::dir::CopyOptions::new(); //Initialize default values for CopyOptions
         options.overwrite = is_overwrite;
         options.append = is_append;
+        options.copy_inside = is_recursive;
+        if !is_recursive
+        {
+            options.depth = 1;
+        }
         let current_path_name = PathBuf::from(current_path.clone());
         let current_path_name = current_path_name.file_name().unwrap().to_str().unwrap();
         let full_path_to = path_to.clone() + &std::path::MAIN_SEPARATOR.to_string() + current_path_name;
@@ -1103,7 +1108,7 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
         let selected_path_to: Rc<String> = s
             .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| an_edit_view.get_content())
             .unwrap();
-        let is_recurse = s
+        let is_recursive = s
             .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| an_chck_bx.is_checked())
             .unwrap();
         let is_overwrite = s
@@ -1112,7 +1117,7 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
         /*Close our dialog*/
         s.pop_layer();
 
-        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recurse, is_overwrite)
+        ok_cpy_callback(s, paths_from.clone(), PathBuf::from((*selected_path_to).clone()), is_recursive, is_overwrite)
     })
     .button("[ Background ]", move |s| {
         let selected_mask_from: Rc<String> = s
@@ -1131,7 +1136,7 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
         /*Close our dialog*/
         s.pop_layer();
 
-        background_cpy_callback(
+        background_cpy_callback(//todo refactor to ok_cpy_callback
             s,
             paths_from_clone.clone(),
             PathBuf::from((*selected_path_to).clone()),
