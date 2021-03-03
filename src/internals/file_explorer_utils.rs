@@ -834,7 +834,7 @@ fn cpy_task(
         let path_to_clone = path_to.clone();
         let cb_clone = cb.clone();
         let table_name_clone = table_name.clone();
-        
+
         /**/
         //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
         match fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, progress_handler_path) {
@@ -1102,8 +1102,7 @@ fn cpy_callback(
     is_overwrite: bool,
     is_background_cpy: bool,
 ) {
-    if is_background_cpy
-    {
+    if is_background_cpy {
         show_progress_cpy(siv, selected_paths_from.len(), true);
     }
     copy_engine(
@@ -1143,7 +1142,48 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         },
     );
 }
+fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: CopyPathInfoT, is_background: bool) {
+    let selected_mask_from = siv
+        .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
+            an_edit_view.get_content()
+        })
+        .unwrap();
 
+    let selected_path_to = siv
+        .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| {
+            an_edit_view.get_content()
+        })
+        .unwrap();
+
+    let is_recursive = siv
+        .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| {
+            an_chck_bx.is_checked()
+        })
+        .unwrap();
+
+    let is_overwrite = siv
+        .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| {
+            an_chck_bx.is_checked()
+        })
+        .unwrap();
+
+    cpy_callback(
+        siv,
+        paths_from,
+        PathBuf::from((*selected_path_to).clone()),
+        is_recursive,
+        is_overwrite,
+        true,
+    )
+}
+
+fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
+    let clone = paths_from.clone();
+    move |s| {
+        get_cpy_dialog_content_cb(s, clone.clone(), is_background);
+        s.pop_layer();
+    }
+}
 
 fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
@@ -1177,85 +1217,23 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
                         LinearLayout::horizontal()
                             .child(Checkbox::new().with_name("overwrite_chck_bx"))
                             .child(TextView::new(" Overwrite")),
-                    )
-                    .child(DummyView.min_width(5))
-                    .child(
-                        LinearLayout::horizontal()
-                            .child(Checkbox::new().with_name("preserve_attribs_chck_bx"))
-                            .child(TextView::new(" Preserve attributes")),
                     ),
             )
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]", move |s| {
-        let selected_mask_from: Rc<String> = s
-            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
-                an_edit_view.get_content()
-            })
-            .unwrap();
-
-        let selected_path_to: Rc<String> = s
-            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| {
-                an_edit_view.get_content()
-            })
-            .unwrap();
-        let is_recursive = s
-            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| {
-                an_chck_bx.is_checked()
-            })
-            .unwrap();
-        let is_overwrite = s
-            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| {
-                an_chck_bx.is_checked()
-            })
-            .unwrap();
-        /*Close our dialog*/
-        s.pop_layer();
-
-        cpy_callback(
-            s,
-            paths_from.clone(),
-            PathBuf::from((*selected_path_to).clone()),
-            is_recursive,
-            is_overwrite,
-            false,
-        )
-    })
-    .button("[ Background ]", move |s| {
-        let selected_mask_from: Rc<String> = s
-            .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
-                an_edit_view.get_content()
-            })
-            .unwrap();
-
-        let selected_path_to: Rc<String> = s
-            .call_on_name("cpy_to_edit_view", move |an_edit_view: &mut EditView| {
-                an_edit_view.get_content()
-            })
-            .unwrap();
-        let is_recurse = s
-            .call_on_name("recursive_chck_bx", move |an_chck_bx: &mut Checkbox| {
-                an_chck_bx.is_checked()
-            })
-            .unwrap();
-        let is_overwrite = s
-            .call_on_name("overwrite_chck_bx", move |an_chck_bx: &mut Checkbox| {
-                an_chck_bx.is_checked()
-            })
-            .unwrap();
-        /*Close our dialog*/
-        s.pop_layer();
-
-        cpy_callback(
-            s,
-            paths_from_clone.clone(),
-            PathBuf::from((*selected_path_to).clone()),
-            is_recurse,
-            is_overwrite,
-            true,
-        )
-    })
+    .button("[ OK ]",
+        
+            get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), false)
+            /*Close our dialog*/
+    //        s.pop_layer();
+        
+    )
+    .button("[ Background ]", 
+            get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), true)
+            /*Close our dialog*/
+            //s.pop_layer();
+    )
     .button("[ Cancel ]", |s| {
         s.pop_layer();
     });
