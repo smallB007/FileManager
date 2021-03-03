@@ -1094,22 +1094,28 @@ fn copy_engine(
     }
 }
 
-fn ok_cpy_callback(
+fn cpy_callback(
     siv: &mut Cursive,
     selected_paths_from: CopyPathInfoT,
     selected_path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
+    is_background_cpy: bool,
 ) {
+    if is_background_cpy
+    {
+        show_progress_cpy(siv, selected_paths_from.len(), true);
+    }
     copy_engine(
         siv,
         selected_paths_from,
         selected_path_to,
         is_recursive,
         is_overwrite,
-        false,
+        is_background_cpy,
     );
 }
+
 fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {
     siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
         hideable_cpy_btn.set_visible(!show_progress_bar);
@@ -1137,23 +1143,7 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         },
     );
 }
-fn background_cpy_callback(
-    siv: &mut Cursive,
-    selected_paths_from: CopyPathInfoT,
-    selected_path_to: PathBuf,
-    is_recursive: bool,
-    is_overwrite: bool,
-) {
-    show_progress_cpy(siv, selected_paths_from.len(), true);
-    copy_engine(
-        siv,
-        selected_paths_from,
-        selected_path_to,
-        is_recursive,
-        is_overwrite,
-        true,
-    );
-}
+
 
 fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
     let paths_from_clone = paths_from.clone();
@@ -1223,12 +1213,13 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
         /*Close our dialog*/
         s.pop_layer();
 
-        ok_cpy_callback(
+        cpy_callback(
             s,
             paths_from.clone(),
             PathBuf::from((*selected_path_to).clone()),
             is_recursive,
             is_overwrite,
+            false,
         )
     })
     .button("[ Background ]", move |s| {
@@ -1256,13 +1247,13 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
         /*Close our dialog*/
         s.pop_layer();
 
-        background_cpy_callback(
-            //todo refactor to ok_cpy_callback
+        cpy_callback(
             s,
             paths_from_clone.clone(),
             PathBuf::from((*selected_path_to).clone()),
             is_recurse,
             is_overwrite,
+            true,
         )
     })
     .button("[ Cancel ]", |s| {
