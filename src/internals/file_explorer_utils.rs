@@ -791,9 +791,10 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
 ) {
-    let rg = regex::Regex::new(&selected_mask).unwrap();
+    let rg  = regex::Regex::new(&selected_mask);
+    let rg_ok = rg.is_ok();
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        if !rg.is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir() {
+        if rg_ok && !rg.as_ref().unwrap().is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir() {
             /*we filter for files only here, content of a dir is being filtered in fs_extra */
             continue;
         }
@@ -1194,7 +1195,7 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_b
         PathBuf::from((*selected_path_to).clone()),
         is_recursive,
         is_overwrite,
-        true,
+        is_background,
     )
 }
 
