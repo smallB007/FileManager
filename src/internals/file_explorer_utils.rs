@@ -791,7 +791,7 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
 ) {
-    let rg  = regex::Regex::new(&selected_mask);
+    let rg  = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec::<_>>());
     let rg_ok = rg.is_ok();
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
         if rg_ok && !rg.as_ref().unwrap().is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir() {
@@ -863,6 +863,8 @@ fn cpy_task(
                 fs_extra::error::ErrorKind::PermissionDenied => {}
                 fs_extra::error::ErrorKind::AlreadyExists => {
                     let mut proceed_with_copy = false;
+                    let mut is_overwrite = false;
+                    let mut is_append = false;
                     let current_path_clone_internal = current_path_clone.clone();
                     let cond_var_skip_clone_internal = cond_var_skip_clone.clone();
                     let full_path_to_clone = full_path_to.clone();
@@ -898,12 +900,14 @@ fn cpy_task(
                     match skip_file.lock().unwrap().action {
                         FileExistsAction::Override(OverrideCase::JustDoIt) => {
                             proceed_with_copy = true;
+                            is_overwrite = true;
                         }
                         FileExistsAction::Override(OverrideCase::DifferentSize) => {
                             let size_left = current_path_clone_internal.metadata().unwrap().len();
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left != size_right {
                                 proceed_with_copy = true;
+                                is_overwrite = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Larger) => {
@@ -911,6 +915,7 @@ fn cpy_task(
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left < size_right {
                                 proceed_with_copy = true;
+                                is_overwrite = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Smaller) => {
@@ -918,6 +923,7 @@ fn cpy_task(
                             let size_right = PathBuf::from(full_path_to).metadata().unwrap().len();
                             if size_left > size_right {
                                 proceed_with_copy = true;
+                                is_overwrite = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Older) => {
@@ -925,6 +931,7 @@ fn cpy_task(
                             let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
                             if date_right < date_left {
                                 proceed_with_copy = true;
+                                is_overwrite = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Newer) => {
@@ -932,10 +939,13 @@ fn cpy_task(
                             let date_right = PathBuf::from(full_path_to).metadata().unwrap().modified().unwrap();
                             if date_right > date_left {
                                 proceed_with_copy = true;
+                                is_overwrite = true;
                             }
                         }
                         FileExistsAction::Override(OverrideCase::Append) => {
                             proceed_with_copy = true;
+                            is_overwrite = true;
+                            is_append = true;
                         }
 
                         FileExistsAction::Abort => {
