@@ -11,7 +11,7 @@ use cursive::*;
 use cursive::{Cursive, CursiveExt};
 use theme::BaseColor;
 // STD Dependencies -----------------------------------------------------------
-use super::cursive_table_view::{TableView, TableViewItem};
+use super::cursive_table_view::{ExplorerReady, TableView, TableViewItem};
 use chrono::offset::Utc;
 use chrono::DateTime;
 use std::collections::HashMap;
@@ -216,6 +216,12 @@ pub struct ExplorerColumnData {
     name: String,
     size: u64,
     last_modify_time: SystemTime,
+}
+
+impl ExplorerReady for ExplorerColumnData {
+    fn has_parent(&self) -> bool {
+        self.name == ".."
+    }
 }
 
 impl TableViewItem<ExplorerColumn> for ExplorerColumnData {

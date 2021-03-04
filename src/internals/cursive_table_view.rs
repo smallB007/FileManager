@@ -29,10 +29,12 @@ use cursive::{
     view::{scroll, View},
     Cursive, Printer, Rect, With,
 };
-
+pub trait ExplorerReady {
+    fn has_parent(&self) -> bool;
+}
 /// A trait for displaying and sorting items inside a
 /// [`TableView`](struct.TableView.html).
-pub trait TableViewItem<H>: Clone + Sized
+pub trait TableViewItem<H>: Clone + Sized + ExplorerReady
 where
     H: Eq + Hash + Copy + Clone + 'static,
 {
@@ -126,7 +128,7 @@ pub struct TableView<T, H> {
     ///Allows to check if view is in focus ++artie
     pub last_focus_time: std::time::SystemTime,
     ///Allows to check if view is in focus
-    pub rows_selected: std::collections::BTreeSet<usize>,
+    pub rows_selected: std::collections::BTreeSet<usize>, //++artie
     focus: usize,
     items: Vec<T>,
     //rows_to_items: Vec<usize>,
@@ -853,8 +855,10 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         match event {
             //++artie
             Event::Key(Key::Ins) => {
-                //              let row = self.row().unwrap();
-                //                let value = self.items[self.rows_to_items[row]].to_column(column.column);
+                let value = &self.items[last_focus];
+                if value.has_parent() {
+                    return EventResult::Ignored;
+                }
                 if self.rows_selected.contains(&last_focus) {
                     self.rows_selected.remove(&last_focus);
                 } else {
