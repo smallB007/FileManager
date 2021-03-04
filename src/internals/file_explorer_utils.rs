@@ -220,7 +220,7 @@ pub struct ExplorerColumnData {
 
 impl ExplorerReady for ExplorerColumnData {
     fn has_parent(&self) -> bool {
-        self.name == ".."
+        self.name == ".."//todo static &str
     }
 }
 
