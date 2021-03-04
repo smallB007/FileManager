@@ -791,10 +791,13 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
 ) {
-    let rg  = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec::<_>>());
+    let rg = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec<_>>());
     let rg_ok = rg.is_ok();
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        if rg_ok && !rg.as_ref().unwrap().is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir() {
+        if rg_ok
+            && !rg.as_ref().unwrap().is_match(current_path)
+            && !PathBuf::from(current_path).metadata().unwrap().is_dir()
+        {
             /*we filter for files only here, content of a dir is being filtered in fs_extra */
             continue;
         }
@@ -1396,9 +1399,13 @@ fn cpy(siv: &mut cursive::Cursive) {
                     let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
                     siv.add_layer(cpy_dlg);
                 }
-                None => siv.add_layer(
-                    Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"),
-                ),
+                None => {
+                    let info_dlg = create_themed_view(
+                        siv,
+                        Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"),
+                    );
+                    siv.add_layer(info_dlg);
+                }
             }
         }
     }
