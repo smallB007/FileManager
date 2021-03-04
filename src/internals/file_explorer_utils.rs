@@ -791,10 +791,10 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
 ) {
+    let rg = regex::Regex::new(&selected_mask).unwrap();
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        let rg = regex::Regex::new(&selected_mask).unwrap();
-        if !rg.is_match(current_path)
-        {
+        if !rg.is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir()
+        {/*we filter for files only here, content of a dir is being filtered in fs_extra */
             continue;
         }
         let progress_handler_path = |process_info: fs_extra::TransitProcess| {//Todo, could this be outside of loop?
@@ -843,7 +843,7 @@ fn cpy_task(
 
         /**/
         //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
-        match fs_extra::copy_items_with_progress(&vec![current_path], &path_to, &options, progress_handler_path) {
+        match fs_extra::copy_items_with_progress(&selected_mask,&vec![current_path], &path_to, &options, progress_handler_path) {
             Ok(val) => {
                 let inx_clone = Arc::new(*inx);
                 let table_name_clone = Arc::new(table_name.clone());
