@@ -1203,7 +1203,12 @@ fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bo
     let clone = paths_from.clone();
     move |s| {
         get_cpy_dialog_content_cb(s, &clone, is_background);
-        s.pop_layer();
+        match s.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
+            Some(layer_position) => {
+                s.screen_mut().remove_layer(layer_position);
+            }
+            None => {}
+        }
     }
 }
 
