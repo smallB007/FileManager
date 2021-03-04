@@ -781,6 +781,7 @@ fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
 fn cpy_task(
+    selected_mask:String,
     selected_paths: CopyPathInfoT,
     path_to: String,
     cb: CbSink,
@@ -791,7 +792,12 @@ fn cpy_task(
     is_append: bool,
 ) {
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        let progress_handler_path = |process_info: fs_extra::TransitProcess| {
+        let rg = regex::Regex::new(&selected_mask).unwrap();
+        if !rg.is_match(current_path)
+        {
+            continue;
+        }
+        let progress_handler_path = |process_info: fs_extra::TransitProcess| {//Todo, could this be outside of loop?
             let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
                 Ok(ref val) => {
@@ -931,6 +937,7 @@ fn cpy_task(
                     }
                     if proceed_with_copy {
                         cpy_task(
+                            selected_mask.clone(),
                             vec![(
                                 table_name_clone,
                                 String::from(current_path_clone_internal.to_str().unwrap()),
@@ -1042,12 +1049,14 @@ fn create_cpy_progress_dialog_priv(
 }
 fn copy_engine(
     siv: &mut Cursive,
+    selected_mask: Rc<String>,
     paths_from: &CopyPathInfoT,
     path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
     is_background_cpy: bool,
 ) {
+    /*Todo, get rid of clones */
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
     let cond_var_suspend_clone = Arc::clone(&cond_var_suspend);
 
@@ -1066,9 +1075,11 @@ fn copy_engine(
     let path_to_clone: String = String::from(path_to.as_os_str().to_str().unwrap());
 
     let cb = siv.cb_sink().clone();
+    let selected_mask = (*selected_mask).clone();
     #[cfg(feature = "serial_cpy")]
     let handle = std::thread::spawn(move || {
         cpy_task(
+            selected_mask,
             paths_from_clone, /*todo clone here?*/
             path_to_clone,
             cb.clone(),
@@ -1096,6 +1107,7 @@ fn copy_engine(
 
 fn cpy_callback(
     siv: &mut Cursive,
+    selected_mask: Rc<String>,
     selected_paths_from: &CopyPathInfoT,
     selected_path_to: PathBuf,
     is_recursive: bool,
@@ -1107,6 +1119,7 @@ fn cpy_callback(
     }
     copy_engine(
         siv,
+        selected_mask,
         selected_paths_from,
         selected_path_to,
         is_recursive,
@@ -1169,6 +1182,7 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_b
 
     cpy_callback(
         siv,
+        selected_mask_from,
         paths_from,
         PathBuf::from((*selected_path_to).clone()),
         is_recursive,
@@ -1176,7 +1190,7 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_b
         true,
     )
 }
-
+/*Todo multiple cpy_dlgs */
 fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
     let clone = paths_from.clone();
     move |s| {
