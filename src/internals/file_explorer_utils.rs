@@ -781,7 +781,7 @@ fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize>) {
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
 fn cpy_task(
-    selected_mask:String,
+    selected_mask: String,
     selected_paths: CopyPathInfoT,
     path_to: String,
     cb: CbSink,
@@ -793,11 +793,12 @@ fn cpy_task(
 ) {
     let rg = regex::Regex::new(&selected_mask).unwrap();
     'main_for: for (current_inx, (table_name, current_path, inx)) in selected_paths.iter().enumerate() {
-        if !rg.is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir()
-        {/*we filter for files only here, content of a dir is being filtered in fs_extra */
+        if !rg.is_match(current_path) && !PathBuf::from(current_path).metadata().unwrap().is_dir() {
+            /*we filter for files only here, content of a dir is being filtered in fs_extra */
             continue;
         }
-        let progress_handler_path = |process_info: fs_extra::TransitProcess| {//Todo, could this be outside of loop?
+        let progress_handler_path = |process_info: fs_extra::TransitProcess| {
+            //Todo, could this be outside of loop?
             let v = GLOBAL_FileManager.get();
             match v.lock().unwrap().borrow().tx_rx.1.try_recv() {
                 Ok(ref val) => {
@@ -843,7 +844,13 @@ fn cpy_task(
 
         /**/
         //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
-        match fs_extra::copy_items_with_progress(&selected_mask,&vec![current_path], &path_to, &options, progress_handler_path) {
+        match fs_extra::copy_items_with_progress(
+            &selected_mask,
+            &vec![current_path],
+            &path_to,
+            &options,
+            progress_handler_path,
+        ) {
             Ok(val) => {
                 let inx_clone = Arc::new(*inx);
                 let table_name_clone = Arc::new(table_name.clone());
@@ -1190,7 +1197,7 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_b
         true,
     )
 }
-/*Todo multiple cpy_dlgs */
+
 fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
     let clone = paths_from.clone();
     move |s| {
@@ -1199,7 +1206,7 @@ fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bo
     }
 }
 
-fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {
+fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> Dialog {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
@@ -1236,25 +1243,23 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Di
             .child(DummyView),
     )
     .title("Copy")
-    .button("[ OK ]",
-        
-            get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), false)
-            /*Close our dialog*/
-    //        s.pop_layer();
-        
+    .button(
+        "[ OK ]",
+        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), false), /*Close our dialog*/
+                                                                           //        s.pop_layer();
     )
-    .button("[ Background ]", 
-            get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), true)
-            /*Close our dialog*/
-            //s.pop_layer();
+    .button(
+        "[ Background ]",
+        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), true), /*Close our dialog*/
+                                                                          //s.pop_layer();
     )
     .button("[ Cancel ]", |s| {
         s.pop_layer();
     });
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
-
-    cpy_dialog.with_name(copy_dlg::labels::dialog_name)
+    cpy_dialog
+    //cpy_dialog.with_name(copy_dlg::labels::dialog_name)
 }
 fn help(siv: &mut cursive::Cursive) {}
 fn cancel_operation(siv: &mut cursive::Cursive) {
@@ -1353,28 +1358,32 @@ fn cpy(siv: &mut cursive::Cursive) {
             siv.set_autorefresh(true);
         }
     } else {
-        /*No copying, let'siv start it then ;)*/
-        let left_panel_last_focus_time = siv
-            .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-            .unwrap();
+        /*No copying, let'siv start it then but first: ;)*/
+        /*Check if we already presenting CpyDlg and if not ...*/
+        if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
+            let left_panel_last_focus_time = siv
+                .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+                .unwrap();
 
-        let right_panel_last_focus_time = siv
-            .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
-            .unwrap();
-        let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
-            ("LeftPanel", "RightPanel")
-        } else {
-            ("RightPanel", "LeftPanel")
-        };
-        match get_selected_path(siv, from) {
-            Some(selected_paths_from) => {
-                let selected_path_to = get_current_dir(siv, to);
-                let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
-                let cpy_dlg = create_themed_view(siv, cpy_dlg);
-                siv.add_layer(cpy_dlg);
+            let right_panel_last_focus_time = siv
+                .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+                .unwrap();
+            let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
+                ("LeftPanel", "RightPanel")
+            } else {
+                ("RightPanel", "LeftPanel")
+            };
+            match get_selected_path(siv, from) {
+                Some(selected_paths_from) => {
+                    let selected_path_to = get_current_dir(siv, to);
+                    let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
+                    let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
+                    siv.add_layer(cpy_dlg);
+                }
+                None => siv.add_layer(
+                    Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"),
+                ),
             }
-            None => siv
-                .add_layer(Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]")),
         }
     }
 }
