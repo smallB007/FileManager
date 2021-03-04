@@ -857,6 +857,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
             Event::Key(Key::Ins) => {
                 let value = &self.items[last_focus];
                 if value.has_parent() {
+                    self.focus_down(1);
                     return EventResult::Ignored;
                 }
                 if self.rows_selected.contains(&last_focus) {
