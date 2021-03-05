@@ -37,6 +37,7 @@ use crate::internals::atomic_text_view::AtomicTextView;
 use crate::internals::literals::copy_dlg;
 use crate::internals::literals::copy_progress_dlg;
 use crate::internals::literals::file_exists_dlg;
+use crate::internals::literals::main_ui;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -181,6 +182,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     siv.add_global_callback(Key::Esc, switch_panel);
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F4, cpy);
+    siv.add_global_callback(Key::F8, del);
     //    siv.add_global_callback(Key::F7, show_hide_cpy);
     //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 
@@ -1387,16 +1389,16 @@ fn cpy(siv: &mut cursive::Cursive) {
         /*Check if we already presenting CpyDlg and if not ...*/
         if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
             let left_panel_last_focus_time = siv
-                .call_on_name("LeftPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+                .call_on_name(main_ui::widget_names::left_panel_id, move |a_table: &mut tableViewType| a_table.last_focus_time)
                 .unwrap();
 
             let right_panel_last_focus_time = siv
-                .call_on_name("RightPanel", move |a_table: &mut tableViewType| a_table.last_focus_time)
+                .call_on_name(main_ui::widget_names::right_panel_id, move |a_table: &mut tableViewType| a_table.last_focus_time)
                 .unwrap();
             let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
-                ("LeftPanel", "RightPanel")
+                (main_ui::widget_names::left_panel_id, main_ui::widget_names::right_panel_id)
             } else {
-                ("RightPanel", "LeftPanel")
+                (main_ui::widget_names::right_panel_id, main_ui::widget_names::left_panel_id)
             };
             match get_selected_path(siv, from) {
                 Some(selected_paths_from) => {
@@ -1418,7 +1420,10 @@ fn cpy(siv: &mut cursive::Cursive) {
 }
 fn ren_mov(siv: &mut cursive::Cursive) {}
 fn mkdir(siv: &mut cursive::Cursive) {}
-fn del(siv: &mut cursive::Cursive) {}
+fn del(siv: &mut cursive::Cursive)
+ {
+
+ }
 fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
@@ -1465,8 +1470,8 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
                 let tmp = v.lock().unwrap();
                 let mut a_file_mngr = tmp.borrow_mut();
     //            a_file_mngr.start_dir_watcher_thread(a_name,initial_path.clone());*/
-    //let left_cb_sink = start_dir_watcher_thread(siv,String::from("LeftPanel"),String::from(&fm_config.left_panel_initial_path));
-    let mut left_table = create_basic_table_core(siv, "LeftPanel", &fm_config.left_panel_initial_path);
+    //let left_cb_sink = start_dir_watcher_thread(siv,String::from(main_ui::widget_names::left_panel_id),String::from(&fm_config.left_panel_initial_path));
+    let mut left_table = create_basic_table_core(siv, main_ui::widget_names::left_panel_id, &fm_config.left_panel_initial_path);
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -1478,7 +1483,7 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
     .padding_lrtb(0, 0, 0, 0)
     .with_name("LeftPanelDlg");
 
-    let mut right_table = create_basic_table_core(siv, "RightPanel", &fm_config.right_panel_initial_path);
+    let mut right_table = create_basic_table_core(siv, main_ui::widget_names::right_panel_id, &fm_config.right_panel_initial_path);
     let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
@@ -1525,15 +1530,13 @@ fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileManger
         .visible(true)
         .with_name("hideable_cpy_button");
     let cpy_layout = LinearLayout::horizontal()
-        .child(TextView::new("5"))
+        .child(TextView::new("5").style(theme::ColorStyle::title_primary()))
         .child(button_cpy)
         .child(left_bracket_hideable)
         .child(ProgressBar_on_event_view)
         .child(right_bracket_hideable);
     let button_RenMov = Button::new_raw("[ RenMov ]", ren_mov);
-    let mut tv = TextView::new("6");
-    tv.set_style(theme::ColorStyle::title_primary());
-    let ren_mov_layout = LinearLayout::horizontal().child(tv).child(button_RenMov);
+    let ren_mov_layout = LinearLayout::horizontal().child(TextView::new("6")).child(button_RenMov);
     let button_MkDir = Button::new_raw("[ MkDir ]", mkdir);
     let mkdir_layout = LinearLayout::horizontal().child(TextView::new("7")).child(button_MkDir);
     let button_Del = Button::new_raw("[ Del ]", del);
