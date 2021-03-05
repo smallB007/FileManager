@@ -43,6 +43,7 @@ use crate::internals::ops::f5_cpy::{
     copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
     OverrideCase,
 };
+use crate::internals::ops::f8_del;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -740,4 +741,28 @@ fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<
     let _ = a_table.take_items(); //clear before you put new, panic! otherwise will occur
     a_table.set_items(items);
     Ok(())
+}
+
+pub fn get_active_panel(siv: &mut Cursive) -> String {
+    let left_panel_last_focus_time = siv
+        .call_on_name(
+            main_ui::widget_names::left_panel_id,
+            move |a_table: &mut tableViewType| a_table.last_focus_time,
+        )
+        .unwrap();
+
+    let right_panel_last_focus_time = siv
+        .call_on_name(
+            main_ui::widget_names::right_panel_id,
+            move |a_table: &mut tableViewType| a_table.last_focus_time,
+        )
+        .unwrap();
+
+    let active_panel = if left_panel_last_focus_time > right_panel_last_focus_time {
+        main_ui::widget_names::left_panel_id
+    } else {
+        main_ui::widget_names::right_panel_id
+    };
+    
+    active_panel.to_owned()
 }

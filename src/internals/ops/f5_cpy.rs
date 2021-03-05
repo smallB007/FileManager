@@ -24,7 +24,7 @@ use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::file_explorer_utils::{
-    cancel_operation, create_themed_view, get_current_dir, get_selected_path, remove_view, tableViewType, unselect_inx,
+    cancel_operation, create_themed_view, get_current_dir, get_selected_path,get_active_panel, remove_view, tableViewType, unselect_inx,
     CopyPathInfoT, ProgressDlgT,
 };
 use crate::internals::file_manager::GLOBAL_FileManager;
@@ -810,7 +810,6 @@ fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> Dialog {
 
     cpy_dialog.set_focus(DialogFocus::Button(0));
     cpy_dialog
-    //cpy_dialog.with_name(copy_dlg::labels::dialog_name)
 }
 
 pub fn cpy(siv: &mut cursive::Cursive) {
@@ -826,20 +825,9 @@ pub fn cpy(siv: &mut cursive::Cursive) {
         /*No copying, let'siv start it then but first: ;)*/
         /*Check if we already presenting CpyDlg and if not ...*/
         if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
-            let left_panel_last_focus_time = siv
-                .call_on_name(
-                    main_ui::widget_names::left_panel_id,
-                    move |a_table: &mut tableViewType| a_table.last_focus_time,
-                )
-                .unwrap();
+            let active_panel = get_active_panel(siv);
 
-            let right_panel_last_focus_time = siv
-                .call_on_name(
-                    main_ui::widget_names::right_panel_id,
-                    move |a_table: &mut tableViewType| a_table.last_focus_time,
-                )
-                .unwrap();
-            let (from, to) = if left_panel_last_focus_time > right_panel_last_focus_time {
+            let (from, to) = if active_panel == main_ui::widget_names::left_panel_id {
                 (
                     main_ui::widget_names::left_panel_id,
                     main_ui::widget_names::right_panel_id,
@@ -850,6 +838,7 @@ pub fn cpy(siv: &mut cursive::Cursive) {
                     main_ui::widget_names::left_panel_id,
                 )
             };
+
             match get_selected_path(siv, from) {
                 Some(selected_paths_from) => {
                     let selected_path_to = get_current_dir(siv, to);
