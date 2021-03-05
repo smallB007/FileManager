@@ -747,14 +747,14 @@ pub fn get_active_panel(siv: &mut Cursive) -> String {
     let left_panel_last_focus_time = siv
         .call_on_name(
             main_ui::widget_names::left_panel_id,
-            move |a_table: &mut tableViewType| a_table.last_focus_time,
+            |a_table: &mut tableViewType| a_table.last_focus_time,
         )
         .unwrap();
 
     let right_panel_last_focus_time = siv
         .call_on_name(
             main_ui::widget_names::right_panel_id,
-            move |a_table: &mut tableViewType| a_table.last_focus_time,
+             |a_table: &mut tableViewType| a_table.last_focus_time,
         )
         .unwrap();
 
