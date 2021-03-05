@@ -375,7 +375,7 @@ pub type TableNameT = String;
 pub type PathT = String;
 pub type IndexT = usize;
 pub type CopyPathInfoT = Vec<(TableNameT, PathT, IndexT)>;
-pub fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
+pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
     let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
         selected_items_inx = a_table.get_selected_items();

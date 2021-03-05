@@ -24,7 +24,7 @@ use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::file_explorer_utils::{
-    cancel_operation, create_themed_view, get_current_dir, get_selected_path,get_active_panel, remove_view, tableViewType, unselect_inx,
+    cancel_operation, create_themed_view, get_current_dir, get_selected_paths,get_active_panel, remove_view, tableViewType, unselect_inx,
     CopyPathInfoT, ProgressDlgT,
 };
 use crate::internals::file_manager::GLOBAL_FileManager;
@@ -839,7 +839,7 @@ pub fn cpy(siv: &mut cursive::Cursive) {
                 )
             };
 
-            match get_selected_path(siv, from) {
+            match get_selected_paths(siv, from) {
                 Some(selected_paths_from) => {
                     let selected_path_to = get_current_dir(siv, to);
                     let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);

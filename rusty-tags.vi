@@ -1435,7 +1435,7 @@ get_or_try	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        pub fn get_precise_ns() -> u64 {$/;"	f
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    pub fn get_precise_ns() -> u64 {$/;"	f
 get_selected_items	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> \/*todo, why not by &*\/ {$/;"	f
-get_selected_path	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {$/;"	f
+get_selected_paths	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {$/;"	f
 get_selected_path_from_inx	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {$/;"	f
 get_shared_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn get_shared_content(&mut self) -> TextContent {$/;"	f
 get_slow	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn get_slow(&self, id: usize, table_top: &Table<T>) -> Option<&T> {$/;"	f
