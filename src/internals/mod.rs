@@ -5,5 +5,8 @@ mod atomic_text_view;
 mod cursive_table_view;
 mod delimiter;
 pub mod file_explorer_utils;
+pub mod file_manager;
+pub mod file_manager_config;
 pub mod literals;
+pub mod ops;
 mod utils;

@@ -1,5 +1,5 @@
 mod internals;
-use internals::file_explorer_utils::FileManager;
+use internals::file_manager::FileManager;
 fn main() {
     let mut siv = cursive::default();
     // You can load a theme from a file at runtime for fast development.
