@@ -690,7 +690,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     let button_MkDir = Button::new_raw("[ MkDir ]", mkdir);
     let mkdir_layout = LinearLayout::horizontal().child(TextView::new("7")).child(button_MkDir);
     let button_Del = Button::new_raw("[ Del ]", del);
-    let del_layout = LinearLayout::horizontal().child(TextView::new("8")).child(button_Del);
+    let del_layout = LinearLayout::horizontal().child(TextView::new("8").style(theme::ColorStyle::title_primary())).child(button_Del);
     let button_PullDn = Button::new_raw("[ PullDn ]", pull_dn);
     let pulldn_layout = LinearLayout::horizontal()
         .child(TextView::new("9"))
