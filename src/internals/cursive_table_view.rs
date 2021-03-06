@@ -854,6 +854,15 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
         self.last_focus_time = std::time::SystemTime::now(); //++artie
         match event {
             //++artie
+            Event::CtrlChar('a') => {
+                if self.rows_selected.is_empty() {
+                    self.rows_selected.clear();
+                    let value = &self.items[0];
+                    self.rows_selected.extend(value.has_parent() as usize .. self.items.len());
+                } else {
+                    self.rows_selected.clear();
+                }
+            }
             Event::Key(Key::Ins) => {
                 let value = &self.items[last_focus];
                 if value.has_parent() {

@@ -25,7 +25,8 @@ fn create_del_dlg(items: PathInfoT) -> Dialog {
         })
         .button("Cancel", |s| {
             s.pop_layer();
-        }).title("Delete");
+        })
+        .title("Delete");
     del_dlg
 }
 pub fn del(siv: &mut cursive::Cursive) {
