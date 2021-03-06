@@ -1,5 +1,4 @@
 #![forbid(unreachable_patterns)]
-use cursive::align::{HAlign, VAlign};
 use cursive::event::*;
 use cursive::menu::Tree;
 use cursive::traits::*;
@@ -8,6 +7,10 @@ use cursive::utils::Counter;
 use cursive::view::Boxable;
 use cursive::views::*;
 use cursive::*;
+use cursive::{
+    align::{HAlign, VAlign},
+    theme::Theme,
+};
 use cursive::{Cursive, CursiveExt};
 use theme::BaseColor;
 // STD Dependencies -----------------------------------------------------------
@@ -43,7 +46,8 @@ use crate::internals::ops::f5_cpy::{
     copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
     OverrideCase,
 };
-use crate::internals::ops::f8_del;
+use crate::internals::ops::f8_del::del;
+
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -374,15 +378,15 @@ pub fn create_basic_table_core(
 pub type TableNameT = String;
 pub type PathT = String;
 pub type IndexT = usize;
-pub type CopyPathInfoT = Vec<(TableNameT, PathT, IndexT)>;
-pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {
+pub type PathInfoT = Vec<(TableNameT, PathT, IndexT)>;
+pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<PathInfoT> {
     let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
     siv.call_on_name(a_name, |a_table: &mut tableViewType| {
         selected_items_inx = a_table.get_selected_items();
     });
 
     if selected_items_inx.len() != 0 {
-        let mut selected_paths = CopyPathInfoT::new();
+        let mut selected_paths = PathInfoT::new();
         for selected_inx in selected_items_inx {
             match get_selected_path_from_inx(siv, a_name, selected_inx) {
                 Some(path) => {
@@ -565,7 +569,7 @@ fn edit(siv: &mut cursive::Cursive) {}
 
 fn ren_mov(siv: &mut cursive::Cursive) {}
 fn mkdir(siv: &mut cursive::Cursive) {}
-fn del(siv: &mut cursive::Cursive) {}
+
 fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
     siv.quit();
@@ -745,17 +749,15 @@ fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<
 
 pub fn get_active_panel(siv: &mut Cursive) -> String {
     let left_panel_last_focus_time = siv
-        .call_on_name(
-            main_ui::widget_names::left_panel_id,
-            |a_table: &mut tableViewType| a_table.last_focus_time,
-        )
+        .call_on_name(main_ui::widget_names::left_panel_id, |a_table: &mut tableViewType| {
+            a_table.last_focus_time
+        })
         .unwrap();
 
     let right_panel_last_focus_time = siv
-        .call_on_name(
-            main_ui::widget_names::right_panel_id,
-             |a_table: &mut tableViewType| a_table.last_focus_time,
-        )
+        .call_on_name(main_ui::widget_names::right_panel_id, |a_table: &mut tableViewType| {
+            a_table.last_focus_time
+        })
         .unwrap();
 
     let active_panel = if left_panel_last_focus_time > right_panel_last_focus_time {
@@ -763,6 +765,15 @@ pub fn get_active_panel(siv: &mut Cursive) -> String {
     } else {
         main_ui::widget_names::right_panel_id
     };
-    
+
     active_panel.to_owned()
+}
+
+pub fn get_error_theme(siv: &mut Cursive) -> cursive::theme::Theme {
+    siv.current_theme().clone().with(|theme| {
+        theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
+        theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
+        theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
+        theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
+    })
 }

@@ -24,8 +24,8 @@ use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::file_explorer_utils::{
-    cancel_operation, create_themed_view, get_current_dir, get_selected_paths,get_active_panel, remove_view, tableViewType, unselect_inx,
-    CopyPathInfoT, ProgressDlgT,
+    cancel_operation, create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_selected_paths,
+    remove_view, tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
 };
 use crate::internals::file_manager::GLOBAL_FileManager;
 use crate::internals::literals::copy_dlg;
@@ -136,12 +136,7 @@ pub fn copying_already_exists(
     is_recursive: bool,
     cond_var_skip: Arc<(Mutex<bool>, Condvar, Mutex<FileExistsActionWithOptions>)>,
 ) {
-    let theme_error = siv.current_theme().clone().with(|theme| {
-        theme.palette[theme::PaletteColor::View] = theme::Color::Dark(theme::BaseColor::Red);
-        theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
-        theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
-        theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
-    });
+    let theme_error = get_error_theme(siv);
     siv.set_autorefresh(false); //todo repeat
                                 /*todo!("Dialog type changed");
                                 if let Some(_) = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
@@ -173,6 +168,7 @@ pub fn copying_already_exists(
         date = date_to
     )));
     let file_exist_dlg = Dialog::around(
+        //todo refactor
         LinearLayout::vertical()
             .child(new_from_layout)
             .child(DummyView)
@@ -314,7 +310,7 @@ let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
 fn cpy_task(
     selected_mask: String,
-    selected_paths: CopyPathInfoT,
+    selected_paths: PathInfoT,
     path_to: String,
     cb: CbSink,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
@@ -603,7 +599,7 @@ fn create_cpy_progress_dialog_priv(
 fn copy_engine(
     siv: &mut Cursive,
     selected_mask: Rc<String>,
-    paths_from: &CopyPathInfoT,
+    paths_from: &PathInfoT,
     path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
@@ -661,7 +657,7 @@ fn copy_engine(
 fn cpy_callback(
     siv: &mut Cursive,
     selected_mask: Rc<String>,
-    selected_paths_from: &CopyPathInfoT,
+    selected_paths_from: &PathInfoT,
     selected_path_to: PathBuf,
     is_recursive: bool,
     is_overwrite: bool,
@@ -708,7 +704,7 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         },
     );
 }
-fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_background: bool) {
+fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &PathInfoT, is_background: bool) {
     let selected_mask_from = siv
         .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
             an_edit_view.get_content()
@@ -744,7 +740,7 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &CopyPathInfoT, is_b
     )
 }
 
-fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
+fn get_cpy_dialog_content_clone_cb(paths_from: &PathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
     let clone = paths_from.clone();
     move |s| {
         get_cpy_dialog_content_cb(s, &clone, is_background);
@@ -757,7 +753,7 @@ fn get_cpy_dialog_content_clone_cb(paths_from: &CopyPathInfoT, is_background: bo
     }
 }
 
-fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> Dialog {
+fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()

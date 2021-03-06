@@ -67,7 +67,7 @@ ConfigKind	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.
 ConfigSerializer	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/config-0.9.3/src/ser.rs	/^pub struct ConfigSerializer {$/;"	s
 Container	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/container.rs	/^pub struct Container {$/;"	s
 Context	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/context.rs	/^pub struct Context {$/;"	s
-CopyPathInfoT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type CopyPathInfoT = Vec<(TableNameT, PathT, IndexT)>;$/;"	T
+PathInfoT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type PathInfoT = Vec<(TableNameT, PathT, IndexT)>;$/;"	T
 CopyProgressDlgT	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;$/;"	T
 Counter	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/counter.rs	/^struct Counter<C> {$/;"	s
 CpyData	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^struct CpyData {$/;"	s
@@ -778,7 +778,7 @@ assign_action_and_notify	/home/artie/Documents/Projects/rust/FileManager/src/int
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/crossbeam-channel-0.5.0/src/channel.rs	/^pub fn at(when: Instant) -> Receiver<Instant> {$/;"	f
 at	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at(clock: Timespec) -> Tm {$/;"	f
 at_utc	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/lib.rs	/^pub fn at_utc(clock: Timespec) -> Tm {$/;"	f
-background_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
+background_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn background_cpy_callback(siv: &mut Cursive, selected_paths_from: PathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/cursive_runnable.rs	/^    pub fn blt() -> Self {$/;"	f
 blt	/home/artie/Documents/Repos/smallB_cursive/cursive/src/lib.rs	/^pub fn blt() -> CursiveRunnable {$/;"	f
 blt_colour_to_colour	/home/artie/Documents/Repos/smallB_cursive/cursive/src/backends/blt.rs	/^fn blt_colour_to_colour(c: BltColor) -> Color {$/;"	f
@@ -923,7 +923,7 @@ compute_rows	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomi
 content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    pub fn content<V: IntoBoxedView>(self, view: V) -> Self {$/;"	f
 content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn content<S>(self, content: S) -> Self$/;"	f
 content_required_size	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    fn content_required_size(&mut self, req: Vec2) -> Vec2 {$/;"	f
-copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: CopyPathInfoT, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {$/;"	f
+copy_engine	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copy_engine(siv: &mut Cursive, paths_from: PathInfoT, path_to: PathBuf, is_recursive: bool, is_overwrite: bool, is_background_cpy: bool) {$/;"	f
 copying_already_exists	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_already_exists($/;"	f
 copying_cancelled	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_cancelled(siv: &mut Cursive) {$/;"	f
 copying_error	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn copying_error(siv: &mut Cursive) {$/;"	f
@@ -935,7 +935,7 @@ cpy	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_
 cpy_task	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn cpy_task($/;"	f
 create	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/windows.rs	/^    pub fn create($/;"	f
 create_basic_table_core	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^pub fn create_basic_table_core(siv: &mut Cursive, a_name: &'static str, initial_path: &str) -> NamedView<tableViewType> {$/;"	f
-create_cpy_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_dialog(paths_from: CopyPathInfoT, path_to: String) -> NamedView<Dialog> {$/;"	f
+create_cpy_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> NamedView<Dialog> {$/;"	f
 create_cpy_progress_dialog	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_cpy_progress_dialog(files_total: usize, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) -> CopyProgressDlgT {$/;"	f
 create_debounced	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/windows.rs	/^    pub fn create_debounced($/;"	f
 create_main_layout	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {$/;"	f
@@ -1435,7 +1435,7 @@ get_or_try	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^        pub fn get_precise_ns() -> u64 {$/;"	f
 get_precise_ns	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/time-0.1.44/src/sys.rs	/^    pub fn get_precise_ns() -> u64 {$/;"	f
 get_selected_items	/home/artie/Documents/Projects/rust/FileManager/src/internals/cursive_table_view.rs	/^    pub fn get_selected_items(&mut self) -> std::collections::BTreeSet<usize> \/*todo, why not by &*\/ {$/;"	f
-get_selected_paths	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<CopyPathInfoT> {$/;"	f
+get_selected_paths	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<PathInfoT> {$/;"	f
 get_selected_path_from_inx	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {$/;"	f
 get_shared_content	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_text_view.rs	/^    pub fn get_shared_content(&mut self) -> TextContent {$/;"	f
 get_slow	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/state-0.4.2/src/thread_local/mod.rs	/^    fn get_slow(&self, id: usize, table_top: &Table<T>) -> Option<&T> {$/;"	f
@@ -1958,7 +1958,7 @@ offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9e
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/local.rs	/^    fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> FixedOffset {$/;"	f
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/mod.rs	/^    fn offset_from_utc_datetime(&self, utc: &NaiveDateTime) -> Self::Offset;$/;"	f
 offset_from_utc_datetime	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/chrono-0.4.19/src/offset/utc.rs	/^    fn offset_from_utc_datetime(&self, _utc: &NaiveDateTime) -> Utc {$/;"	f
-ok_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: CopyPathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
+ok_cpy_callback	/home/artie/Documents/Projects/rust/FileManager/src/internals/file_explorer_utils.rs	/^fn ok_cpy_callback(siv: &mut Cursive, selected_paths_from: PathInfoT, selected_path_to: PathBuf, is_recursive: bool, is_overwrite: bool) {$/;"	f
 old_bitflags_form	/home/artie/.cargo/registry/src/github.com-1ecc6299db9ec823/notify-4.0.15/src/lib.rs	/^    fn old_bitflags_form() {$/;"	f
 on_event	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_button.rs	/^    fn on_event(&mut self, event: Event) -> EventResult {$/;"	f
 on_event	/home/artie/Documents/Projects/rust/FileManager/src/internals/atomic_dialog.rs	/^    fn on_event(&mut self, event: Event) -> EventResult {$/;"	f
