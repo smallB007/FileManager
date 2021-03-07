@@ -23,8 +23,8 @@ use std::{
 use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
 use crate::internals::file_explorer_utils::{
-    cancel_operation, create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_selected_paths,
-    remove_view, tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
+    create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_selected_paths, remove_view,
+    tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
 };
 use crate::internals::file_manager::GLOBAL_FileManager;
 use crate::internals::literals::copy_dlg;
@@ -517,8 +517,8 @@ fn cpy_task(
 }
 const a_const: i128 = 0;
 fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
-    let mut resume_thread = cond_var_suspend.0.lock().unwrap();
-    *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
+    let mut suspend_thread = cond_var_suspend.0.lock().unwrap();
+    *suspend_thread = if suspend_thread.cmp(&true) == std::cmp::Ordering::Equal {
         siv.call_on_name(
             literals::copy_progress_dlg::widget_names::suspend_resume_btn,
             move |a_button: &mut Button| a_button.set_label("Suspend"),
@@ -606,16 +606,16 @@ fn create_cpy_progress_dialog_priv(
             .child(DummyView),
     )
     .visible(files_total > 1);
-
+    let cond_var_suspend_clone = cond_var_suspend.clone();
     let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone()))
         .with_name(literals::copy_progress_dlg::widget_names::suspend_resume_btn);
     let background_button = Button::new("Background", move |siv| {
         siv.pop_layer();
         show_progress_cpy(siv, files_total, true);
     });
-    let cancel_button = Button::new("Cancel", |siv| {
+    let cancel_button = Button::new("Cancel", move |siv| {
         siv.pop_layer(); //yes but make sure that update isn't proceeding ;)
-        cancel_operation(siv)
+        cancel_cpy_operation(cond_var_suspend_clone.clone());
     });
     let buttons = LinearLayout::horizontal()
         .child(suspend_button)
@@ -868,8 +868,8 @@ pub fn cpy(siv: &mut cursive::Cursive) {
             siv.add_layer(cpy_progress_dlg);
             if true {
                 //todo refactor
-                let resume_thread = cpy_data.cond_var_suspend.0.lock().unwrap();
-                if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
+                let suspend_thread = cpy_data.cond_var_suspend.0.lock().unwrap();
+                if suspend_thread.cmp(&true) == std::cmp::Ordering::Equal {
                     /*todo refactor*/
                     siv.call_on_name(
                         literals::copy_progress_dlg::widget_names::dialog_name,
@@ -920,4 +920,19 @@ pub fn cpy(siv: &mut cursive::Cursive) {
             }
         }
     }
+}
+
+pub fn cancel_cpy_operation(cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
+/*Not happy about this below...*/
+/*Make sure thread is not suspended*/
+    let mut suspend_thread = cond_var_suspend.0.lock().unwrap();
+    *suspend_thread = false; //put the flag up
+    cond_var_suspend.1.notify_one();
+
+    let mutex_g_file_manager = GLOBAL_FileManager.get();
+    let mutex_guard_g_file_manager = mutex_g_file_manager.lock().unwrap();
+    let g_file_manager = mutex_guard_g_file_manager.borrow_mut();
+    g_file_manager.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
+
+    
 }

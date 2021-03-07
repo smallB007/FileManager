@@ -480,12 +480,7 @@ pub fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize
 }
 
 fn help(siv: &mut cursive::Cursive) {}
-pub fn cancel_operation(siv: &mut cursive::Cursive) {
-    let v = GLOBAL_FileManager.get();
-    let tmp = v.lock().unwrap();
-    let mut v = tmp.borrow_mut();
-    v.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
-}
+
 pub type ProgressDlgT = ResizedView<Dialog>;
 /*fn show_hide_cpy(siv: &mut cursive::Cursive) {
     if let Some(_) = siv.find_name::<ProgressDlgT>("Pcopy_progress_dlg::labels::dialog_namerogressDlg") {
