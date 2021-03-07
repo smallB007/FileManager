@@ -22,7 +22,6 @@ use std::{
 //fs_extra
 use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
-use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::file_explorer_utils::{
     cancel_operation, create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_selected_paths,
     remove_view, tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
@@ -32,6 +31,7 @@ use crate::internals::literals::copy_dlg;
 use crate::internals::literals::copy_progress_dlg;
 use crate::internals::literals::file_exists_dlg;
 use crate::internals::literals::main_ui;
+use crate::internals::{self, atomic_dialog::Atomic_Dialog, literals};
 #[derive(Copy, Clone)]
 pub enum AtomicFileTransitFlags {
     Abort,
@@ -232,7 +232,7 @@ pub fn copying_already_exists(
 
 fn cannot_suspend_copy(siv: &mut Cursive) {
     siv.set_autorefresh(false);
-    if let Some(_) = siv.find_name::<ResizedView<Dialog>>(copy_progress_dlg::labels::dialog_name) {
+    if let Some(_) = siv.find_name::<ResizedView<Dialog>>(copy_progress_dlg::widget_names::dialog_name) {
         siv.pop_layer();
     }
     siv.add_layer(
@@ -250,7 +250,7 @@ fn end_copying_helper(siv: &mut Cursive, title: &str, text: &str) {
 
     siv.set_autorefresh(false);
 
-    remove_view(siv, copy_progress_dlg::labels::dialog_name);
+    remove_view(siv, copy_progress_dlg::widget_names::dialog_name);
 
     let success_dlg = Dialog::new()
         .title(title)
@@ -519,17 +519,58 @@ const a_const: i128 = 0;
 fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
     let mut resume_thread = cond_var_suspend.0.lock().unwrap();
     *resume_thread = if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
-        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
-            a_button.set_label("Suspend")
-        })
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::suspend_resume_btn,
+            move |a_button: &mut Button| a_button.set_label("Suspend"),
+        )
+        .unwrap();
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::dialog_name,
+            move |a_dlg: &mut CopyProgressDlgT| {
+                a_dlg
+                    .get_mut()
+                    .get_inner_mut()
+                    .set_title(literals::copy_progress_dlg::labels::dialog_title)
+            },
+        )
+        .unwrap();
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::hideable_cpy_prgrs_br,
+            move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
+                a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(|a, (b, c)| {
+                    literals::copy_progress_dlg::labels::copying_progress_total_background.to_owned()
+                })
+            },
+        )
         .unwrap();
         false
     } else {
-        siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
-            a_button.set_label("Resume")
-        });
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::suspend_resume_btn,
+            move |a_button: &mut Button| a_button.set_label("Resume"),
+        );
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::dialog_name,
+            move |a_dlg: &mut CopyProgressDlgT| {
+                a_dlg
+                    .get_mut()
+                    .get_inner_mut()
+                    .set_title(literals::copy_progress_dlg::labels::dialog_title_copying_suspended)
+            },
+        )
+        .unwrap();
+        siv.call_on_name(
+            literals::copy_progress_dlg::widget_names::hideable_cpy_prgrs_br,
+            move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
+                a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(|a, (b, c)| {
+                    literals::copy_progress_dlg::labels::copying_progress_total_suspended_background.to_owned()
+                })
+            },
+        )
+        .unwrap();
         true
     };
+
     cond_var_suspend.1.notify_one();
 }
 type CopyProgressDlgT = NamedView<ResizedView<Dialog>>;
@@ -551,7 +592,6 @@ fn create_cpy_progress_dialog_priv(
     //let g_file_manager = g_file_manager.lock().unwrap();
     //let is_copying_in_progress = g_file_manager.borrow().cpy_data.is_some();
 
-    let cond_var_suspend_clone = cond_var_suspend.clone();
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(
@@ -568,7 +608,7 @@ fn create_cpy_progress_dialog_priv(
     .visible(files_total > 1);
 
     let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone()))
-        .with_name("Suspend_Resume_Btn");
+        .with_name(literals::copy_progress_dlg::widget_names::suspend_resume_btn);
     let background_button = Button::new("Background", move |siv| {
         siv.pop_layer();
         show_progress_cpy(siv, files_total, true);
@@ -597,11 +637,13 @@ fn create_cpy_progress_dialog_priv(
                 .child(buttons),
         ),
     )
+    .title(literals::copy_progress_dlg::labels::dialog_title)
     .fixed_width(80)
-    .with_name(copy_progress_dlg::labels::dialog_name);
-   
+    .with_name(copy_progress_dlg::widget_names::dialog_name);
+
     cpy_progress_dlg
 }
+
 fn copy_engine(
     siv: &mut Cursive,
     selected_mask: Rc<String>,
@@ -684,17 +726,20 @@ fn cpy_callback(
 }
 
 fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: bool) {
-    siv.call_on_name("hideable_cpy_button", |hideable_cpy_btn: &mut HideableView<Button>| {
-        hideable_cpy_btn.set_visible(!show_progress_bar);
-    });
     siv.call_on_name(
-        "left_bracket_hideable",
+        copy_progress_dlg::widget_names::hideable_cpy_button,
+        |hideable_cpy_btn: &mut HideableView<Button>| {
+            hideable_cpy_btn.set_visible(!show_progress_bar);
+        },
+    );
+    siv.call_on_name(
+        copy_progress_dlg::widget_names::hideable_cpy_prgrs_br_left_bracket,
         |hideable_bracket: &mut HideableView<TextView>| {
             hideable_bracket.set_visible(show_progress_bar);
         },
     );
     siv.call_on_name(
-        "hideable_cpy_prgrs_br",
+        copy_progress_dlg::widget_names::hideable_cpy_prgrs_br,
         |hideable_view_total: &mut HideableView<ResizedView<ProgressBar>>| {
             hideable_view_total.set_visible(show_progress_bar);
             hideable_view_total
@@ -704,7 +749,7 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         },
     );
     siv.call_on_name(
-        "right_bracket_hideable",
+        copy_progress_dlg::widget_names::hideable_cpy_prgrs_br_right_bracket,
         |hideable_bracket: &mut HideableView<TextView>| {
             hideable_bracket.set_visible(show_progress_bar);
         },
@@ -817,28 +862,26 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
 pub fn cpy(siv: &mut cursive::Cursive) {
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
-        if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
+        if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::widget_names::dialog_name) {
             let cpy_progress_dlg =
                 create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
-            if true {//todo refactor
-                let resume_thread =cpy_data.cond_var_suspend.0.lock().unwrap();
+            if true {
+                //todo refactor
+                let resume_thread = cpy_data.cond_var_suspend.0.lock().unwrap();
                 if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
                     /*todo refactor*/
-                    siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
-                        a_button.set_label("Resume")
-                    })
+                    siv.call_on_name(
+                        literals::copy_progress_dlg::widget_names::dialog_name,
+                        move |a_dlg: &mut ProgressDlgT| a_dlg.get_inner_mut().set_title("Copying Paused"),
+                    )
                     .unwrap();
-                    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, move |a_prgrss_bar: &mut ProgressBar| {
-                        a_prgrss_bar.set_label(|_a,(_b,_c)|{"Copying paused".to_owned()});
-                    })
+                    siv.call_on_name(
+                        literals::copy_progress_dlg::widget_names::suspend_resume_btn,
+                        move |a_button: &mut Button| a_button.set_label("Resume"),
+                    )
                     .unwrap();
-/*                     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_current, move |a_prgrss_bar: &mut ProgressBar| {
-                        a_prgrss_bar.set_label(|_a,(_b,_c)|{"Copying paused".to_owned()});
-                    })
-                    .unwrap(); */
-                    //
-                } 
+                }
             }
             siv.set_autorefresh(true);
         }

@@ -667,16 +667,16 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
             .min_width(copy_progress_dlg::labels::copying_progress_total_background.len()),
     )
     .visible(false)
-    .with_name("hideable_cpy_prgrs_br");
+    .with_name(copy_progress_dlg::widget_names::hideable_cpy_prgrs_br);
     let left_bracket_hideable = HideableView::new(TextView::new("["))
         .visible(false)
-        .with_name("left_bracket_hideable");
+        .with_name(copy_progress_dlg::widget_names::hideable_cpy_prgrs_br_left_bracket);
     let right_bracket_hideable = HideableView::new(TextView::new("]"))
         .visible(false)
-        .with_name("right_bracket_hideable");
+        .with_name(copy_progress_dlg::widget_names::hideable_cpy_prgrs_br_right_bracket);
     let button_cpy = HideableView::new(Button::new_raw("[ Copy ]", cpy))
         .visible(true)
-        .with_name("hideable_cpy_button");
+        .with_name(copy_progress_dlg::widget_names::hideable_cpy_button);
     let cpy_layout = LinearLayout::horizontal()
         .child(TextView::new("5").style(theme::ColorStyle::title_primary()))
         .child(button_cpy)
