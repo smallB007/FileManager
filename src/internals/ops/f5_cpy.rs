@@ -538,14 +538,20 @@ fn create_thmd_cpy_pgrss_dlg(
     files_total: usize,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
 ) -> ThemedView<Layer<CopyProgressDlgT>> {
-    let cpy_progress_dlg = create_cpy_progress_dialog_priv(files_total, cond_var_suspend);
+    let cpy_progress_dlg = create_cpy_progress_dialog_priv(siv, files_total, cond_var_suspend);
     let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
     cpy_progress_dlg
 }
 fn create_cpy_progress_dialog_priv(
+    siv: &mut Cursive,
     files_total: usize,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
 ) -> CopyProgressDlgT {
+    //let g_file_manager = GLOBAL_FileManager.get();
+    //let g_file_manager = g_file_manager.lock().unwrap();
+    //let is_copying_in_progress = g_file_manager.borrow().cpy_data.is_some();
+
+    let cond_var_suspend_clone = cond_var_suspend.clone();
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(
@@ -593,7 +599,7 @@ fn create_cpy_progress_dialog_priv(
     )
     .fixed_width(80)
     .with_name(copy_progress_dlg::labels::dialog_name);
-
+   
     cpy_progress_dlg
 }
 fn copy_engine(
@@ -815,6 +821,25 @@ pub fn cpy(siv: &mut cursive::Cursive) {
             let cpy_progress_dlg =
                 create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
             siv.add_layer(cpy_progress_dlg);
+            if true {//todo refactor
+                let resume_thread =cpy_data.cond_var_suspend.0.lock().unwrap();
+                if resume_thread.cmp(&true) == std::cmp::Ordering::Equal {
+                    /*todo refactor*/
+                    siv.call_on_name("Suspend_Resume_Btn", move |a_button: &mut Button| {
+                        a_button.set_label("Resume")
+                    })
+                    .unwrap();
+                    siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_total, move |a_prgrss_bar: &mut ProgressBar| {
+                        a_prgrss_bar.set_label(|_a,(_b,_c)|{"Copying paused".to_owned()});
+                    })
+                    .unwrap();
+/*                     siv.call_on_name(copy_progress_dlg::widget_names::progress_bar_current, move |a_prgrss_bar: &mut ProgressBar| {
+                        a_prgrss_bar.set_label(|_a,(_b,_c)|{"Copying paused".to_owned()});
+                    })
+                    .unwrap(); */
+                    //
+                } 
+            }
             siv.set_autorefresh(true);
         }
     } else {

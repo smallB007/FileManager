@@ -858,7 +858,7 @@ impl<T: TableViewItem<H>, H: Eq + Hash + Copy + Clone + 'static> TableView<T, H>
                 if self.rows_selected.is_empty() {
                     self.rows_selected.clear();
                     let value = &self.items[0];
-                    self.rows_selected.extend(value.has_parent() as usize .. self.items.len());
+                    self.rows_selected.extend(value.has_parent() as usize..self.items.len());
                 } else {
                     self.rows_selected.clear();
                 }
