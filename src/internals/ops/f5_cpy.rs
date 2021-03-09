@@ -266,7 +266,7 @@ fn copying_cancelled(siv: &mut Cursive) {
     end_copying_helper(siv, "User request cancel", "Copying cancelled");
 }
 
-fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::TransitProcess, file_name: String, current_inx: usize) {
+fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::TransitProcess, file_name: String, current_inx: usize,is_copy:bool) {
     /*   siv.call_on_name("TextView_copying_x_of_n", |a_text_view: &mut TextView| {
         a_text_view.set_content(format!("Copying {} of {}", process_info.copied_bytes, process_info.total_bytes));
     })
@@ -288,7 +288,7 @@ fn update_cpy_dlg(siv: &mut Cursive, process_info: fs_extra::TransitProcess, fil
         },
     );
     siv.call_on_name("TextView_copying_x", |a_text_view: &mut TextView| {
-        a_text_view.set_content(format!("Copying:\n {}", file_name));
+        a_text_view.set_content(literals::copy_progress_dlg::labels::get_copying_n(is_copy,&file_name));
     });
     siv.call_on_name(
         copy_progress_dlg::widget_names::progress_bar_current,
@@ -381,7 +381,7 @@ fn cpy_task(
 
             let current_path_clone = current_path.clone();
             cb.send(Box::new(move |siv| {
-                update_cpy_dlg(siv, process_info, current_path_clone, current_inx)
+                update_cpy_dlg(siv, process_info, current_path_clone, current_inx,is_copy)
             }));
             TransitProcessResult::ContinueOrAbort
         };
@@ -676,7 +676,7 @@ fn create_cpy_progress_dialog_priv(
     let cpy_progress_dlg = Dialog::around(
         LinearLayout::vertical().child(hideable_total).child(
             LinearLayout::vertical()
-                .child(TextView::new("").with_name("TextView_copying_x"))
+                .child(TextView::new("").with_name("TextView_copying_x"))//todo <<
                 .child(
                     ProgressBar::new()
                         .range(0, 100)
@@ -931,7 +931,7 @@ pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pu
                     /*todo refactor*/
                     siv.call_on_name(
                         literals::copy_progress_dlg::widget_names::dialog_name,
-                        move |a_dlg: &mut ProgressDlgT| a_dlg.get_inner_mut().set_title("Copying Paused"),
+                        move |a_dlg: &mut ProgressDlgT| a_dlg.get_inner_mut().set_title(literals::copy_progress_dlg::labels::get_copy_dialog_title_copying_suspended_text(is_copy)),
                     )
                     .unwrap();
                     siv.call_on_name(
@@ -971,7 +971,7 @@ pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pu
                 None => {
                     let info_dlg = create_themed_view(
                         siv,
-                        Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"),
+                        Atomic_Dialog::around(TextView::new(literals::copy_progress_dlg::labels::get_select_item_to_copy_to_text(is_copy))).dismiss_button("[ OK ]"),
                     );
                     siv.add_layer(info_dlg);
                 }

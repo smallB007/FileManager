@@ -79,4 +79,29 @@ pub mod labels {
             "Move to:".to_owned()
         }
     }
+    
+    pub fn get_select_item_to_copy_to_text(is_copy:bool)->String{
+        if is_copy
+        {
+            "Please select item to copy".to_owned()
+        }
+        else
+        {
+            "Please select item to move".to_owned()
+        }
+    }
+
+    pub fn get_copying_n(is_copy:bool,file_name:&str)->String{
+        if is_copy
+        {
+            format!("Copying:\n {}", file_name)
+        }
+        else
+        {
+            format!("Moving:\n {}", file_name)
+        }
+    }
+
+    
+    
 }
