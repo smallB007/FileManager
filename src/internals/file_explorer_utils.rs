@@ -46,8 +46,8 @@ use crate::internals::ops::f5_cpy::{
     copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
     OverrideCase,
 };
+use crate::internals::ops::f6_ren_mv::ren_mv;
 use crate::internals::ops::f8_del::del;
-
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -139,6 +139,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F4, cpy);
     siv.add_global_callback(Key::F8, del);
+    siv.add_global_callback(Key::F6, ren_mv);
     //    siv.add_global_callback(Key::F7, show_hide_cpy);
     //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 
@@ -562,7 +563,6 @@ fn menu(siv: &mut cursive::Cursive) {}
 fn view(siv: &mut cursive::Cursive) {}
 fn edit(siv: &mut cursive::Cursive) {}
 
-fn ren_mov(siv: &mut cursive::Cursive) {}
 fn mkdir(siv: &mut cursive::Cursive) {}
 
 fn pull_dn(siv: &mut cursive::Cursive) {}
@@ -655,11 +655,8 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         position: XY::new(1, 1),
         event: MouseEvent::Press(MouseButton::Left),
     };
-    let fn_with_label = |val, (min, max)| copy_progress_dlg::labels::copying_progress_total_background.to_owned();
-    let ProgressBar_on_event_view = HideableView::new(
+    let ProgressBar_on_event_view = HideableView::new(//todo must it be on event?
         ProgressBar::new()
-            .with_label(fn_with_label)
-            .min_width(copy_progress_dlg::labels::copying_progress_total_background.len()),
     )
     .visible(false)
     .with_name(copy_progress_dlg::widget_names::hideable_cpy_prgrs_br);
@@ -678,7 +675,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         .child(left_bracket_hideable)
         .child(ProgressBar_on_event_view)
         .child(right_bracket_hideable);
-    let button_RenMov = Button::new_raw("[ RenMov ]", ren_mov);
+    let button_RenMov = Button::new_raw("[ RenMv ]", ren_mv);
     let ren_mov_layout = LinearLayout::horizontal()
         .child(TextView::new("6"))
         .child(button_RenMov);

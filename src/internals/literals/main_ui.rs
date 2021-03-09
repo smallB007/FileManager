@@ -5,5 +5,5 @@ pub mod widget_names {
     //   pub static progress_bar_current: &str = "ProgressBar_current";
 }
 pub mod labels {
-    //    pub static copying_progress_total_background: &str = "Copying...";
+    //    pub static get_copying_progress_total_background_text: &str = "Copying...";
 }

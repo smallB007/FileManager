@@ -4,6 +4,6 @@ pub mod widget_names {
     //   pub static progress_bar_current: &str = "ProgressBar_current";
 }
 pub mod labels {
-    pub static dialog_name: &str = "CopyDlg";
-    //    pub static copying_progress_total_background: &str = "Copying...";
+    pub static dialog_name: &str = "CopyDlg"; //todo move to widget_names
+                                              //    pub static get_copying_progress_total_background_text: &str = "Copying...";
 }

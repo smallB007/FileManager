@@ -308,6 +308,35 @@ struct file_transfer_context {
 /* let start = std::time::Instant::now();
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
+fn cpy_or_mv<Cb>(
+    cp: bool,
+    selected_mask: &String,
+    current_path: &String,
+    path_to: &String,
+    options: &fs_extra::dir::CopyOptions,
+    progress_handler_path: Cb,
+) -> std::result::Result<u64, fs_extra::error::Error>
+where
+    Cb: Fn(fs_extra::TransitProcess) -> TransitProcessResult,
+{
+    if cp {
+        fs_extra::copy_items_with_progress(
+            &selected_mask,
+            &vec![current_path],
+            &path_to,
+            &options,
+            progress_handler_path,
+        )
+    } else {
+        fs_extra::move_items_with_progress(
+            &selected_mask,
+            &vec![current_path],
+            &path_to,
+            &options,
+            progress_handler_path,
+        )
+    }
+}
 fn cpy_task(
     selected_mask: String,
     selected_paths: PathInfoT,
@@ -318,6 +347,7 @@ fn cpy_task(
     is_recursive: bool,
     is_overwrite: bool,
     is_append: bool,
+    is_copy: bool,
 ) {
     let rg = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec<_>>());
     let rg_ok = rg.is_ok();
@@ -376,13 +406,18 @@ fn cpy_task(
 
         /**/
         //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
-        match fs_extra::copy_items_with_progress(
+        match cpy_or_mv(is_copy, &selected_mask,
+                &current_path,
+                &path_to,
+                &options,
+                progress_handler_path)
+        /*match fs_extra::copy_items_with_progress(
             &selected_mask,
             &vec![current_path],
             &path_to,
             &options,
             progress_handler_path,
-        ) {
+        ) */{
             Ok(val) => {
                 let inx_clone = Arc::new(*inx);
                 let table_name_clone = Arc::new(table_name.clone());
@@ -499,6 +534,7 @@ fn cpy_task(
                             is_recursive,
                             is_overwrite,
                             is_append,
+                            is_copy
                         );
                     }
                 }
@@ -516,7 +552,26 @@ fn cpy_task(
     }
 }
 const a_const: i128 = 0;
-fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
+fn clone_and_get_copying_progress_total_background_text(is_copy:bool)->impl Fn(&mut HideableView<ResizedView<ProgressBar>>)
+{
+    let is_copy_clone =is_copy.clone();
+    move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
+        a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(move |a, (b, c)| {
+            literals::copy_progress_dlg::labels::get_copying_progress_total_background_text(is_copy_clone)
+        })
+    }
+}
+fn clone_and_get_copying_progress_total_suspended_background_text(is_copy:bool)->impl Fn(&mut HideableView<ResizedView<ProgressBar>>)
+{
+    let is_copy_clone =is_copy.clone();
+    move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
+        a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(move |a, (b, c)| {
+            literals::copy_progress_dlg::labels::get_copying_progress_total_suspended_background_text(is_copy_clone)
+        })
+    }
+}
+
+fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,is_copy:bool) {
     let mut suspend_thread = cond_var_suspend.0.lock().unwrap();
     *suspend_thread = if suspend_thread.cmp(&true) == std::cmp::Ordering::Equal {
         siv.call_on_name(
@@ -530,17 +585,13 @@ fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Con
                 a_dlg
                     .get_mut()
                     .get_inner_mut()
-                    .set_title(literals::copy_progress_dlg::labels::dialog_title)
+                    .set_title(literals::copy_progress_dlg::labels::get_copy_dialog_title_text(is_copy))
             },
         )
         .unwrap();
         siv.call_on_name(
             literals::copy_progress_dlg::widget_names::hideable_cpy_prgrs_br,
-            move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
-                a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(|a, (b, c)| {
-                    literals::copy_progress_dlg::labels::copying_progress_total_background.to_owned()
-                })
-            },
+            clone_and_get_copying_progress_total_background_text(is_copy),
         )
         .unwrap();
         false
@@ -555,17 +606,13 @@ fn suspend_cpy_thread(siv: &mut Cursive, cond_var_suspend: Arc<(Mutex<bool>, Con
                 a_dlg
                     .get_mut()
                     .get_inner_mut()
-                    .set_title(literals::copy_progress_dlg::labels::dialog_title_copying_suspended)
+                    .set_title(literals::copy_progress_dlg::labels::get_copy_dialog_title_copying_suspended_text(is_copy))
             },
         )
         .unwrap();
         siv.call_on_name(
             literals::copy_progress_dlg::widget_names::hideable_cpy_prgrs_br,
-            move |a_prgrss_bar: &mut HideableView<ResizedView<ProgressBar>>| {
-                a_prgrss_bar.get_inner_mut().get_inner_mut().set_label(|a, (b, c)| {
-                    literals::copy_progress_dlg::labels::copying_progress_total_suspended_background.to_owned()
-                })
-            },
+            clone_and_get_copying_progress_total_suspended_background_text(is_copy),
         )
         .unwrap();
         true
@@ -578,8 +625,9 @@ fn create_thmd_cpy_pgrss_dlg(
     siv: &mut Cursive,
     files_total: usize,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
+    is_copy: bool,
 ) -> ThemedView<Layer<CopyProgressDlgT>> {
-    let cpy_progress_dlg = create_cpy_progress_dialog_priv(siv, files_total, cond_var_suspend);
+    let cpy_progress_dlg = create_cpy_progress_dialog_priv(siv, files_total, cond_var_suspend, is_copy);
     let cpy_progress_dlg = create_themed_view(siv, cpy_progress_dlg);
     cpy_progress_dlg
 }
@@ -587,6 +635,7 @@ fn create_cpy_progress_dialog_priv(
     siv: &mut Cursive,
     files_total: usize,
     cond_var_suspend: Arc<(Mutex<bool>, Condvar)>,
+    is_copy: bool,
 ) -> CopyProgressDlgT {
     //let g_file_manager = GLOBAL_FileManager.get();
     //let g_file_manager = g_file_manager.lock().unwrap();
@@ -595,7 +644,7 @@ fn create_cpy_progress_dialog_priv(
     let hideable_total = HideableView::new(
         LinearLayout::vertical()
             .child(
-                TextView::new(copy_progress_dlg::labels::copying_progress_total)
+                TextView::new(copy_progress_dlg::labels::get_copying_progress_total_text(is_copy))
                     .with_name(copy_progress_dlg::widget_names::text_view_copying_total),
             )
             .child(
@@ -607,7 +656,7 @@ fn create_cpy_progress_dialog_priv(
     )
     .visible(files_total > 1);
     let cond_var_suspend_clone = cond_var_suspend.clone();
-    let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone()))
+    let suspend_button = Button::new("Suspend", move |siv| suspend_cpy_thread(siv, cond_var_suspend.clone(),is_copy))
         .with_name(literals::copy_progress_dlg::widget_names::suspend_resume_btn);
     let background_button = Button::new("Background", move |siv| {
         siv.pop_layer();
@@ -637,7 +686,7 @@ fn create_cpy_progress_dialog_priv(
                 .child(buttons),
         ),
     )
-    .title(literals::copy_progress_dlg::labels::dialog_title)
+    .title(literals::copy_progress_dlg::labels::get_copy_dialog_title_text(is_copy))
     .fixed_width(80)
     .with_name(copy_progress_dlg::widget_names::dialog_name);
 
@@ -652,6 +701,7 @@ fn copy_engine(
     is_recursive: bool,
     is_overwrite: bool,
     is_background_cpy: bool,
+    is_copy: bool,
 ) {
     /*Todo, get rid of clones */
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
@@ -685,6 +735,7 @@ fn copy_engine(
             is_recursive,
             is_overwrite,
             false, //append todo check
+            is_copy,
         );
         cb.send(Box::new(|siv| copying_finished_success(siv)));
     });
@@ -696,7 +747,7 @@ fn copy_engine(
     });
 
     if !is_background_cpy {
-        let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv, paths_from.len(), cond_var_suspend);
+        let cpy_progress_dlg = create_thmd_cpy_pgrss_dlg(siv, paths_from.len(), cond_var_suspend, is_copy);
         siv.add_layer(cpy_progress_dlg);
         siv.set_autorefresh(true);
     }
@@ -710,6 +761,7 @@ fn cpy_callback(
     is_recursive: bool,
     is_overwrite: bool,
     is_background_cpy: bool,
+    is_copy: bool,
 ) {
     if is_background_cpy {
         show_progress_cpy(siv, selected_paths_from.len(), true);
@@ -722,6 +774,7 @@ fn cpy_callback(
         is_recursive,
         is_overwrite,
         is_background_cpy,
+        is_copy,
     );
 }
 
@@ -755,7 +808,7 @@ fn show_progress_cpy(siv: &mut Cursive, total_files: usize, show_progress_bar: b
         },
     );
 }
-fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &PathInfoT, is_background: bool) {
+fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &PathInfoT, is_background: bool, is_copy: bool) {
     let selected_mask_from = siv
         .call_on_name("cpy_from_edit_view", move |an_edit_view: &mut EditView| {
             an_edit_view.get_content()
@@ -788,13 +841,18 @@ fn get_cpy_dialog_content_cb(siv: &mut Cursive, paths_from: &PathInfoT, is_backg
         is_recursive,
         is_overwrite,
         is_background,
+        is_copy,
     )
 }
 
-fn get_cpy_dialog_content_clone_cb(paths_from: &PathInfoT, is_background: bool) -> impl Fn(&mut Cursive) {
+fn get_cpy_dialog_content_clone_cb(
+    paths_from: &PathInfoT,
+    is_background: bool,
+    is_copy: bool,
+) -> impl Fn(&mut Cursive) {
     let clone = paths_from.clone();
     move |s| {
-        get_cpy_dialog_content_cb(s, &clone, is_background);
+        get_cpy_dialog_content_cb(s, &clone, is_background, is_copy);
         match s.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
             Some(layer_position) => {
                 s.screen_mut().remove_layer(layer_position);
@@ -804,11 +862,11 @@ fn get_cpy_dialog_content_clone_cb(paths_from: &PathInfoT, is_background: bool) 
     }
 }
 
-fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
+fn create_cpy_dialog(paths_from: PathInfoT, path_to: String, is_copy: bool) -> Dialog {
     let paths_from_clone = paths_from.clone();
     let mut cpy_dialog = Dialog::around(
         LinearLayout::vertical()
-            .child(TextView::new(format!("Copy {} items with mask:", paths_from.len())))
+            .child(TextView::new(literals::copy_progress_dlg::labels::get_copy_n_items_with_mask_text(is_copy, paths_from.len())))
             .child(
                 EditView::new()
                     .content("*")
@@ -816,7 +874,7 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
                     .min_width(100),
             )
             .child(DummyView)
-            .child(TextView::new("Copy to:"))
+            .child(TextView::new(literals::copy_progress_dlg::labels::get_copy_to_text(is_copy)))
             .child(
                 EditView::new()
                     .content(path_to)
@@ -840,16 +898,16 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
             )
             .child(DummyView),
     )
-    .title("Copy")
+    .title(literals::copy_progress_dlg::labels::get_copy_dialog_title(is_copy))
     .button(
         "[ OK ]",
-        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), false), /*Close our dialog*/
-                                                                           //        s.pop_layer();
+        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), false, is_copy), /*Close our dialog*/
+                                                                                    //        s.pop_layer();
     )
     .button(
         "[ Background ]",
-        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), true), /*Close our dialog*/
-                                                                          //s.pop_layer();
+        get_cpy_dialog_content_clone_cb(&paths_from_clone.clone(), true, is_copy), /*Close our dialog*/
+                                                                                   //s.pop_layer();
     )
     .button("[ Cancel ]", |s| {
         s.pop_layer();
@@ -858,13 +916,13 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String) -> Dialog {
     cpy_dialog.set_focus(DialogFocus::Button(0));
     cpy_dialog
 }
-
-pub fn cpy(siv: &mut cursive::Cursive) {
+pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pub
+{
     /*First, check if copying is in the progress:*/
     if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
         if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::widget_names::dialog_name) {
             let cpy_progress_dlg =
-                create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
+                create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone(), is_copy);
             siv.add_layer(cpy_progress_dlg);
             if true {
                 //todo refactor
@@ -906,7 +964,7 @@ pub fn cpy(siv: &mut cursive::Cursive) {
             match get_selected_paths(siv, from) {
                 Some(selected_paths_from) => {
                     let selected_path_to = get_current_dir(siv, to);
-                    let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
+                    let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to, is_copy);
                     let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
                     siv.add_layer(cpy_dlg);
                 }
@@ -921,10 +979,13 @@ pub fn cpy(siv: &mut cursive::Cursive) {
         }
     }
 }
+pub fn cpy(siv: &mut cursive::Cursive) {
+    cpy_mv_helper(siv, true);
+}
 
 pub fn cancel_cpy_operation(cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
-/*Not happy about this below...*/
-/*Make sure thread is not suspended*/
+    /*Not happy about this below...*/
+    /*Make sure thread is not suspended*/
     let mut suspend_thread = cond_var_suspend.0.lock().unwrap();
     *suspend_thread = false; //put the flag up
     cond_var_suspend.1.notify_one();
@@ -933,6 +994,4 @@ pub fn cancel_cpy_operation(cond_var_suspend: Arc<(Mutex<bool>, Condvar)>) {
     let mutex_guard_g_file_manager = mutex_g_file_manager.lock().unwrap();
     let g_file_manager = mutex_guard_g_file_manager.borrow_mut();
     g_file_manager.tx_rx.0.send(AtomicFileTransitFlags::Abort).unwrap();
-
-    
 }
