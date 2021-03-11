@@ -369,6 +369,7 @@ fn cpy_task(
             }
         }
     } else {
+        /*Find if mounting point is the same and if so, do rename (much quicker)*/
         let rg = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec<_>>());
         let rg_ok = rg.is_ok();
         let path_to_clone = path_to.clone();
