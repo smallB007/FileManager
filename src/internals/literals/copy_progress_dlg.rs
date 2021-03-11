@@ -10,16 +10,13 @@ pub mod widget_names {
     pub static hideable_cpy_button: &str = "hideable_cpy_button";
 }
 pub mod labels {
-    pub fn get_copy_n_items_with_mask_text(is_copy: bool, n_items:usize)->String
-    {
-        if is_copy{
-            format!("Copy {} items with mask:",n_items)
+    pub fn get_copy_n_items_with_mask_text(is_copy: bool, n_items: usize) -> String {
+        if is_copy {
+            format!("Copy {} items with mask:", n_items)
+        } else {
+            format!("Move {} items with mask:", n_items)
         }
-        else
-        {
-            format!("Move {} items with mask:",n_items)
-        }
-    } 
+    }
     pub fn get_copying_progress_total_background_text(is_copy: bool) -> String {
         if is_copy {
             "Copying...".to_owned()
@@ -41,13 +38,10 @@ pub mod labels {
             "Moving".to_owned()
         }
     }
-    pub fn get_copy_dialog_title_copying_suspended_text(is_copy:bool)->String{
-        if is_copy
-        {
+    pub fn get_copy_dialog_title_copying_suspended_text(is_copy: bool) -> String {
+        if is_copy {
             "Copying paused".to_owned()
-        }
-        else
-        {
+        } else {
             "Moving paused".to_owned()
         }
     }
@@ -58,50 +52,35 @@ pub mod labels {
             "Moving total progress:".to_owned()
         }
     }
-    pub fn get_copy_dialog_title(is_copy:bool)->String{
-        if is_copy
-        {
+    pub fn get_copy_dialog_title(is_copy: bool) -> String {
+        if is_copy {
             "Copy".to_owned()
-        }
-        else
-        {
+        } else {
             "Move".to_owned()
         }
     }
-    
-    pub fn get_copy_to_text(is_copy:bool)->String{
-        if is_copy
-        {
+
+    pub fn get_copy_to_text(is_copy: bool) -> String {
+        if is_copy {
             "Copy to:".to_owned()
-        }
-        else
-        {
+        } else {
             "Move to:".to_owned()
         }
     }
-    
-    pub fn get_select_item_to_copy_to_text(is_copy:bool)->String{
-        if is_copy
-        {
+
+    pub fn get_select_item_to_copy_to_text(is_copy: bool) -> String {
+        if is_copy {
             "Please select item to copy".to_owned()
-        }
-        else
-        {
+        } else {
             "Please select item to move".to_owned()
         }
     }
 
-    pub fn get_copying_n(is_copy:bool,file_name:&str)->String{
-        if is_copy
-        {
+    pub fn get_copying_n(is_copy: bool, file_name: &str) -> String {
+        if is_copy {
             format!("Copying:\n {}", file_name)
-        }
-        else
-        {
+        } else {
             format!("Moving:\n {}", file_name)
         }
     }
-
-    
-    
 }

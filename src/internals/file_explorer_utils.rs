@@ -137,9 +137,9 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     }
     siv.add_global_callback(Key::Esc, switch_panel);
     siv.add_global_callback(Key::F10, quit);
-    siv.add_global_callback(Key::F4, cpy);
+    siv.add_global_callback(Key::F5, cpy);
     siv.add_global_callback(Key::F8, del);
-    siv.add_global_callback(Key::F6, ren_mv);
+    siv.add_global_callback(Key::F4, ren_mv);
     //    siv.add_global_callback(Key::F7, show_hide_cpy);
     //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 
@@ -655,8 +655,9 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         position: XY::new(1, 1),
         event: MouseEvent::Press(MouseButton::Left),
     };
-    let ProgressBar_on_event_view = HideableView::new(//todo must it be on event?
-        ProgressBar::new()
+    let ProgressBar_on_event_view = HideableView::new(
+        //todo must it be on event?
+        ProgressBar::new(),
     )
     .visible(false)
     .with_name(copy_progress_dlg::widget_names::hideable_cpy_prgrs_br);

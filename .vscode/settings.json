@@ -1,7 +1,7 @@
 {
   "editor.formatOnSave": true,
   "editor.cursorStyle": "block",
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.minimap.enabled": false,
   "workbench.colorCustomizations": {
     "[Kelp Forest]": {
       "editorLineNumber.foreground": "#8d8d8d",
