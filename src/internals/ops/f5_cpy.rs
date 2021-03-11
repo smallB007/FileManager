@@ -33,7 +33,6 @@ use crate::internals::literals::file_exists_dlg;
 use crate::internals::literals::main_ui;
 use crate::internals::{self, atomic_dialog::Atomic_Dialog, literals};
 
-use super::f6_ren_mv::MoveData;
 #[derive(Copy, Clone)]
 pub enum AtomicFileTransitFlags {
     Abort,
@@ -357,12 +356,12 @@ fn cpy_task(
     is_overwrite: bool,
     is_append: bool,
     is_copy: bool,
-    rename_data: Option<MoveData>,
+    is_rename: bool,
 ) {
-    if rename_data.is_some() {
+    if is_rename {
         match std::fs::rename(
-            &rename_data.as_ref().unwrap().original_name,
-            &rename_data.as_ref().unwrap().new_name,
+            &selected_paths[0].1,
+            &path_to,
         ) {
             Ok(_val) => {}
             Err(err) => {
@@ -416,9 +415,6 @@ fn cpy_task(
                 options.depth = 1;
             }
             let current_path_name = PathBuf::from(current_path.clone());
-            if current_path_name.is_file() && selected_paths.len() == 1 && PathBuf::from(path_to_clone.clone()).exists()
-            {
-            }
             let current_path_name = current_path_name.file_name().unwrap().to_str().unwrap();
             let full_path_to = path_to_clone.clone() + &std::path::MAIN_SEPARATOR.to_string() + current_path_name;
             /*clones*/
@@ -430,19 +426,10 @@ fn cpy_task(
             let table_name_clone = table_name.clone();
 
             /**/
-            //match fs_extra::file::copy_with_progress(&current_path, &full_path_to, &options, progres_handler_file) {
-            let mut cr_pt = (*current_path).clone();
-            let mut p_to = path_to_clone.clone();
-            match rename_data {
-                Some(ref data) => {
-                    cr_pt = data.original_name.clone();
-                    p_to = data.new_name.clone();
-                }
-                None => {}
-            }
+
             match cpy_or_mv(is_copy, &selected_mask,
-                cr_pt,//*current_path,
-                p_to,//path_to,
+                (*current_path).clone(),
+                path_to.clone(),
                 &options,
                 progress_handler_path)
         /*match fs_extra::copy_items_with_progress(
@@ -569,7 +556,7 @@ fn cpy_task(
                             is_overwrite,
                             is_append,
                             is_copy,
-                            rename_data.clone(),
+                            is_rename,
                         );
                     }
                 }
@@ -747,7 +734,7 @@ fn copy_engine(
     is_overwrite: bool,
     is_background_cpy: bool,
     is_copy: bool,
-    rename_data: Option<MoveData>,
+    is_rename: bool,
 ) {
     /*Todo, get rid of clones */
     let cond_var_suspend = Arc::new((Mutex::new(false), Condvar::new()));
@@ -782,7 +769,7 @@ fn copy_engine(
             is_overwrite,
             false, //append todo check
             is_copy,
-            rename_data,
+            is_rename,
         );
         cb.send(Box::new(|siv| copying_finished_success(siv)));
     });
@@ -809,7 +796,7 @@ fn cpy_callback(
     is_overwrite: bool,
     is_background_cpy: bool,
     is_copy: bool,
-    rename_data: Option<MoveData>,
+    is_rename: bool,
 ) {
     if is_background_cpy {
         show_progress_cpy(siv, selected_paths_from.len(), true);
@@ -823,7 +810,7 @@ fn cpy_callback(
         is_overwrite,
         is_background_cpy,
         is_copy,
-        rename_data,
+        is_rename,
     );
 }
 
@@ -894,14 +881,11 @@ fn get_cpy_dialog_content_cb(
             an_chck_bx.is_checked()
         })
         .unwrap();
-    let mut rename_data = None;
+    let mut is_rename = false;
     if selected_paths_from.len() == 1 {
         let path_to = PathBuf::from((*selected_path_to).clone());
         if !path_to.exists() {
-            rename_data = Some(MoveData {
-                new_name: (*selected_path_to).clone(),
-                original_name: (*selected_path_from).clone(),
-            });
+            is_rename = true;
         }
     }
     cpy_callback(
@@ -913,7 +897,7 @@ fn get_cpy_dialog_content_cb(
         is_overwrite,
         is_background_cpy,
         is_copy,
-        rename_data,
+        is_rename,
     )
 }
 
@@ -944,11 +928,6 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String, is_copy: bool) -> D
             .child(
                 EditView::new()
                     .content(if paths_from.len() == 1 {
-                        let g_file_manager = GLOBAL_FileManager.get();
-                        g_file_manager.lock().unwrap().borrow_mut().set_mv_data(Some(MoveData {
-                            original_name: paths_from[0].1.clone(),
-                            new_name: "".to_owned(),
-                        }));
                         &paths_from[0].1
                     } else {
                         "*.*"
