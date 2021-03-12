@@ -1,5 +1,5 @@
 #![forbid(unreachable_patterns)]
-use cursive::align::{HAlign, VAlign};
+use cursive::{align::{HAlign, VAlign}, reexports::log::warn};
 use cursive::event::*;
 use cursive::menu::Tree;
 use cursive::traits::*;
@@ -326,13 +326,22 @@ pub fn move_rename_items_with_progress<F>(
 where
     F: FnMut(fs_extra::TransitProcess) -> fs_extra::dir::TransitProcessResult,
 {
+    let rg  = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec::<_>>());//++artie
+    let rg_ok = rg.is_ok();
+
     for item_from in from_items {
+
+        if rg_ok && !rg.as_ref().unwrap().is_match(&item_from)
+        {
+            continue;
+        }
+
         let current_path_name = PathBuf::from(&item_from).file_name().unwrap().to_owned();
         let full_path_to = to.clone() + &std::path::MAIN_SEPARATOR.to_string() + current_path_name.to_str().unwrap();
         match std::fs::rename(item_from, full_path_to) {
             Ok(val) => {}
             Err(err) => {
-                panic!("Cannot rename, ")
+                warn!("Cannot rename, reason: {}", err)
             }
         }
     }
