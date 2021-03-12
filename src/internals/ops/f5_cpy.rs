@@ -12,9 +12,9 @@ use cursive::{Cursive, CursiveExt};
 //std
 use chrono::offset::Utc;
 use chrono::DateTime;
-use std::path::PathBuf;
 use std::rc::Rc;
 use std::sync::{Arc, Condvar, Mutex};
+use std::{fmt::Display, path::PathBuf};
 use std::{
     io::{Error, ErrorKind},
     os::unix::prelude::MetadataExt,
@@ -316,6 +316,29 @@ struct file_transfer_context {
 /* let start = std::time::Instant::now();
 let duration = start.elapsed();
 println!("Copying finished:{}", duration.as_secs());*/
+pub fn move_rename_items_with_progress<F>(
+    selected_mask: &String, //++artie
+    from_items: &[String],
+    to: &String,
+    options: &fs_extra::dir::CopyOptions,
+    mut progress_handler: F,
+) -> fs_extra::error::Result<u64>
+where
+    F: FnMut(fs_extra::TransitProcess) -> fs_extra::dir::TransitProcessResult,
+{
+    for item_from in from_items {
+        let current_path_name = PathBuf::from(&item_from).file_name().unwrap().to_owned();
+        let full_path_to = to.clone() + &std::path::MAIN_SEPARATOR.to_string() + current_path_name.to_str().unwrap();
+        match std::fs::rename(item_from, full_path_to) {
+            Ok(val) => {}
+            Err(err) => {
+                panic!("Cannot rename, ")
+            }
+        }
+    }
+    Ok(1)
+}
+
 fn cpy_or_mv<Cb>(
     cp: bool,
     selected_mask: &String,
@@ -336,7 +359,7 @@ where
             progress_handler_path,
         )
     } else {
-        fs_extra::move_items_with_progress(
+        move_rename_items_with_progress(
             &selected_mask,
             &vec![current_path],
             &path_to,
@@ -359,10 +382,7 @@ fn cpy_task(
     is_rename: bool,
 ) {
     if is_rename {
-        match std::fs::rename(
-            &selected_paths[0].1,
-            &path_to,
-        ) {
+        match std::fs::rename(&selected_paths[0].1, &path_to) {
             Ok(_val) => {}
             Err(err) => {
                 println!("Couldn't rename, reason: {}", err)
@@ -928,11 +948,7 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String, is_copy: bool) -> D
             ))
             .child(
                 EditView::new()
-                    .content(if paths_from.len() == 1 {
-                        &paths_from[0].1
-                    } else {
-                        "*.*"
-                    })
+                    .content(if paths_from.len() == 1 { &paths_from[0].1 } else { "*.*" })
                     .with_name(literals::copy_dlg::widget_names::copy_from_edit_view)
                     .min_width(100),
             )
