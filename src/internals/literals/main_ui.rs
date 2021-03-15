@@ -1,6 +1,9 @@
 pub mod widget_names {
+    pub static LEFT_PANEL_ID: &str = "LeftPanel";
+    pub static RIGHT_PANEL_ID: &str = "RightPanel";
     pub static LEFT_PANEL_TABLE_ID: &str = "LeftPanelTableView";
     pub static RIGHT_PANEL_TABLE_ID: &str = "RightPanelTableView";
+
     //   pub static progress_bar_total: &str = "ProgressBar_total";
     //   pub static progress_bar_current: &str = "ProgressBar_current";
 }

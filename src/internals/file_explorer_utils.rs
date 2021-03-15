@@ -14,7 +14,10 @@ use cursive::{
 use cursive::{Cursive, CursiveExt};
 use theme::BaseColor;
 // STD Dependencies -----------------------------------------------------------
-use super::cursive_table_view::{ExplorerReady, TableView, TableViewItem};
+use super::{
+    cursive_table_view::{ExplorerReady, TableView, TableViewItem},
+    literals,
+};
 use chrono::offset::Utc;
 use chrono::DateTime;
 use std::collections::HashMap;
@@ -398,18 +401,24 @@ pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<PathInfoT> 
     }
 }
 
-pub fn get_current_dir(siv: &mut Cursive, a_name: &str) -> String {
+pub fn get_current_dir(siv: &mut Cursive, a_panel_id: &str) -> String {
     let current_dir = siv
-        .call_on_name(
-            &(String::from(a_name) + &String::from("Dlg")),
-            move |a_dlg: &mut Atomic_Dialog| a_dlg.get_title(),
-        )
+        .call_on_name(a_panel_id, move |a_dlg: &mut Atomic_Dialog| a_dlg.get_title())
         .unwrap();
     current_dir
 }
+fn get_panel_id_from_table_id(table_id: &str) -> &str {
+    if table_id == literals::main_ui::widget_names::LEFT_PANEL_TABLE_ID {
+        literals::main_ui::widget_names::LEFT_PANEL_ID
+    } else if table_id == literals::main_ui::widget_names::RIGHT_PANEL_TABLE_ID {
+        literals::main_ui::widget_names::RIGHT_PANEL_ID
+    } else {
+        panic!("Wrong table id provided");
+    }
+}
 fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {
     /*Todo repeat*/
-    let current_dir = get_current_dir(siv, a_name);
+    let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
     let new_path = siv
         .call_on_name(a_name, move |a_table: &mut tableViewType| {
             let mut selected_item = a_table.borrow_item(index).unwrap().name.clone();
@@ -599,7 +608,7 @@ fn start_dir_watcher_thread(
     });
 }
 pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
-    let mut left_table = create_basic_table_core(
+    let left_table = create_basic_table_core(
         siv,
         main_ui::widget_names::LEFT_PANEL_TABLE_ID,
         &fm_config.left_panel_initial_path,
@@ -613,9 +622,9 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     )
     .title(fm_config.left_panel_initial_path.clone())
     .padding_lrtb(0, 0, 0, 0)
-    .with_name("LeftPanelDlg");
+    .with_name(main_ui::widget_names::LEFT_PANEL_ID);
 
-    let mut right_table = create_basic_table_core(
+    let right_table = create_basic_table_core(
         siv,
         main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
         &fm_config.right_panel_initial_path,
@@ -629,7 +638,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     )
     .title(fm_config.right_panel_initial_path.clone()) //todo get name from table
     .padding_lrtb(0, 0, 0, 0)
-    .with_name("RightPanelDlg");
+    .with_name(main_ui::widget_names::RIGHT_PANEL_ID);
 
     let button_help = OnEventView::new(TextView::new("[ Help ]"))
         .on_event('w', |siv| siv.quit())
