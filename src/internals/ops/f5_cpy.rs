@@ -1,5 +1,4 @@
 #![forbid(unreachable_patterns)]
-use cursive::{align::{HAlign, VAlign}, reexports::log::warn};
 use cursive::event::*;
 use cursive::menu::Tree;
 use cursive::traits::*;
@@ -8,6 +7,10 @@ use cursive::utils::Counter;
 use cursive::view::Boxable;
 use cursive::views::*;
 use cursive::*;
+use cursive::{
+    align::{HAlign, VAlign},
+    reexports::log::warn,
+};
 use cursive::{Cursive, CursiveExt};
 //std
 use chrono::offset::Utc;
@@ -326,13 +329,11 @@ pub fn move_rename_items_with_progress<F>(
 where
     F: FnMut(fs_extra::TransitProcess) -> fs_extra::dir::TransitProcessResult,
 {
-    let rg  = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec::<_>>());//++artie
+    let rg = regex::RegexSet::new(&selected_mask.split_ascii_whitespace().collect::<Vec<_>>()); //++artie
     let rg_ok = rg.is_ok();
 
     for item_from in from_items {
-
-        if rg_ok && !rg.as_ref().unwrap().is_match(&item_from)
-        {
+        if rg_ok && !rg.as_ref().unwrap().is_match(&item_from) {
             continue;
         }
 

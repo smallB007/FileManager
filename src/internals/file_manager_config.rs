@@ -1,11 +1,136 @@
-use config::Config;
+use crate::internals::literals;
+use std::{thread, time};
+
+use config::{Config, File};
+
+use lazy_static::*;
+use notify::{DebouncedEvent, RecommendedWatcher, RecursiveMode, Watcher};
+use std::sync::mpsc::channel;
+use std::sync::RwLock;
+use std::time::Duration;
+use std::{collections::HashMap, path::PathBuf};
+
+lazy_static! {
+    pub static ref SETTINGS: RwLock<Config> = RwLock::new({
+        let mut settings = Config::default();
+        settings.merge(config::File::with_name("Settings.toml")).unwrap();
+
+        settings
+    });
+}
+fn show() {
+    println!(
+        " * Settings :: \n\x1b[31m{:?}\x1b[0m",
+        SETTINGS
+            .read()
+            .unwrap()
+            .clone()
+            .try_into::<HashMap<String, String>>()
+            .unwrap()
+    );
+}
+
+fn exwatch() {
+    // Create a channel to receive the events.
+    let (tx, rx) = channel();
+
+    // Automatically select the best implementation for your platform.
+    // You can also access each implementation directly e.g. INotifyWatcher.
+    let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
+
+    // Add a path to be watched. All files and directories at that path and
+    // below will be monitored for changes.
+
+    match std::fs::OpenOptions::new()
+        .read(true)
+        .write(true)
+        .create(true)
+        .open(literals::config::config_keys::settings_path)
+    {
+        Ok(file) => {
+            watcher
+                .watch(
+                    literals::config::config_keys::settings_path,
+                    RecursiveMode::NonRecursive,
+                )
+                .unwrap();
+
+            // This is a simple loop, but you may want to use more complex logic here,
+            // for example to handle I/O.
+            loop {
+                match rx.recv() {
+                    Ok(DebouncedEvent::Write(_)) => {
+                        println!(" * Settings.toml written; refreshing configuration ...");
+                        SETTINGS.write().unwrap().refresh().unwrap();
+                        show();
+                    }
+
+                    Err(e) => println!("watch error: {:?}", e),
+
+                    _ => {
+                        // Ignore event
+                    }
+                }
+            }
+        }
+        Err(err) => {
+            println!("Couldn't create/open file: {:?}", err)
+        }
+    }
+}
 pub struct FileMangerConfig {
     pub left_panel_initial_path: String,
     pub right_panel_initial_path: String,
 }
+
 pub fn read_config() -> FileMangerConfig {
+    /*let ten_millis = time::Duration::from_secs(10);
+
+    thread::sleep(ten_millis);*/
+
+    std::thread::spawn(|| exwatch());
+    let mut left_panel_initial_path = std::env::var("HOME").unwrap();
+    let mut right_panel_initial_path = std::env::var("HOME").unwrap();
+    match SETTINGS.read() {
+        Ok(res) => match res.clone().try_into::<HashMap<String, String>>() {
+            Ok(ref mut hm) => {
+                match hm.get(literals::config::config_keys::left_panel_initial_path) {
+                    Some(path) => match PathBuf::from(path).metadata() {
+                        Ok(val) => {
+                            if val.is_dir() {
+                                left_panel_initial_path = path.to_owned();
+                            } else {
+                                hm.remove(literals::config::config_keys::left_panel_initial_path);
+                            }
+                        }
+                        Err(err) => {}
+                    },
+                    None => {
+                        //log only
+                    }
+                }
+                match hm.get(literals::config::config_keys::right_panel_initial_path) {
+                    Some(path) => match PathBuf::from(path).metadata() {
+                        Ok(val) => {
+                            if val.is_dir() {
+                                right_panel_initial_path = path.to_owned();
+                            } else {
+                                hm.remove(literals::config::config_keys::right_panel_initial_path);
+                            }
+                        }
+                        Err(err) => {}
+                    },
+                    None => {
+                        //log only
+                    }
+                }
+            }
+            Err(err) => {}
+        },
+        Err(err) => {}
+    }
     FileMangerConfig {
-        left_panel_initial_path: "/home/artie/Desktop/Left".to_owned(),
-        right_panel_initial_path: "/home/artie/Desktop/Right".to_owned(),
+        left_panel_initial_path,
+        right_panel_initial_path,
     }
 }
