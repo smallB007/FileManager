@@ -293,15 +293,7 @@ pub fn create_basic_table_core(
             a_table.clear_selected_items();
         });
 
-        let current_dir = siv
-            .call_on_name(
-                &(String::from(a_name) + &String::from("Dlg")),
-                move |a_dlg: &mut Atomic_Dialog| {
-                    //format!("{:?}", a_table.borrow_item(index).unwrap())
-                    a_dlg.get_title()
-                },
-            )
-            .unwrap();
+        let current_dir = get_current_dir(siv, a_name);
         let path_to_stop_watching = current_dir.clone();
         let new_path = siv
             .call_on_name(a_name, move |a_table: &mut tableViewType| {
@@ -567,6 +559,7 @@ fn mkdir(siv: &mut cursive::Cursive) {}
 
 fn pull_dn(siv: &mut cursive::Cursive) {}
 fn quit(siv: &mut cursive::Cursive) {
+    /* */
     siv.quit();
 }
 fn start_dir_watcher_thread(
@@ -608,7 +601,7 @@ fn start_dir_watcher_thread(
 pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
     let mut left_table = create_basic_table_core(
         siv,
-        main_ui::widget_names::left_panel_id,
+        main_ui::widget_names::LEFT_PANEL_TABLE_ID,
         &fm_config.left_panel_initial_path,
     );
     let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
@@ -624,7 +617,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
 
     let mut right_table = create_basic_table_core(
         siv,
-        main_ui::widget_names::right_panel_id,
+        main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
         &fm_config.right_panel_initial_path,
     );
     let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
@@ -744,21 +737,23 @@ fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<
 
 pub fn get_active_panel(siv: &mut Cursive) -> String {
     let left_panel_last_focus_time = siv
-        .call_on_name(main_ui::widget_names::left_panel_id, |a_table: &mut tableViewType| {
-            a_table.last_focus_time
-        })
+        .call_on_name(
+            main_ui::widget_names::LEFT_PANEL_TABLE_ID,
+            |a_table: &mut tableViewType| a_table.last_focus_time,
+        )
         .unwrap();
 
     let right_panel_last_focus_time = siv
-        .call_on_name(main_ui::widget_names::right_panel_id, |a_table: &mut tableViewType| {
-            a_table.last_focus_time
-        })
+        .call_on_name(
+            main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
+            |a_table: &mut tableViewType| a_table.last_focus_time,
+        )
         .unwrap();
 
     let active_panel = if left_panel_last_focus_time > right_panel_last_focus_time {
-        main_ui::widget_names::left_panel_id
+        main_ui::widget_names::LEFT_PANEL_TABLE_ID
     } else {
-        main_ui::widget_names::right_panel_id
+        main_ui::widget_names::RIGHT_PANEL_TABLE_ID
     };
 
     active_panel.to_owned()

@@ -13,7 +13,12 @@ use std::{collections::HashMap, path::PathBuf};
 lazy_static! {
     pub static ref SETTINGS: RwLock<Config> = RwLock::new({
         let mut settings = Config::default();
-        settings.merge(config::File::with_name("Settings.toml")).unwrap();
+        match settings.merge(config::File::with_name(literals::config::config_keys::settings_path)) {
+            Err(err) => {
+                println!("settings error: {}", err);
+            }
+            _ => {}
+        }
 
         settings
     });

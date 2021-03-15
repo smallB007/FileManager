@@ -61,15 +61,15 @@ pub fn del(siv: &mut cursive::Cursive) {
     //    if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
     //        let active_panel = get_active_panel(siv);
     //
-    //        let (from, to) = if active_panel == main_ui::widget_names::left_panel_id {
+    //        let (from, to) = if active_panel == main_ui::widget_names::LEFT_PANEL_TABLE_ID {
     //            (
-    //                main_ui::widget_names::left_panel_id,
-    //                main_ui::widget_names::right_panel_id,
+    //                main_ui::widget_names::LEFT_PANEL_TABLE_ID,
+    //                main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
     //            )
     //        } else {
     //            (
-    //                main_ui::widget_names::right_panel_id,
-    //                main_ui::widget_names::left_panel_id,
+    //                main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
+    //                main_ui::widget_names::LEFT_PANEL_TABLE_ID,
     //            )
     //        };
     //
