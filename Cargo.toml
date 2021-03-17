@@ -26,6 +26,8 @@ notify = "*"
 crossbeam-channel = "*"
 regex = "1"
 lazy_static = "1.4.0"
+serde = { version = "1.0", features = ["derive"] }
+toml = "*"
 [features]
 default = ["serial_cpy"]
 serial_cpy = []

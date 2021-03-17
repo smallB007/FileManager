@@ -16,12 +16,12 @@ use theme::BaseColor;
 // STD Dependencies -----------------------------------------------------------
 use super::{
     cursive_table_view::{ExplorerReady, TableView, TableViewItem},
-    literals,
+    file_manager_config, literals,
 };
 use chrono::offset::Utc;
 use chrono::DateTime;
-use std::collections::HashMap;
-use std::path::PathBuf;
+use std::{borrow::BorrowMut, collections::HashMap, io::Write};
+use std::{fs::OpenOptions, path::PathBuf};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::channel;
@@ -40,9 +40,9 @@ use crate::internals::atomic_button::Atomic_Button;
 use crate::internals::atomic_dialog::Atomic_Dialog;
 use crate::internals::atomic_dialog_try::AtomicDialog;
 use crate::internals::atomic_text_view::AtomicTextView;
+use crate::internals::file_manager::GLOBAL_FileManager;
 use crate::internals::literals::copy_progress_dlg;
 
-use crate::internals::file_manager::GLOBAL_FileManager;
 use crate::internals::file_manager_config::FileMangerConfig;
 use crate::internals::literals::main_ui;
 use crate::internals::ops::f5_cpy::{
@@ -247,7 +247,7 @@ pub fn create_basic_table_core(
         .watch(initial_path.clone(), RecursiveMode::NonRecursive)
         .unwrap();
 
-    start_dir_watcher_thread(siv, String::from(a_name), String::from(initial_path), rx);
+    start_dir_watcher_thread(siv, a_name, String::from(initial_path), rx);
     let watcher = Arc::new(Mutex::new(watcher));
     /*=============END DIR WATCHER=================*/
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
@@ -296,7 +296,7 @@ pub fn create_basic_table_core(
             a_table.clear_selected_items();
         });
 
-        let current_dir = get_current_dir(siv, a_name);
+        let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
         let path_to_stop_watching = current_dir.clone();
         let new_path = siv
             .call_on_name(a_name, move |a_table: &mut tableViewType| {
@@ -328,44 +328,9 @@ pub fn create_basic_table_core(
                 .unwrap()
                 .watch(new_path.clone(), RecursiveMode::NonRecursive)
                 .unwrap();
-            /*            let new_path_clone = new_path.clone();
-            let a_table_name_clone = a_name.clone();*/
 
-            /*            if let Some(wtchr) = a_file_mngr.watchers.remove_entry(a_table_name_clone) {}
-            a_file_mngr.watchers.insert(
-                String::from(a_table_name_clone),
-
-                std::thread::spawn(move || watch_dir(new_path_clone, a_table_name_clone)),
-            );*/
-            fill_table_with_items_wrapper(siv, String::from(a_name), new_path);
-            /*
-            let mut res = Option::<std::io::Error>::default();
-            siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-                res = fill_table_with_items(a_table, new_path.clone()).err();
-            });
-            match res {
-                Some(e) => {
-                    siv.add_layer(Dialog::around(TextView::new(e.to_string())).dismiss_button("Ok"));
-                }
-                None => {
-                    let _value = siv
-                        .call_on_name(&(String::from(a_name) + &String::from("Dlg")), |a_dlg: &mut Atomic_Dialog| {
-                            a_dlg.set_title(new_path.clone().to_str().unwrap());
-                        })
-                        .unwrap();
-                }
-            }*/
+            fill_table_with_items_wrapper(siv, a_name, new_path);
         }
-        /*        siv.add_layer(
-            Dialog::around(TextView::new(value))
-                .title(format!("Removing row # {}", row))
-                .button("Close", move |siv| {
-                    siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-                        a_table.remove_item(index);
-                    });
-                    siv.pop_layer();
-                }),
-        );*/
     });
     let named_view_table = table.with_name(a_name);
 
@@ -438,7 +403,7 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
     new_path
 }
 
-fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: PathBuf) {
+fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */, new_path: PathBuf) {
     let mut res = Option::<std::io::Error>::default();
     siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
         res = fill_table_with_items(a_table, new_path.clone()).err();
@@ -449,18 +414,15 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: String, new_path: Pa
         }
         None => {
             let _value = siv
-                .call_on_name(
-                    &(String::from(a_name) + &String::from("Dlg")),
-                    |a_dlg: &mut Atomic_Dialog| {
-                        a_dlg.set_title(new_path.clone().to_str().unwrap());
-                    },
-                )
+                .call_on_name(get_panel_id_from_table_id(a_name), |a_dlg: &mut Atomic_Dialog| {
+                    a_dlg.set_title(new_path.clone().to_str().unwrap());
+                })
                 .unwrap();
         }
     }
 }
 
-fn update_table(siv: &mut Cursive, a_name: String, a_path: String) {
+fn update_table(siv: &mut Cursive, a_name: &str, a_path: String) {
     let new_path = PathBuf::from(a_path);
     fill_table_with_items_wrapper(siv, a_name, new_path);
     //println!("Command received");
@@ -567,13 +529,24 @@ fn edit(siv: &mut cursive::Cursive) {}
 fn mkdir(siv: &mut cursive::Cursive) {}
 
 fn pull_dn(siv: &mut cursive::Cursive) {}
+
 fn quit(siv: &mut cursive::Cursive) {
-    /* */
+    let left_dir = get_current_dir(siv, literals::main_ui::widget_names::LEFT_PANEL_ID);
+    let right_dir = get_current_dir(siv, literals::main_ui::widget_names::RIGHT_PANEL_ID);
+
+    let mutex_guard = GLOBAL_FileManager.get().lock().unwrap();
+    let mut ref_mut = (*mutex_guard).borrow_mut();
+
+    let fm = &mut ref_mut.config;
+    fm.left_panel_initial_path = left_dir;
+    fm.right_panel_initial_path = right_dir;
+    file_manager_config::write_config(&fm);
+
     siv.quit();
 }
 fn start_dir_watcher_thread(
     siv: &mut Cursive,
-    a_table_name: String,
+    a_table_name: &'static str,
     a_path: String,
     rx: Receiver<notify::DebouncedEvent>,
 ) {
@@ -595,11 +568,11 @@ fn start_dir_watcher_thread(
         loop {
             match rx.recv() {
                 Ok(event) => {
-                    let name = a_table_name.clone();
+                    //let name = a_table_name.clone();
                     let path = a_path.clone(); //todo optimize
                                                //println!("{:?}", event);
                     cb_panel_update_clone
-                        .send(Box::new(|siv| update_table(siv, name, path)))
+                        .send(Box::new(move |siv| update_table(siv, a_table_name, path)))
                         .unwrap();
                 }
                 Err(e) => println!("watch error: {:?}", e),
