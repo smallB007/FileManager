@@ -3,10 +3,7 @@ pub mod widget_names {
     pub static RIGHT_PANEL_ID: &str = "RightPanel";
     pub static LEFT_PANEL_TABLE_ID: &str = "LeftPanelTableView";
     pub static RIGHT_PANEL_TABLE_ID: &str = "RightPanelTableView";
-
-    //   pub static progress_bar_total: &str = "ProgressBar_total";
-    //   pub static progress_bar_current: &str = "ProgressBar_current";
+    pub static LEFT_PANEL_INFO_ITEM_ID: &str = "LeftPanelInfoItem";
+    pub static RIGHT_PANEL_INFO_ITEM_ID: &str = "RightPanelInfoItem";
 }
-pub mod labels {
-    //    pub static get_copying_progress_total_background_text: &str = "Copying...";
-}
+pub mod labels {}

@@ -263,32 +263,14 @@ pub fn create_basic_table_core(
     table.set_on_select(move |siv: &mut Cursive, row: usize, index: usize| {
         let current_item = siv
             .call_on_name(a_name, move |a_table: &mut tableViewType| {
-                /*                let v = GLOBAL_FileManager.get();
-                let tmp = v.lock().unwrap();
-                let mut v = tmp.borrow_mut();*/
                 a_table.borrow_item(index).unwrap().clone()
             })
             .unwrap();
         let _value = siv
-            .call_on_name(
-                &(String::from(a_name) + &String::from("InfoItem")),
-                move |a_dlg: &mut TextView| {
-                    //                a_dlg.set_title(current_item.name.clone());
-                    a_dlg.set_content(current_item.name.clone());
-                },
-            )
+            .call_on_name(get_info_item_from_table_id(a_name), move |a_dlg: &mut TextView| {
+                a_dlg.set_content(current_item.name.clone());
+            })
             .unwrap();
-
-        /*        siv.add_layer(
-            Dialog::around(TextView::new(value))
-                .title(format!("Removing row # {}", row))
-                .button("Close", move |siv| {
-                    siv.call_on_name(a_name, |a_table: &mut tableViewType| {
-                        a_table.remove_item(index);
-                    });
-                    siv.pop_layer();
-                }),
-        );*/
     });
     table.set_selected_row(0);
     table.set_on_submit(move |siv: &mut Cursive, row: usize, index: usize| {
@@ -381,6 +363,17 @@ fn get_panel_id_from_table_id(table_id: &str) -> &str {
         panic!("Wrong table id provided");
     }
 }
+
+fn get_info_item_from_table_id(table_id: &str) -> &str {
+    if table_id == literals::main_ui::widget_names::LEFT_PANEL_TABLE_ID {
+        literals::main_ui::widget_names::LEFT_PANEL_INFO_ITEM_ID
+    } else if table_id == literals::main_ui::widget_names::RIGHT_PANEL_TABLE_ID {
+        literals::main_ui::widget_names::RIGHT_PANEL_INFO_ITEM_ID
+    } else {
+        panic!("Wrong table id provided");
+    }
+}
+
 fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<(TableNameT, PathT, IndexT)> {
     /*Todo repeat*/
     let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
@@ -586,7 +579,8 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         main_ui::widget_names::LEFT_PANEL_TABLE_ID,
         &fm_config.left_panel_initial_path,
     );
-    let left_info_item = TextView::new("Hello Dialog!").with_name("LeftPanelInfoItem");
+    let left_info_item =
+        TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::LEFT_PANEL_INFO_ITEM_ID);
     let left_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(left_table.full_screen())
@@ -602,7 +596,8 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
         &fm_config.right_panel_initial_path,
     );
-    let right_info_item = TextView::new("Hello Dialog!").with_name("RightPanelInfoItem");
+    let right_info_item =
+        TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::LEFT_PANEL_INFO_ITEM_ID);
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(right_table.full_screen())
