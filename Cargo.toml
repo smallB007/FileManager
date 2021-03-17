@@ -11,21 +11,12 @@ cursive = { path = "../../../Repos/smallB_cursive/cursive" }
 #cursive_table_view = "*"
 rand = "0.8.2"
 chrono = "0.4.19"
-config = "0.9"
 unicode-width = "0.1.5"
 owning_ref = "0.4.1"
-#used customized fs_extra = "1.2.0"
 state = { version = "0.4.2", features = ["tls"] }
-#[dependencies]
-#cursive_table_view ={ path = "../../../Repos/cursive_table_view"}
 fs_extra = { path = "../../../Repos/smallB_fs_extra" }
 notify = "*"
-#[patch.crates-io.enumset_derive]
-#git = "https://github.com/ocboogie/enumset"
-#branch = "span-fix" 
-crossbeam-channel = "*"
 regex = "1"
-lazy_static = "1.4.0"
 serde = { version = "1.0", features = ["derive"] }
 toml = "*"
 [features]
