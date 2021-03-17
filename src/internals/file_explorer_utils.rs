@@ -347,18 +347,30 @@ pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<PathInfoT> 
         None
     }
 }
+pub struct PanelId<'a> {
+    panel_id: &'a str,
+}
+impl<'a> Into<&'a str> for PanelId<'a> {
+    fn into(self) -> &'a str {
+        self.panel_id
+    }
+}
 
-pub fn get_current_dir(siv: &mut Cursive, a_panel_id: &str) -> String {
+pub fn get_current_dir(siv: &mut Cursive, a_panel_id: PanelId) -> String {
     let current_dir = siv
-        .call_on_name(a_panel_id, move |a_dlg: &mut Atomic_Dialog| a_dlg.get_title())
+        .call_on_name(a_panel_id.into(), move |a_dlg: &mut Atomic_Dialog| a_dlg.get_title())
         .unwrap();
     current_dir
 }
-pub fn get_panel_id_from_table_id(table_id: &str) -> &str {
+pub fn get_panel_id_from_table_id(table_id: &str) -> PanelId {
     if table_id == literals::main_ui::widget_names::LEFT_PANEL_TABLE_ID {
-        literals::main_ui::widget_names::LEFT_PANEL_ID
+        PanelId {
+            panel_id: literals::main_ui::widget_names::LEFT_PANEL_ID,
+        }
     } else if table_id == literals::main_ui::widget_names::RIGHT_PANEL_TABLE_ID {
-        literals::main_ui::widget_names::RIGHT_PANEL_ID
+        PanelId {
+            panel_id: literals::main_ui::widget_names::RIGHT_PANEL_ID,
+        }
     } else {
         panic!("Wrong table id provided");
     }
@@ -407,9 +419,12 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */,
         }
         None => {
             let _value = siv
-                .call_on_name(get_panel_id_from_table_id(a_name), |a_dlg: &mut Atomic_Dialog| {
-                    a_dlg.set_title(new_path.clone().to_str().unwrap());
-                })
+                .call_on_name(
+                    get_panel_id_from_table_id(a_name).into(),
+                    |a_dlg: &mut Atomic_Dialog| {
+                        a_dlg.set_title(new_path.clone().to_str().unwrap());
+                    },
+                )
                 .unwrap();
         }
     }
@@ -524,8 +539,18 @@ fn mkdir(siv: &mut cursive::Cursive) {}
 fn pull_dn(siv: &mut cursive::Cursive) {}
 
 fn quit(siv: &mut cursive::Cursive) {
-    let left_dir = get_current_dir(siv, literals::main_ui::widget_names::LEFT_PANEL_ID);
-    let right_dir = get_current_dir(siv, literals::main_ui::widget_names::RIGHT_PANEL_ID);
+    let left_dir = get_current_dir(
+        siv,
+        PanelId {
+            panel_id: literals::main_ui::widget_names::LEFT_PANEL_ID,
+        },
+    );
+    let right_dir = get_current_dir(
+        siv,
+        PanelId {
+            panel_id: literals::main_ui::widget_names::RIGHT_PANEL_ID,
+        },
+    );
 
     let mutex_guard = GLOBAL_FileManager.get().lock().unwrap();
     let mut ref_mut = (*mutex_guard).borrow_mut();
