@@ -105,9 +105,9 @@ impl Default for FileMangerConfig {
 pub fn write_config(config: &FileMangerConfig) {
     let input_file = literals::config::config_keys::settings_path;
     let mut file = std::fs::OpenOptions::new()
-        .read(true)
         .write(true)
         .create(true)
+        .truncate(true)
         .open(input_file)
         .unwrap();
 
