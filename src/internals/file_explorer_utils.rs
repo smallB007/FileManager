@@ -354,7 +354,7 @@ pub fn get_current_dir(siv: &mut Cursive, a_panel_id: &str) -> String {
         .unwrap();
     current_dir
 }
-fn get_panel_id_from_table_id(table_id: &str) -> &str {
+pub fn get_panel_id_from_table_id(table_id: &str) -> &str {
     if table_id == literals::main_ui::widget_names::LEFT_PANEL_TABLE_ID {
         literals::main_ui::widget_names::LEFT_PANEL_ID
     } else if table_id == literals::main_ui::widget_names::RIGHT_PANEL_TABLE_ID {

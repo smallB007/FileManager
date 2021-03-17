@@ -26,8 +26,8 @@ use std::{
 use fs_extra::dir::{copy, TransitProcessResult};
 //FileManager crate
 use crate::internals::file_explorer_utils::{
-    create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_selected_paths, remove_view,
-    tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
+    create_themed_view, get_active_panel, get_current_dir, get_error_theme, get_panel_id_from_table_id,
+    get_selected_paths, remove_view, tableViewType, unselect_inx, PathInfoT, ProgressDlgT,
 };
 use crate::internals::file_manager::GLOBAL_FileManager;
 use crate::internals::literals::copy_dlg;
@@ -1078,7 +1078,7 @@ pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pu
 
             match get_selected_paths(siv, from) {
                 Some(selected_paths_from) => {
-                    let selected_path_to = get_current_dir(siv, to);
+                    let selected_path_to = get_current_dir(siv, get_panel_id_from_table_id(to));
                     let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to, is_copy);
                     let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
                     siv.add_layer(cpy_dlg);
