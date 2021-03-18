@@ -33,7 +33,6 @@ pub fn del(siv: &mut cursive::Cursive) {
     let active_panel = get_active_panel(siv);
     match get_selected_paths(siv, &active_panel) {
         Some(selected_paths) => {
-            //let selected_path_to = get_current_dir(siv, to);
             let del_dlg = create_del_dlg(selected_paths);
             let theme_error = get_error_theme(siv);
             siv.add_layer(ThemedView::new(theme_error, Layer::new(del_dlg)));
@@ -47,46 +46,4 @@ pub fn del(siv: &mut cursive::Cursive) {
             siv.add_layer(info_dlg);
         }
     }
-    // *First, check if copying is in the progress:*/
-    //if let Some(ref cpy_data) = GLOBAL_FileManager.get().lock().unwrap().borrow().cpy_data {
-    //    if let None = siv.find_name::<ProgressDlgT>(copy_progress_dlg::labels::dialog_name) {
-    //        let cpy_progress_dlg =
-    //            create_thmd_cpy_pgrss_dlg(siv, cpy_data.files_total, cpy_data.cond_var_suspend.clone());
-    //        siv.add_layer(cpy_progress_dlg);
-    //        siv.set_autorefresh(true);
-    //    }
-    //} else {
-    //    /*No copying, let'siv start it then but first: ;)*/
-    //    /*Check if we already presenting CpyDlg and if not ...*/
-    //    if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
-    //        let active_panel = get_active_panel(siv);
-    //
-    //        let (from, to) = if active_panel == main_ui::widget_names::LEFT_PANEL_TABLE_ID {
-    //            (
-    //                main_ui::widget_names::LEFT_PANEL_TABLE_ID,
-    //                main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
-    //            )
-    //        } else {
-    //            (
-    //                main_ui::widget_names::RIGHT_PANEL_TABLE_ID,
-    //                main_ui::widget_names::LEFT_PANEL_TABLE_ID,
-    //            )
-    //        };
-    //
-    //        match get_selected_paths(siv, from) {
-    //            Some(selected_paths_from) => {
-    //                let selected_path_to = get_current_dir(siv, to);
-    //                let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to);
-    //                let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
-    //                siv.add_layer(cpy_dlg);
-    //            }
-    //            None => {
-    //                let info_dlg = create_themed_view(
-    //                    siv,
-    //                    Atomic_Dialog::around(TextView::new("Please select item to copy")).dismiss_button("[ OK ]"),
-    //                );
-    //                siv.add_layer(info_dlg);
-    //            }
-    //        }
-    //    }
 }

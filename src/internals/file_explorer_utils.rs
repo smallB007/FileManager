@@ -247,7 +247,7 @@ pub fn create_basic_table_core(
         .watch(initial_path.clone(), RecursiveMode::NonRecursive)
         .unwrap();
 
-    start_dir_watcher_thread(siv, a_name, String::from(initial_path), rx);
+    start_dir_watcher_thread(siv, a_name, rx);
     let watcher = Arc::new(Mutex::new(watcher));
     /*=============END DIR WATCHER=================*/
     fill_table_with_items(&mut table, PathBuf::from(initial_path));
@@ -304,7 +304,15 @@ pub fn create_basic_table_core(
             })
             .unwrap();
         if new_path.is_dir() {
-            watcher.lock().unwrap().unwatch(path_to_stop_watching);
+            match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
+                Ok(_) => {
+                    //println!("Unwatched");
+                }
+                Err(err) => {
+                    println!("Cannot unwatch: {}", err);
+                    panic!(); //todo remove
+                }
+            }
             watcher
                 .lock()
                 .unwrap()
@@ -430,9 +438,9 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */,
     }
 }
 
-fn update_table(siv: &mut Cursive, a_name: &str, a_path: String) {
-    let new_path = PathBuf::from(a_path);
-    fill_table_with_items_wrapper(siv, a_name, new_path);
+fn update_table(siv: &mut Cursive, a_name: &str, a_path: PathBuf) {
+    //    let new_path = PathBuf::from(a_path);
+    fill_table_with_items_wrapper(siv, a_name, a_path);
     //println!("Command received");
 }
 
@@ -562,42 +570,68 @@ fn quit(siv: &mut cursive::Cursive) {
 
     siv.quit();
 }
-fn start_dir_watcher_thread(
-    siv: &mut Cursive,
-    a_table_name: &'static str,
-    a_path: String,
-    rx: Receiver<notify::DebouncedEvent>,
-) {
-    let cb_panel_update = siv.cb_sink().clone();
-    let cb_panel_update_clone = cb_panel_update.clone();
 
-    /*let (tx, rx) = channel();
-    // Create a watcher object, delivering debounced events.
-    // The notification back-end is selected based on the platform.
-    let mut watcher = watcher(tx, Duration::from_secs(5)).unwrap();
-    // Add a path to be watched. All files and directories at that path and
-    // below will be monitored for changes.
-    watcher.watch(a_path.clone(), RecursiveMode::NonRecursive).unwrap();
-    let watcher = Arc::new(Mutex::new(watcher));*/
+fn start_dir_watcher_thread(siv: &mut Cursive, a_table_name: &'static str, rx: Receiver<notify::DebouncedEvent>) {
+    let cb_panel_update_clone = siv.cb_sink().clone();
+    //let cb_panel_update_clone = cb_panel_update.clone();
+
     std::thread::spawn(move || {
-        // let v = GLOBAL_FileManager.get();
-        // let tmp = v.lock().unwrap();
-        //  let mut a_file_mngr = tmp.borrow_mut();
         loop {
             match rx.recv() {
                 Ok(event) => {
-                    //let name = a_table_name.clone();
-                    let path = a_path.clone(); //todo optimize
-                                               //println!("{:?}", event);
-                    cb_panel_update_clone
-                        .send(Box::new(move |siv| update_table(siv, a_table_name, path)))
-                        .unwrap();
+                    //let path = a_path.clone(); //todo optimize
+                    let path: Option<PathBuf> = match event {
+                        notify::DebouncedEvent::Rescan => None,
+                        notify::DebouncedEvent::Error(_, _) => None,
+
+                        notify::DebouncedEvent::NoticeWrite(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::NoticeRemove(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::Create(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::Write(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::Chmod(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::Remove(a_path) => {
+                            let mut dir = a_path.clone();
+                            dir.pop();
+                            Some(dir)
+                        }
+                        notify::DebouncedEvent::Rename(a_path_from, a_path_to) => {
+                            let mut dir = a_path_to.clone();
+                            dir.pop();
+                            Some(dir)
+                        } //todo check if to
+                    };
+                    if path.is_some() {
+                        cb_panel_update_clone
+                            .send(Box::new(move |siv| update_table(siv, a_table_name, path.unwrap())))
+                            .unwrap();
+                    }
                 }
                 Err(e) => println!("watch error: {:?}", e),
             }
         }
     });
 }
+
 pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMangerConfig) {
     let left_table = create_basic_table_core(
         siv,
@@ -705,9 +739,6 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     );
     let whole_layout = LinearLayout::vertical().child(left_right_layout).child(buttons_layout);
     siv.add_fullscreen_layer(whole_layout);
-    /*    let paths_from = vec!["file.txt".to_owned(),"file.txt".to_owned()];
-    siv.add_layer(create_cpy_progress_dialog(siv,paths_from,Rc::new(PathBuf::from("path_to")),false,false));*/
-    //    siv.run();
 }
 fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<(), std::io::Error> {
     let is = crate::internals::utils::read_directory(&a_dir)?;
