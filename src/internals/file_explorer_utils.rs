@@ -622,7 +622,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         &fm_config.right_panel_initial_path,
     );
     let right_info_item =
-        TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::LEFT_PANEL_INFO_ITEM_ID);
+        TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::RIGHT_PANEL_INFO_ITEM_ID);
     let right_layout = Atomic_Dialog::around(
         LinearLayout::vertical()
             .child(right_table.full_screen())
