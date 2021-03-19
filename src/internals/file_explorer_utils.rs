@@ -149,10 +149,9 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     //siv.run();
 }
 fn close_dlg(siv: &mut cursive::Cursive) {
-    if let Some(mut dialog) = siv.find_name::<Dialog>("DLG") {
-        for but in dialog.buttons_mut() {}
+    while siv.screen_mut().len() > 1 {
+        siv.pop_layer();
     }
-    //siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
 }
 // Modules --------------------------------------------------------------------
 // ----------------------------------------------------------------------------
