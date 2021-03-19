@@ -635,15 +635,16 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     );
     let left_info_item =
         TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::LEFT_PANEL_INFO_ITEM_ID);
-    let left_layout = Atomic_Dialog::around(
-        LinearLayout::vertical()
-            .child(left_table.full_screen())
-            .child(Delimiter::new("Title 1"))
-            .child(left_info_item),
-    )
-    .title(fm_config.left_panel_initial_path.clone())
-    .padding_lrtb(0, 0, 0, 0)
-    .with_name(main_ui::widget_names::LEFT_PANEL_ID);
+    let main_left_layout = LinearLayout::vertical()
+        .child(left_table.full_screen())
+        .child(Delimiter::new("Title 1"))
+        .child(left_info_item);
+    let mut left_stack_view = StackView::new();
+    left_stack_view.add_fullscreen_layer(main_left_layout);
+    let left_layout = Atomic_Dialog::around(left_stack_view)
+        .title(fm_config.left_panel_initial_path.clone())
+        .padding_lrtb(0, 0, 0, 0)
+        .with_name(main_ui::widget_names::LEFT_PANEL_ID);
 
     let right_table = create_basic_table_core(
         siv,
@@ -652,15 +653,16 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     );
     let right_info_item =
         TextView::new("Hello Dialog!").with_name(literals::main_ui::widget_names::RIGHT_PANEL_INFO_ITEM_ID);
-    let right_layout = Atomic_Dialog::around(
-        LinearLayout::vertical()
-            .child(right_table.full_screen())
-            .child(Delimiter::new("Title 2"))
-            .child(right_info_item),
-    )
-    .title(fm_config.right_panel_initial_path.clone()) //todo get name from table
-    .padding_lrtb(0, 0, 0, 0)
-    .with_name(main_ui::widget_names::RIGHT_PANEL_ID);
+    let main_right_layout = LinearLayout::vertical()
+        .child(right_table.full_screen())
+        .child(Delimiter::new("Title 2"))
+        .child(right_info_item);
+    let mut right_stack_view = StackView::new();
+    right_stack_view.add_fullscreen_layer(main_right_layout);
+    let right_layout = Atomic_Dialog::around(right_stack_view)
+        .title(fm_config.right_panel_initial_path.clone()) //todo get name from table
+        .padding_lrtb(0, 0, 0, 0)
+        .with_name(main_ui::widget_names::RIGHT_PANEL_ID);
 
     let button_help = OnEventView::new(TextView::new("[ Help ]"))
         .on_event('w', |siv| siv.quit())
