@@ -9,13 +9,31 @@ pub mod widget_names {
     pub static hideable_cpy_prgrs_br_right_bracket: &str = "right_bracket_hideable";
     pub static hideable_cpy_button: &str = "hideable_cpy_button";
 }
+
 pub mod labels {
-    pub fn get_copy_n_items_with_mask_text(is_copy: bool, n_items: usize) -> String {
-        if is_copy {
-            format!("Copy {} items with mask:", n_items)
-        } else {
-            format!("Move {} items with mask:", n_items)
+    use std::fmt::{self, Display, Formatter};
+    struct Plural {
+        is_copy: bool,
+        n_items: usize,
+    }
+    impl Display for Plural {
+        //format!("Copy {} items with mask:", n_items)
+        // `f` is a buffer, and this method must write the formatted string into it
+        fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+            // `write!` is like `format!`, but it will write the formatted string
+            // into a buffer (the first argument)
+            write!(
+                f,
+                "{} {} {}",
+                if self.is_copy { "Copy" } else { "Move" },
+                self.n_items,
+                if self.n_items == 1 { "item" } else { "items" }
+            )
         }
+    }
+    pub fn get_copy_n_items_with_mask_text(is_copy: bool, n_items: usize) -> String {
+        let plural = Plural { is_copy, n_items };
+        plural.to_string() + " with mask:"
     }
     pub fn get_copying_progress_total_background_text(is_copy: bool) -> String {
         if is_copy {
