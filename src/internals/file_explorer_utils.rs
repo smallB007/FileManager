@@ -138,17 +138,13 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     if showMenu {
         siv.select_menubar()
     }
-    siv.add_global_callback(Key::Esc, close_dlg);
+    siv.add_global_callback(Key::Esc, close_dlgs);
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F5, cpy);
     siv.add_global_callback(Key::F8, del);
     siv.add_global_callback(Key::F4, ren_mv);
-    //    siv.add_global_callback(Key::F7, show_hide_cpy);
-    //  siv.add_layer(Dialog::text("Hit <Esc> to show the menu!"));
-
-    //siv.run();
 }
-fn close_dlg(siv: &mut cursive::Cursive) {
+fn close_dlgs(siv: &mut cursive::Cursive) {
     while siv.screen_mut().len() > 1 {
         siv.pop_layer();
     }
