@@ -940,7 +940,7 @@ fn get_cpy_dialog_content_clone_cb(
     let clone = paths_from.clone();
     move |s| {
         get_cpy_dialog_content_cb(s, &clone, is_background, is_copy);
-        match s.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
+        match s.screen_mut().find_layer_from_name(copy_dlg::widget_names::dialog_name) {
             Some(layer_position) => {
                 s.screen_mut().remove_layer(layer_position);
             }
@@ -1061,7 +1061,10 @@ pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pu
     } else {
         /*No copying, let'siv start it then but first: ;)*/
         /*Check if we already presenting CpyDlg and if not ...*/
-        if let None = siv.screen_mut().find_layer_from_name(copy_dlg::labels::dialog_name) {
+        if let None = siv
+            .screen_mut()
+            .find_layer_from_name(copy_dlg::widget_names::dialog_name)
+        {
             let active_panel = get_active_panel(siv);
 
             let (from, to) = if active_panel == main_ui::widget_names::LEFT_PANEL_TABLE_ID {
@@ -1080,7 +1083,7 @@ pub fn cpy_mv_helper(siv: &mut cursive::Cursive, is_copy: bool) //todo remove pu
                 Some(selected_paths_from) => {
                     let selected_path_to = get_current_dir(siv, get_panel_id_from_table_id(to));
                     let cpy_dlg = create_cpy_dialog(selected_paths_from, selected_path_to, is_copy);
-                    let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::labels::dialog_name);
+                    let cpy_dlg = create_themed_view(siv, cpy_dlg).with_name(copy_dlg::widget_names::dialog_name);
                     siv.add_layer(cpy_dlg);
                 }
                 None => {

@@ -138,7 +138,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
     if showMenu {
         siv.select_menubar()
     }
-    siv.add_global_callback(Key::Esc, switch_panel);
+    siv.add_global_callback(Key::Esc, close_dlg);
     siv.add_global_callback(Key::F10, quit);
     siv.add_global_callback(Key::F5, cpy);
     siv.add_global_callback(Key::F8, del);
@@ -148,7 +148,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
 
     //siv.run();
 }
-fn switch_panel(siv: &mut cursive::Cursive) {
+fn close_dlg(siv: &mut cursive::Cursive) {
     if let Some(mut dialog) = siv.find_name::<Dialog>("DLG") {
         for but in dialog.buttons_mut() {}
     }
