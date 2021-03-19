@@ -702,7 +702,7 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         .child(right_bracket_hideable);
     let button_RenMov = Button::new_raw("[ RenMv ]", ren_mv);
     let ren_mov_layout = LinearLayout::horizontal()
-        .child(TextView::new("6"))
+        .child(TextView::new("6").style(theme::ColorStyle::title_primary()))
         .child(button_RenMov);
     let button_MkDir = Button::new_raw("[ MkDir ]", mkdir);
     let mkdir_layout = LinearLayout::horizontal().child(TextView::new("7")).child(button_MkDir);
@@ -715,7 +715,9 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         .child(TextView::new("9"))
         .child(button_PullDn);
     let button_quit = Button::new_raw("[ Quit ]", quit);
-    let quit_layout = LinearLayout::horizontal().child(TextView::new("10")).child(button_quit);
+    let quit_layout = LinearLayout::horizontal()
+        .child(TextView::new("10").style(theme::ColorStyle::title_primary()))
+        .child(button_quit);
     let buttons_layout = LinearLayout::horizontal()
         .child(help_layout.full_width())
         .child(menu_layout.full_width())
