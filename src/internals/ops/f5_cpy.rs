@@ -958,7 +958,7 @@ fn create_cpy_dialog(paths_from: PathInfoT, path_to: String, is_copy: bool) -> D
             ))
             .child(
                 EditView::new()
-                    .content(if paths_from.len() == 1 { &paths_from[0].1 } else { "*.*" })
+                    .content("*.*")
                     .with_name(literals::copy_dlg::widget_names::copy_from_edit_view)
                     .min_width(100),
             )
