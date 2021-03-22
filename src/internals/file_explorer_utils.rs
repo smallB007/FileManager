@@ -45,6 +45,7 @@ use crate::internals::literals::copy_progress_dlg;
 
 use crate::internals::file_manager_config::FileMangerConfig;
 use crate::internals::literals::main_ui;
+use crate::internals::ops::f3_open::open;
 use crate::internals::ops::f5_cpy::{
     copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
     OverrideCase,
@@ -139,10 +140,11 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
         siv.select_menubar()
     }
     siv.add_global_callback(Key::Esc, close_dlgs);
-    siv.add_global_callback(Key::F10, quit);
+    siv.add_global_callback(Key::F3, open);
     siv.add_global_callback(Key::F5, cpy);
+    siv.add_global_callback(Key::F6, ren_mv);
     siv.add_global_callback(Key::F8, del);
-    siv.add_global_callback(Key::F4, ren_mv);
+    siv.add_global_callback(Key::F10, quit);
 }
 fn close_dlgs(siv: &mut cursive::Cursive) {
     while siv.screen_mut().len() > 1 {
@@ -434,9 +436,7 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */,
 }
 
 fn update_table(siv: &mut Cursive, a_name: &str, a_path: PathBuf) {
-    //    let new_path = PathBuf::from(a_path);
     fill_table_with_items_wrapper(siv, a_name, a_path);
-    //println!("Command received");
 }
 
 pub fn remove_view(siv: &mut Cursive, view_name: &str) {
@@ -457,51 +457,10 @@ pub fn unselect_inx(siv: &mut Cursive, a_table_name: Arc<String>, inx: Arc<usize
 fn help(siv: &mut cursive::Cursive) {}
 
 pub type ProgressDlgT = ResizedView<Dialog>;
-/*fn show_hide_cpy(siv: &mut cursive::Cursive) {
-    if let Some(_) = siv.find_name::<ProgressDlgT>("Pcopy_progress_dlg::labels::dialog_namerogressDlg") {
-        siv.pop_layer(); //trouble
-    } else {
-        let g_file_manager = GLOBAL_FileManager.get();
-        match &g_file_manager.lock().unwrap().borrow().cpy_data {
-            Some(cpy_data) => {
-                let cpy_progress_dlg = create_cpy_progress_dialog(cpy_data.files_total, cpy_data.cond_var_suspend.clone());
-                siv.add_layer(cpy_progress_dlg);
-                siv.set_autorefresh(true);
-            }
-            None => {}
-        }
-    }
-}*/
 pub fn create_themed_view<T>(siv: &mut Cursive, view: T) -> ThemedView<Layer<T>>
 where
     T: View,
 {
-    /*theme.palette[theme::PaletteColor::Primary] = theme::Color::Light(theme::BaseColor::White);
-            theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
-            theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
-    *//*
-     /// Color used for the application background.
-        Background,
-        /// Color used for View shadows.
-        Shadow,
-        /// Color used for View backgrounds.
-        View,
-        /// Primary color used for the text.
-        Primary,
-        /// Secondary color used for the text.
-        Secondary,
-        /// Tertiary color used for the text.
-        Tertiary,
-        /// Primary color used for title text.
-        TitlePrimary,
-        /// Secondary color used for title text.
-        TitleSecondary,
-        /// Color used for highlighting text.
-        Highlight,
-        /// Color used for highlighting inactive text.
-        HighlightInactive,
-        /// Color used for highlighted text
-        HighlightText,*/
     let curr_theme = siv.current_theme().clone();
     let theme = siv.current_theme().clone().with(|theme| {
         let color_view = match curr_theme.palette[theme::PaletteColor::View] {
@@ -520,28 +479,17 @@ where
         };
         theme.palette[theme::PaletteColor::View] = color_view;
         theme.palette[theme::PaletteColor::HighlightText] = color_highlight_text;
-        /*theme.palette[theme::PaletteColor::Background] = color_primary;
-                            theme.palette[theme::PaletteColor::Shadow] = color_primary;
-                            theme.palette[theme::PaletteColor::Primary] = color_primary;
-                            theme.palette[theme::PaletteColor::Secondary] = color_primary;
-                            theme.palette[theme::PaletteColor::Tertiary] = color_primary;
-                            theme.palette[theme::PaletteColor::TitlePrimary] = color_primary;
-                            theme.palette[theme::PaletteColor::TitleSecondary] = color_primary;
-        //                    theme.palette[theme::PaletteColor::Highlight] = color_primary;
-                            theme.palette[theme::PaletteColor::HighlightInactive] = color_primary;
-        //                    theme.palette[theme::PaletteColor::Highlight] = color_primary;*/
     });
     views::ThemedView::new(theme, Layer::new(view))
 }
 fn menu(siv: &mut cursive::Cursive) {}
-fn view(siv: &mut cursive::Cursive) {}
-fn edit(siv: &mut cursive::Cursive) {}
 
 fn mkdir(siv: &mut cursive::Cursive) {}
 
 fn pull_dn(siv: &mut cursive::Cursive) {}
 
 fn quit(siv: &mut cursive::Cursive) {
+    /*Todo move to separate mod */
     let left_dir = get_current_dir(
         siv,
         PanelId {
@@ -672,9 +620,9 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     let help_layout = LinearLayout::horizontal().child(TextView::new("1")).child(button_help);
     let button_menu = Button::new_raw("[ Menu ]", menu);
     let menu_layout = LinearLayout::horizontal().child(TextView::new("2")).child(button_menu);
-    let button_view = Button::new_raw("[ View ]", view);
+    let button_view = Button::new_raw("[ Open ]", open);
     let view_layout = LinearLayout::horizontal().child(TextView::new("3")).child(button_view);
-    let button_edit = Button::new_raw("[ Edit ]", edit);
+    let button_edit = Button::new_raw("[ Edit_X ]", open);
     let edit_layout = LinearLayout::horizontal().child(TextView::new("4")).child(button_edit);
     let mouse_event = event::Event::Mouse {
         offset: XY::new(0, 0),
