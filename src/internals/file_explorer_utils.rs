@@ -17,6 +17,7 @@ use theme::BaseColor;
 use super::{
     cursive_table_view::{ExplorerReady, TableView, TableViewItem},
     file_manager_config, literals,
+    ops::f3_open::open_externally,
 };
 use chrono::offset::Utc;
 use chrono::DateTime;
@@ -45,7 +46,7 @@ use crate::internals::literals::copy_progress_dlg;
 
 use crate::internals::file_manager_config::FileMangerConfig;
 use crate::internals::literals::main_ui;
-use crate::internals::ops::f3_open::open;
+use crate::internals::ops::f3_open::preview;
 use crate::internals::ops::f5_cpy::{
     copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
     OverrideCase,
@@ -89,7 +90,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
 
                     siv.add_layer(Dialog::info("New file!"));
                 })
-                // ... and of sub-trees, which open up when selected.
+                // ... and of sub-trees, which preview up when selected.
                 .subtree(
                     "Recent",
                     // The `.with()` method can help when running loops
@@ -140,7 +141,8 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
         siv.select_menubar()
     }
     siv.add_global_callback(Key::Esc, close_dlgs);
-    siv.add_global_callback(Key::F3, open);
+    siv.add_global_callback(Key::F3, preview); //todo repeat
+    siv.add_global_callback(Key::F4, open_externally);
     siv.add_global_callback(Key::F5, cpy);
     siv.add_global_callback(Key::F6, ren_mv);
     siv.add_global_callback(Key::F8, del);
@@ -620,11 +622,11 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     let help_layout = LinearLayout::horizontal().child(TextView::new("1")).child(button_help);
     let button_menu = Button::new_raw("[ Menu ]", menu);
     let menu_layout = LinearLayout::horizontal().child(TextView::new("2")).child(button_menu);
-    let button_view = Button::new_raw("[ Open ]", open);
+    let button_view = Button::new_raw("[ Preview ]", preview);
     let view_layout = LinearLayout::horizontal()
         .child(TextView::new("3").style(theme::ColorStyle::title_primary()))
         .child(button_view);
-    let button_edit = Button::new_raw("[ Edit_X ]", open);
+    let button_edit = Button::new_raw("[ Edit_X ]", preview);
     let edit_layout = LinearLayout::horizontal().child(TextView::new("4")).child(button_edit);
     let mouse_event = event::Event::Mouse {
         offset: XY::new(0, 0),
