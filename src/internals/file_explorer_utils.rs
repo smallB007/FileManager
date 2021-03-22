@@ -588,8 +588,8 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         .child(Delimiter::new("Title 1"))
         .child(left_info_item);
     let mut left_stack_view = StackView::new();
-    left_stack_view.add_fullscreen_layer(main_left_layout);
-    let left_layout = Atomic_Dialog::around(left_stack_view)
+    //left_stack_view.add_fullscreen_layer(main_left_layout);
+    let left_layout = Atomic_Dialog::around(/*left_stack_view*/ main_left_layout)
         .title(fm_config.left_panel_initial_path.clone())
         .padding_lrtb(0, 0, 0, 0)
         .with_name(main_ui::widget_names::LEFT_PANEL_ID);
@@ -606,8 +606,8 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
         .child(Delimiter::new("Title 2"))
         .child(right_info_item);
     let mut right_stack_view = StackView::new();
-    right_stack_view.add_fullscreen_layer(main_right_layout);
-    let right_layout = Atomic_Dialog::around(right_stack_view)
+    //right_stack_view.add_fullscreen_layer(main_right_layout);
+    let right_layout = Atomic_Dialog::around(/*right_stack_view*/ main_right_layout)
         .title(fm_config.right_panel_initial_path.clone()) //todo get name from table
         .padding_lrtb(0, 0, 0, 0)
         .with_name(main_ui::widget_names::RIGHT_PANEL_ID);
@@ -621,7 +621,9 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     let button_menu = Button::new_raw("[ Menu ]", menu);
     let menu_layout = LinearLayout::horizontal().child(TextView::new("2")).child(button_menu);
     let button_view = Button::new_raw("[ Open ]", open);
-    let view_layout = LinearLayout::horizontal().child(TextView::new("3")).child(button_view);
+    let view_layout = LinearLayout::horizontal()
+        .child(TextView::new("3").style(theme::ColorStyle::title_primary()))
+        .child(button_view);
     let button_edit = Button::new_raw("[ Edit_X ]", open);
     let edit_layout = LinearLayout::horizontal().child(TextView::new("4")).child(button_edit);
     let mouse_event = event::Event::Mouse {
