@@ -17,7 +17,6 @@ use theme::BaseColor;
 use super::{
     cursive_table_view::{ExplorerReady, TableView, TableViewItem},
     file_manager_config, literals,
-    ops::f3_open::open_externally,
 };
 use chrono::offset::Utc;
 use chrono::DateTime;
@@ -46,11 +45,9 @@ use crate::internals::literals::copy_progress_dlg;
 
 use crate::internals::file_manager_config::FileMangerConfig;
 use crate::internals::literals::main_ui;
-use crate::internals::ops::f3_open::preview;
-use crate::internals::ops::f5_cpy::{
-    copying_already_exists, cpy, AtomicFileTransitFlags, CpyData, FileExistsAction, FileExistsActionWithOptions,
-    OverrideCase,
-};
+use crate::internals::ops::f3_preview::preview;
+use crate::internals::ops::f4_open::open_externally;
+use crate::internals::ops::f5_cpy::cpy;
 use crate::internals::ops::f6_ren_mv::ren_mv;
 use crate::internals::ops::f8_del::del;
 // ----------------------------------------------------------------------------
@@ -626,8 +623,10 @@ pub fn create_main_layout(siv: &mut cursive::CursiveRunnable, fm_config: &FileMa
     let view_layout = LinearLayout::horizontal()
         .child(TextView::new("3").style(theme::ColorStyle::title_primary()))
         .child(button_view);
-    let button_edit = Button::new_raw("[ Edit_X ]", preview);
-    let edit_layout = LinearLayout::horizontal().child(TextView::new("4")).child(button_edit);
+    let button_edit = Button::new_raw("[ Open ]", open_externally);
+    let edit_layout = LinearLayout::horizontal()
+        .child(TextView::new("4").style(theme::ColorStyle::title_primary()))
+        .child(button_edit);
     let mouse_event = event::Event::Mouse {
         offset: XY::new(0, 0),
         position: XY::new(1, 1),
