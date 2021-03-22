@@ -11,7 +11,7 @@ pub fn open(siv: &mut cursive::Cursive) {
         match get_selected_paths(siv, &active_panel) {
             Some(paths) => {
                 for path in paths {
-                    let output = Command::new(editor.clone())
+                    let output = Command::new(editor.as_str())
                         .arg(path.1)
                         .status()
                         .expect("failed to execute process");
