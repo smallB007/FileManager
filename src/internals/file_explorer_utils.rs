@@ -45,6 +45,7 @@ use crate::internals::literals::copy_progress_dlg;
 
 use crate::internals::file_manager_config::FileMangerConfig;
 use crate::internals::literals::main_ui;
+use crate::internals::ops::f2_menu::menu;
 use crate::internals::ops::f3_preview::preview;
 use crate::internals::ops::f4_open::open_externally;
 use crate::internals::ops::f5_cpy::cpy;
@@ -138,6 +139,7 @@ pub fn create_main_menu(siv: &mut cursive::CursiveRunnable, showMenu: bool, alwa
         siv.select_menubar()
     }
     siv.add_global_callback(Key::Esc, close_dlgs);
+    siv.add_global_callback(Key::F2, menu);
     siv.add_global_callback(Key::F3, preview); //todo repeat
     siv.add_global_callback(Key::F4, open_externally);
     siv.add_global_callback(Key::F5, cpy);
@@ -481,7 +483,6 @@ where
     });
     views::ThemedView::new(theme, Layer::new(view))
 }
-fn menu(siv: &mut cursive::Cursive) {}
 
 fn mkdir(siv: &mut cursive::Cursive) {}
 
