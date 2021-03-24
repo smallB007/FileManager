@@ -353,6 +353,31 @@ pub fn get_selected_paths(siv: &mut Cursive, a_name: &str) -> Option<PathInfoT> 
         None
     }
 }
+pub fn get_selected_paths_only(siv: &mut Cursive, a_name: &str) -> Option<Vec<PathT>> {
+    let mut selected_items_inx = std::collections::BTreeSet::<usize>::new();
+    siv.call_on_name(a_name, |a_table: &mut tableViewType| {
+        selected_items_inx = a_table.get_selected_items();
+    });
+
+    if selected_items_inx.len() != 0 {
+        let mut selected_paths = Vec::new();
+        for selected_inx in selected_items_inx {
+            match get_selected_path_only_from_inx(siv, a_name, selected_inx) {
+                Some(path) => {
+                    selected_paths.push(path);
+                }
+                None => {}
+            }
+        }
+        if selected_paths.len() != 0 {
+            Some(selected_paths)
+        } else {
+            None
+        }
+    } else {
+        None
+    }
+}
 pub struct PanelId<'a> {
     panel_id: &'a str,
 }
@@ -406,6 +431,28 @@ fn get_selected_path_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> 
                         selected_item.insert(0, std::path::MAIN_SEPARATOR);
                     }
                     Some((a_name.to_owned(), current_dir + &selected_item, index))
+                }
+            };
+            whole_path
+        })
+        .unwrap();
+    new_path
+}
+
+fn get_selected_path_only_from_inx(siv: &mut Cursive, a_name: &str, index: usize) -> Option<PathT> {
+    /*Todo repeat*/
+    let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
+    let new_path = siv
+        .call_on_name(a_name, move |a_table: &mut tableViewType| {
+            let mut selected_item = a_table.borrow_item(index).unwrap().name.clone();
+            let whole_path = match selected_item.as_str() {
+                ".." => None,
+                _ => {
+                    let s = selected_item.chars().nth(0).unwrap();
+                    if s != std::path::MAIN_SEPARATOR {
+                        selected_item.insert(0, std::path::MAIN_SEPARATOR);
+                    }
+                    Some(current_dir + &selected_item)
                 }
             };
             whole_path
