@@ -1,4 +1,4 @@
-use std::process::Command;
+use std::{path::PathBuf, process::Command};
 
 use crate::internals::file_explorer_utils::{get_active_panel, get_selected_paths_only};
 use crate::internals::ops::ops_utils::lzma::create_xz_archive;
@@ -28,7 +28,6 @@ enum MenuItems {
 fn compress_zip(paths: &Vec<String>) {
     //todo repeat
     for path in paths {
-        println!("A path: {}", path);
         match zip_file(&path, &(String::from(path) + "zippped")) {
             Ok(_val) => {}
             Err(err) => {
@@ -40,11 +39,14 @@ fn compress_zip(paths: &Vec<String>) {
 
 fn compress_lzma(paths: &Vec<String>) {
     for path in paths {
-        println!("A path: {}", path);
-        match create_xz_archive(&path) {
-            Ok(_val) => {}
-            Err(err) => {
-                println!("Couldn't zip:{}", err);
+        let mut output_file = PathBuf::from(path);
+        output_file.set_extension("7z");
+        if let Some(output) = output_file.as_os_str().to_str() {
+            match create_xz_archive(&path, output) {
+                Ok(_val) => {}
+                Err(err) => {
+                    println!("Couldn't zip:{}", err);
+                }
             }
         }
     }
