@@ -1,6 +1,7 @@
 use std::process::Command;
 
 use crate::internals::file_explorer_utils::{get_active_panel, get_selected_paths_only};
+use crate::internals::ops::ops_utils::lzma::create_xz_archive;
 use crate::internals::ops::ops_utils::zip::zip_file;
 use cursive::align::{HAlign, VAlign};
 use cursive::views::Dialog;
@@ -25,9 +26,22 @@ enum MenuItems {
     //VerifyChecksum,
 }
 fn compress_zip(paths: &Vec<String>) {
+    //todo repeat
     for path in paths {
         println!("A path: {}", path);
         match zip_file(&path, &(String::from(path) + "zippped")) {
+            Ok(_val) => {}
+            Err(err) => {
+                println!("Couldn't zip:{}", err);
+            }
+        }
+    }
+}
+
+fn compress_lzma(paths: &Vec<String>) {
+    for path in paths {
+        println!("A path: {}", path);
+        match create_xz_archive(&path) {
             Ok(_val) => {}
             Err(err) => {
                 println!("Couldn't zip:{}", err);
@@ -67,7 +81,7 @@ pub fn menu(siv: &mut cursive::Cursive) {
                                     todo!("todo")
                                 }
                                 Compression::seven_z => {
-                                    todo!("todo")
+                                    compress_lzma(&paths);
                                 }
                             }
                         });

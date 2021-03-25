@@ -21,7 +21,7 @@ use super::{
 use chrono::offset::Utc;
 use chrono::DateTime;
 use std::{borrow::BorrowMut, collections::HashMap, io::Write};
-use std::{fs::OpenOptions, path::PathBuf};
+use std::{fs::File, fs::OpenOptions, io::Read, path::PathBuf};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::channel;
@@ -797,4 +797,11 @@ pub fn get_error_theme(siv: &mut Cursive) -> cursive::theme::Theme {
         theme.palette[theme::PaletteColor::TitlePrimary] = theme::Color::Light(theme::BaseColor::Yellow);
         theme.palette[theme::PaletteColor::Highlight] = theme::Color::Dark(theme::BaseColor::Black);
     })
+}
+
+pub fn get_file_content(input_file: &str) -> Result<Vec<u8>, std::io::Error> {
+    let mut f = File::open(input_file)?;
+    let mut buf = Vec::new();
+    f.read_to_end(&mut buf)?;
+    Ok(buf)
 }

@@ -21,6 +21,7 @@ serde = { version = "1.0", features = ["derive"] }
 toml = "*"
 open = "1"
 zip = "0.5"
+rust-lzma = "0.5" #7z
 [features]
 default = ["serial_cpy"]
 serial_cpy = []

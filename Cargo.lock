@@ -269,6 +269,7 @@ dependencies = [
  "owning_ref",
  "rand",
  "regex",
+ "rust-lzma",
  "serde",
  "state",
  "toml",
@@ -718,6 +719,15 @@ name = "regex-syntax"
 version = "0.6.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24d5f089152e60f62d28b835fbff2cd2e8dc0baf1ac13343bef92ab7eed84548"
+
+[[package]]
+name = "rust-lzma"
+version = "0.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "895dc04daeaeee338bb96e229797902ed3f0675bfc59d5b42e0f0b0c13ac54da"
+dependencies = [
+ "pkg-config",
+]
 
 [[package]]
 name = "same-file"
