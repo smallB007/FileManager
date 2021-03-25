@@ -2,6 +2,7 @@ use std::{path::PathBuf, process::Command};
 
 use crate::internals::file_explorer_utils::{get_active_panel, get_selected_paths_only};
 use crate::internals::ops::ops_utils::lzma::create_xz_archive;
+use crate::internals::ops::ops_utils::tar::create_tar_archive;
 use crate::internals::ops::ops_utils::zip::zip_file;
 use cursive::align::{HAlign, VAlign};
 use cursive::views::Dialog;
@@ -51,6 +52,11 @@ fn compress_lzma(paths: &Vec<String>) {
         }
     }
 }
+
+fn compress_tar(paths: &Vec<String>) {
+    create_tar_archive(&paths);
+}
+
 pub fn menu(siv: &mut cursive::Cursive) {
     let mut menu_select = SelectView::new().h_align(HAlign::Center);
     menu_select.add_item("Pack", MenuItems::Pack);
@@ -79,9 +85,7 @@ pub fn menu(siv: &mut cursive::Cursive) {
                                 Compression::zip => {
                                     compress_zip(&paths);
                                 }
-                                Compression::tar => {
-                                    todo!("todo")
-                                }
+                                Compression::tar => compress_tar(&paths),
                                 Compression::seven_z => {
                                     compress_lzma(&paths);
                                 }

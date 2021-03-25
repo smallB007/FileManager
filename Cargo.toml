@@ -22,6 +22,7 @@ toml = "*"
 open = "1"
 zip = "0.5"
 rust-lzma = "0.5" #7z
+tar = "0.4"
 [features]
 default = ["serial_cpy"]
 serial_cpy = []
