@@ -912,24 +912,30 @@ fn get_cpy_dialog_content_cb(
             an_chck_bx.is_checked()
         })
         .unwrap();
-    let mut is_rename = false;
-    if selected_paths_from.len() == 1 {
-        let path_to = PathBuf::from((*selected_path_to).clone());
-        if !path_to.exists() {
-            is_rename = true;
+    if selected_path_to.is_some() && selected_mask_from.is_some() {
+        let mut is_rename = false;
+        let path_to = PathBuf::from((selected_path_to.unwrap().as_ref()).clone());
+        if selected_paths_from.len() == 1 {
+            if !path_to.exists() {
+                is_rename = true;
+            }
         }
+        cpy_callback(
+            siv,
+            selected_mask_from.unwrap(),
+            selected_paths_from,
+            path_to,
+            is_recursive,
+            is_overwrite,
+            is_background_cpy,
+            is_copy,
+            is_rename,
+        )
+    } else {
+        siv.add_layer(Dialog::around(TextView::new(
+            "Please fill appropriate fields and try again",
+        )));
     }
-    cpy_callback(
-        siv,
-        selected_mask_from,
-        selected_paths_from,
-        PathBuf::from((*selected_path_to).clone()),
-        is_recursive,
-        is_overwrite,
-        is_background_cpy,
-        is_copy,
-        is_rename,
-    )
 }
 
 fn get_cpy_dialog_content_clone_cb(

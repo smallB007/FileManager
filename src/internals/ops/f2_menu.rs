@@ -1,12 +1,18 @@
 use std::{path::PathBuf, process::Command};
 
-use crate::internals::file_explorer_utils::{get_active_panel, get_selected_paths_only};
 use crate::internals::ops::ops_utils::lzma::create_xz_archive;
 use crate::internals::ops::ops_utils::tar::create_tar_archive;
 use crate::internals::ops::ops_utils::zip::zip_file;
-use cursive::align::{HAlign, VAlign};
+use crate::internals::{
+    file_explorer_utils::{get_active_panel, get_selected_paths_only},
+    literals,
+};
 use cursive::views::Dialog;
 use cursive::views::*;
+use cursive::{
+    align::{HAlign, VAlign},
+    traits::Nameable,
+};
 enum Compression {
     zip,
     tar,
@@ -26,10 +32,10 @@ enum MenuItems {
     //CreateChecksum,
     //VerifyChecksum,
 }
-fn compress_zip(paths: &Vec<String>) {
+fn compress_zip(paths: &Vec<String>, output_file: &str) {
     //todo repeat
     for path in paths {
-        match zip_file(&path, &(String::from(path) + "zippped")) {
+        match zip_file(&path, output_file) {
             Ok(_val) => {}
             Err(err) => {
                 println!("Couldn't zip:{}", err);
@@ -71,26 +77,42 @@ pub fn menu(siv: &mut cursive::Cursive) {
                     Some(paths) => {
                         let mut radio_group = RadioGroup::new();
                         let dlg = Dialog::around(
-                            LinearLayout::vertical().child(TextView::new("Compress files")).child(
-                                LinearLayout::horizontal()
-                                    .child(radio_group.button(Compression::zip, ".zip"))
-                                    .child(radio_group.button(Compression::tar, ".tar.xz"))
-                                    .child(radio_group.button(Compression::seven_z, ".7z")),
-                            ),
+                            LinearLayout::vertical()
+                                .child(TextView::new("Archive name:"))
+                                .child(EditView::new().with_name(literals::zip_dlg::widget_names::ARCHIVE_NAME))
+                                .child(
+                                    LinearLayout::horizontal()
+                                        .child(radio_group.button(Compression::zip, ".zip"))
+                                        .child(radio_group.button(Compression::tar, ".tar.xz"))
+                                        .child(radio_group.button(Compression::seven_z, ".7z")),
+                                ),
                         )
                         .button("Ok", move |s| {
-                            s.pop_layer();
-                            // We retrieve the stored value for group.
-                            match *radio_group.selection() {
-                                Compression::zip => {
-                                    compress_zip(&paths);
+                            match s
+                                .call_on_name(literals::zip_dlg::widget_names::ARCHIVE_NAME, |edit: &mut EditView| {
+                                    edit.get_content()
+                                })
+                                .unwrap()
+                            {
+                                Some(archive_name) => {
+                                    s.pop_layer();
+                                    // We retrieve the stored value for group.
+                                    match *radio_group.selection() {
+                                        Compression::zip => {
+                                            compress_zip(&paths, &*archive_name);
+                                        }
+                                        Compression::tar => compress_tar(&paths),
+                                        Compression::seven_z => {
+                                            compress_lzma(&paths);
+                                        }
+                                    }
                                 }
-                                Compression::tar => compress_tar(&paths),
-                                Compression::seven_z => {
-                                    compress_lzma(&paths);
-                                }
+                                None => s.add_layer(
+                                    Dialog::around(TextView::new("Please provide archive name")).dismiss_button("OK"),
+                                ),
                             }
-                        });
+                        })
+                        .dismiss_button("Cancel");
                         s.add_layer(dlg);
                     }
                     None => {}
