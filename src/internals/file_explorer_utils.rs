@@ -20,7 +20,7 @@ use super::{
 };
 use chrono::offset::Utc;
 use chrono::DateTime;
-use std::{borrow::BorrowMut, collections::HashMap, io::Write};
+use std::{borrow::BorrowMut, collections::HashMap, io::Write, path::MAIN_SEPARATOR};
 use std::{fs::File, fs::OpenOptions, io::Read, path::PathBuf};
 
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -51,6 +51,7 @@ use crate::internals::ops::f4_open::open_externally;
 use crate::internals::ops::f5_cpy::cpy;
 use crate::internals::ops::f6_ren_mv::ren_mv;
 use crate::internals::ops::f8_del::del;
+use crate::internals::ops::ops_utils::archive_types;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
 // External Dependencies ------------------------------------------------------
@@ -276,48 +277,40 @@ pub fn create_basic_table_core(
             a_table.clear_selected_items();
         });
 
-        let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
-        let path_to_stop_watching = current_dir.clone();
-        let new_path = siv
-            .call_on_name(a_name, move |a_table: &mut tableViewType| {
-                let selected_item = a_table.borrow_item(index).unwrap().name.clone();
-                let whole_path = match selected_item.as_str() {
-                    ".." => match PathBuf::from(current_dir).parent() {
-                        Some(parent) => PathBuf::from(parent),
-                        None => PathBuf::from("NO_PARENT"),
-                    },
-                    _ => {
-                        if PathBuf::from(current_dir.clone() + &selected_item.clone()).is_dir() {
-                            let mut removed_first_slash: String = selected_item.clone();
-                            removed_first_slash.remove(0);
-                            let mut full_path = PathBuf::from(current_dir);
-                            full_path.push(&removed_first_slash);
-                            full_path
-                        } else {
-                            PathBuf::from("FILE_SELECTED")
+        let new_path = get_selected_path_only_from_inx(siv, a_name, index);
+        match new_path {
+            Some(new_path) => {
+                let new_path = PathBuf::from(new_path);
+                if new_path.is_dir() {
+                    let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
+                    let path_to_stop_watching = current_dir.clone();
+                    match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
+                        Ok(_) => {
+                            //println!("Unwatched");
+                        }
+                        Err(err) => {
+                            println!("Cannot unwatch: {}", err);
+                            panic!(); //todo remove
                         }
                     }
-                };
-                whole_path
-            })
-            .unwrap();
-        if new_path.is_dir() {
-            match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
-                Ok(_) => {
-                    //println!("Unwatched");
-                }
-                Err(err) => {
-                    println!("Cannot unwatch: {}", err);
-                    panic!(); //todo remove
+                    watcher
+                        .lock()
+                        .unwrap()
+                        .watch(new_path.clone(), RecursiveMode::NonRecursive)
+                        .unwrap();
+
+                    fill_table_with_items_wrapper(siv, a_name, new_path);
+                } else {
+                    let result = tree_magic_mini::from_filepath(new_path.as_path());
+                    match result {
+                        Some(potential_archive) => {
+                            if let Some(archive_type) = archive_types::ARCHIVES_TYPES.get_key(potential_archive) {}
+                        }
+                        None => {}
+                    }
                 }
             }
-            watcher
-                .lock()
-                .unwrap()
-                .watch(new_path.clone(), RecursiveMode::NonRecursive)
-                .unwrap();
-
-            fill_table_with_items_wrapper(siv, a_name, new_path);
+            None => {}
         }
     });
     let named_view_table = table.with_name(a_name);

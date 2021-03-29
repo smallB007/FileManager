@@ -23,6 +23,8 @@ open = "1"
 zip = "0.5"
 rust-lzma = "0.5" #7z
 tar = "0.4"
+tree_magic_mini = "1.0.1"
+phf = { version = "0.7.24", features = ["macros"] }
 [features]
 default = ["serial_cpy"]
 serial_cpy = []
