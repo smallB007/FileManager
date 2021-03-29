@@ -1,0 +1,1 @@
+/*dlgs width, editviews width etc*/

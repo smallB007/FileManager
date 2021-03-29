@@ -7,12 +7,12 @@ use crate::internals::{
     file_explorer_utils::{get_active_panel, get_selected_paths_only},
     literals,
 };
-use cursive::views::Dialog;
 use cursive::views::*;
 use cursive::{
     align::{HAlign, VAlign},
     traits::Nameable,
 };
+use cursive::{traits::Boxable, views::Dialog};
 enum Compression {
     zip,
     tar,
@@ -79,7 +79,11 @@ pub fn menu(siv: &mut cursive::Cursive) {
                         let dlg = Dialog::around(
                             LinearLayout::vertical()
                                 .child(TextView::new("Archive name:"))
-                                .child(EditView::new().with_name(literals::zip_dlg::widget_names::ARCHIVE_NAME))
+                                .child(
+                                    EditView::new()
+                                        .content(if paths.len() == 1 { &paths[0] } else { "" })
+                                        .with_name(literals::zip_dlg::widget_names::ARCHIVE_NAME),
+                                )
                                 .child(
                                     LinearLayout::horizontal()
                                         .child(radio_group.button(Compression::zip, ".zip"))
@@ -112,7 +116,8 @@ pub fn menu(siv: &mut cursive::Cursive) {
                                 ),
                             }
                         })
-                        .dismiss_button("Cancel");
+                        .dismiss_button("Cancel")
+                        .min_width(80);
                         s.add_layer(dlg);
                     }
                     None => {}
