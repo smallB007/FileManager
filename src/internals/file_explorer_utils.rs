@@ -1,4 +1,5 @@
 #![forbid(unreachable_patterns)]
+use archive_readers::{ArchiveReader, ZipArchiveReader};
 use cursive::event::*;
 use cursive::menu::Tree;
 use cursive::traits::*;
@@ -51,6 +52,7 @@ use crate::internals::ops::f4_open::open_externally;
 use crate::internals::ops::f5_cpy::cpy;
 use crate::internals::ops::f6_ren_mv::ren_mv;
 use crate::internals::ops::f8_del::del;
+use crate::internals::ops::ops_utils::archive_readers;
 use crate::internals::ops::ops_utils::archive_types;
 // ----------------------------------------------------------------------------
 //use std::cmp::Ordering;
@@ -304,7 +306,20 @@ pub fn create_basic_table_core(
                     let result = tree_magic_mini::from_filepath(new_path.as_path());
                     match result {
                         Some(potential_archive) => {
-                            if let Some(archive_type) = archive_types::ARCHIVES_TYPES.get_key(potential_archive) {}
+                            if let Some(archive_type) = archive_types::ARCHIVES_TYPES.get_key(potential_archive) {
+                                //println!("archve detected:{}", archive_type);
+                                /*check if we can open it and if so open */
+                                match archive_readers::ARCHIVES_READERS_TYPES.get(archive_type) {
+                                    Some(reader_type) => {
+                                        let reader = archive_readers::ArchiveReaderFactory::create_reader(reader_type);
+
+                                        reader.read(&new_path);
+                                    }
+                                    None => {
+                                        println!("reader NOT found");
+                                    }
+                                }
+                            }
                         }
                         None => {}
                     }

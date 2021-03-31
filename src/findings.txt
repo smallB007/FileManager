@@ -1,3 +1,12 @@
-let mut text = cursive.find_id::<TextView>("test").unwrap();
+// Get and Set permissions
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+
+            if let Some(mode) = file.unix_mode() {
+                fs::set_permissions(&outpath, fs::Permissions::from_mode(mode)).unwrap();
+            }
+        }
+        
 In order to attach to file_explorer from VS: 
 echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
