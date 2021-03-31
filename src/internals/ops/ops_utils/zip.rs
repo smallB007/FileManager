@@ -14,12 +14,12 @@ pub fn zip_file(input_file: &str, output_file: &str) -> zip::result::ZipResult<(
 
     let options = FileOptions::default().compression_method(zip::CompressionMethod::Stored);
     //.unix_permissions(0o755);
-    let file_name = PathBuf::from(output_file);
-    let file_name = file_name
+    let file_name = PathBuf::from(output_file)
         .file_name()
         .ok_or(ZipError::FileNotFound)?
         .to_str()
-        .ok_or(ZipError::FileNotFound)?;
+        .ok_or(ZipError::FileNotFound)?
+        .to_string();
 
     zip.start_file(file_name, options)?;
     let buf = get_file_content(input_file)?;
