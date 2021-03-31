@@ -26,8 +26,32 @@ pub struct ZipArchiveReader {}
 
 impl ArchiveReader for ZipArchiveReader {
     fn read(&self, archive: &std::path::Path) -> Vec<String> {
-        real_main(archive);
-        vec![]
+        let mut res = Vec::new();
+        let fname = archive; //std::path::Path::new(archive);
+
+        let file = fs::File::open(&fname).unwrap();
+
+        let mut archive = zip::ZipArchive::new(file).unwrap();
+
+        for i in 0..archive.len() {
+            let file = archive.by_index(i).unwrap();
+            match file.enclosed_name() {
+                Some(path) => {
+                    //println!("{:?}", path);
+                    match path.to_str() {
+                        Some(path_str) => {
+                            res.push(path_str.to_owned());
+                        }
+                        None => {}
+                    }
+                }
+                None => {
+                    println!("None enclosed");
+                    continue;
+                }
+            }
+        }
+        res
     }
 }
 

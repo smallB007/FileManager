@@ -313,7 +313,7 @@ pub fn create_basic_table_core(
                                     Some(reader_type) => {
                                         let reader = archive_readers::ArchiveReaderFactory::create_reader(reader_type);
 
-                                        reader.read(&new_path);
+                                        fill_table_with_archive_content_wrapper(siv, a_name, reader.read(&new_path));
                                     }
                                     None => {
                                         println!("reader NOT found");
@@ -772,6 +772,34 @@ fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<
     let _ = a_table.take_items(); //clear before you put new, panic! otherwise will occur
     a_table.set_items(items);
     Ok(())
+}
+fn fill_table_with_archive_content_wrapper(
+    siv: &mut Cursive,
+    a_name: &str, /*todo &str */
+    zipped_content: Vec<String>,
+) {
+    siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
+        fill_table_with_archive_content(a_table, zipped_content);
+    });
+}
+fn fill_table_with_archive_content(a_table: &mut tableViewType, zipped_content: Vec<String>) {
+    let mut items = Vec::new();
+
+    items.push(ExplorerColumnData {
+        name: format!(".."),
+        size: 0,
+        last_modify_time: SystemTime::now(),
+    });
+
+    for a_path_buf in zipped_content {
+        items.push(ExplorerColumnData {
+            name: format!("{}", a_path_buf),
+            size: 0,
+            last_modify_time: SystemTime::now(), /*todo */
+        });
+    }
+    let _ = a_table.take_items(); //clear before you put new, panic! otherwise will occur
+    a_table.set_items(items);
 }
 
 pub fn get_active_panel(siv: &mut Cursive) -> String {
