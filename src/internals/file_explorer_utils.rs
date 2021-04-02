@@ -216,6 +216,26 @@ impl TableViewItem<ExplorerColumn> for ExplorerColumnData {
         }
     }
 }
+fn init_new_path_machinery(siv: &mut Cursive, a_name: &str, new_path: PathBuf, watcher: Arc<Mutex<INotifyWatcher>>) {
+    let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
+    let path_to_stop_watching = current_dir.clone();
+    match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
+        Ok(_) => {
+            //println!("Unwatched");
+        }
+        Err(err) => {
+            println!("Cannot unwatch: {}", err);
+            panic!(); //todo remove
+        }
+    }
+    watcher
+        .lock()
+        .unwrap()
+        .watch(new_path.clone(), RecursiveMode::NonRecursive)
+        .unwrap();
+
+    fill_table_with_items_wrapper(siv, a_name, new_path);
+}
 pub type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
 pub fn create_basic_table_core(
     siv: &mut Cursive,
@@ -284,24 +304,7 @@ pub fn create_basic_table_core(
             Some(new_path) => {
                 let new_path = PathBuf::from(new_path);
                 if new_path.is_dir() {
-                    let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
-                    let path_to_stop_watching = current_dir.clone();
-                    match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
-                        Ok(_) => {
-                            //println!("Unwatched");
-                        }
-                        Err(err) => {
-                            println!("Cannot unwatch: {}", err);
-                            panic!(); //todo remove
-                        }
-                    }
-                    watcher
-                        .lock()
-                        .unwrap()
-                        .watch(new_path.clone(), RecursiveMode::NonRecursive)
-                        .unwrap();
-
-                    fill_table_with_items_wrapper(siv, a_name, new_path);
+                    init_new_path_machinery(siv, a_name, new_path, watcher.clone());
                 } else {
                     let result = tree_magic_mini::from_filepath(new_path.as_path());
                     match result {
@@ -325,7 +328,19 @@ pub fn create_basic_table_core(
                     }
                 }
             }
-            None => {}
+            None => {
+                if index == 0
+                //we must be on ".." or top level
+                {
+                    let current_dir = PathBuf::from(get_current_dir(siv, get_panel_id_from_table_id(a_name)));
+                    match current_dir.parent() {
+                        Some(parent_path) => {
+                            init_new_path_machinery(siv, a_name, parent_path.into(), watcher.clone());
+                        }
+                        None => {}
+                    }
+                }
+            }
         }
     });
     let named_view_table = table.with_name(a_name);

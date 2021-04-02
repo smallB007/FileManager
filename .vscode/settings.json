@@ -2,23 +2,27 @@
   "editor.formatOnSave": true,
   "editor.cursorStyle": "block",
   "editor.minimap.enabled": false,
+  "workbench.editor.decorations.badges": false, //displaying extra info on tabs, nonsense...
   "workbench.colorCustomizations": {
     "[Kelp Forest]": {
       "editorLineNumber.foreground": "#8d8d8d",
       "editorLineNumber.activeForeground": "#00aaff"
     },
-
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "[rust]": {
       "editor.defaultFormatter": "esbenp.prettier-vscode"
     },
-
     "editor.tokenColorCustomizations": {
       "textMateRules": [
         {
           "name": "No italics",
-          "scope": ["keyword"],
-          "settings": { "foreground": "#4287f5", "fontStyle": "normal" }
+          "scope": [
+            "keyword"
+          ],
+          "settings": {
+            "foreground": "#4287f5",
+            "fontStyle": "normal"
+          }
         }
       ]
     }
