@@ -32,10 +32,10 @@ enum MenuItems {
     //CreateChecksum,
     //VerifyChecksum,
 }
-fn compress_zip(paths: &Vec<String>, output_file: &str) {
+fn compress_zip(paths: &Vec<String>, filename: &str) {
     //todo repeat
     for path in paths {
-        match zip_file(&path, output_file) {
+        match zip_file(&path, filename) {
             Ok(_val) => {}
             Err(err) => {
                 println!("Couldn't zip:{}", err);
@@ -81,7 +81,16 @@ pub fn menu(siv: &mut cursive::Cursive) {
                                 .child(TextView::new("Archive name:"))
                                 .child(
                                     EditView::new()
-                                        .content(if paths.len() == 1 { &paths[0] } else { "" })
+                                        .content(if paths.len() == 1 {
+                                            PathBuf::from(&paths[0])
+                                                .file_name()
+                                                .unwrap()
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string()
+                                        } else {
+                                            "".to_owned()
+                                        })
                                         .with_name(literals::zip_dlg::widget_names::ARCHIVE_NAME),
                                 )
                                 .child(
