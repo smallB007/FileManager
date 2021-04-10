@@ -216,7 +216,13 @@ impl TableViewItem<ExplorerColumn> for ExplorerColumnData {
         }
     }
 }
-fn init_new_path_machinery(siv: &mut Cursive, a_name: &str, new_path: PathBuf, watcher: Arc<Mutex<INotifyWatcher>>) {
+fn init_new_path_machinery(
+    siv: &mut Cursive,
+    a_name: &str,
+    new_path: PathBuf,
+    watcher: Arc<Mutex<INotifyWatcher>>,
+    archive_reader: Option<Box<dyn ArchiveReader>>,
+) {
     let current_dir = get_current_dir(siv, get_panel_id_from_table_id(a_name));
     let path_to_stop_watching = current_dir.clone();
     match watcher.lock().unwrap().unwatch(path_to_stop_watching) {
@@ -233,8 +239,12 @@ fn init_new_path_machinery(siv: &mut Cursive, a_name: &str, new_path: PathBuf, w
         .unwrap()
         .watch(new_path.clone(), RecursiveMode::NonRecursive)
         .unwrap();
-
-    fill_table_with_items_wrapper(siv, a_name, new_path);
+    match archive_reader {
+        Some(archive_reader) => {
+            fill_table_with_archive_content_wrapper(siv, a_name, archive_reader, new_path);
+        }
+        None => fill_table_with_items_wrapper(siv, a_name, new_path),
+    }
 }
 pub type tableViewType = TableView<ExplorerColumnData, ExplorerColumn>;
 pub fn create_basic_table_core(
@@ -304,7 +314,7 @@ pub fn create_basic_table_core(
             Some(new_path) => {
                 let new_path = PathBuf::from(new_path);
                 if new_path.is_dir() {
-                    init_new_path_machinery(siv, a_name, new_path, watcher.clone());
+                    init_new_path_machinery(siv, a_name, new_path, watcher.clone(), None);
                 } else {
                     let result = tree_magic_mini::from_filepath(new_path.as_path());
                     match result {
@@ -315,8 +325,8 @@ pub fn create_basic_table_core(
                                 match archive_readers::ARCHIVES_READERS_TYPES.get(archive_type) {
                                     Some(reader_type) => {
                                         let reader = archive_readers::ArchiveReaderFactory::create_reader(reader_type);
-
-                                        fill_table_with_archive_content_wrapper(siv, a_name, reader.read(&new_path));
+                                        init_new_path_machinery(siv, a_name, new_path, watcher.clone(), Some(reader));
+                                        //fill_table_with_archive_content_wrapper(siv, a_name, reader.read(&new_path));
                                     }
                                     None => {
                                         println!("reader NOT found");
@@ -335,7 +345,7 @@ pub fn create_basic_table_core(
                     let current_dir = PathBuf::from(get_current_dir(siv, get_panel_id_from_table_id(a_name)));
                     match current_dir.parent() {
                         Some(parent_path) => {
-                            init_new_path_machinery(siv, a_name, parent_path.into(), watcher.clone());
+                            init_new_path_machinery(siv, a_name, parent_path.into(), watcher.clone(), None);
                         }
                         None => {}
                     }
@@ -483,7 +493,15 @@ fn get_selected_path_only_from_inx(siv: &mut Cursive, a_name: &str, index: usize
         .unwrap();
     new_path
 }
-
+fn set_panel_title(siv: &mut Cursive, a_name: &str, new_path: PathBuf) {
+    siv.call_on_name(
+        get_panel_id_from_table_id(a_name).into(),
+        |a_dlg: &mut Atomic_Dialog| {
+            a_dlg.set_title(new_path.clone().to_str().unwrap());
+        },
+    )
+    .unwrap()
+}
 fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */, new_path: PathBuf) {
     let mut res = Option::<std::io::Error>::default();
     siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
@@ -494,14 +512,7 @@ fn fill_table_with_items_wrapper(siv: &mut Cursive, a_name: &str /*todo &str */,
             siv.add_layer(Dialog::around(TextView::new(e.to_string())).dismiss_button("Ok"));
         }
         None => {
-            let _value = siv
-                .call_on_name(
-                    get_panel_id_from_table_id(a_name).into(),
-                    |a_dlg: &mut Atomic_Dialog| {
-                        a_dlg.set_title(new_path.clone().to_str().unwrap());
-                    },
-                )
-                .unwrap();
+            set_panel_title(siv, a_name, new_path);
         }
     }
 }
@@ -791,11 +802,14 @@ fn fill_table_with_items(a_table: &mut tableViewType, a_dir: PathBuf) -> Result<
 fn fill_table_with_archive_content_wrapper(
     siv: &mut Cursive,
     a_name: &str, /*todo &str */
-    zipped_content: Vec<String>,
+    archive_reader: Box<dyn ArchiveReader>,
+    new_path: PathBuf,
 ) {
+    let zipped_content = archive_reader.read(&new_path);
     siv.call_on_name(&a_name, |a_table: &mut tableViewType| {
         fill_table_with_archive_content(a_table, zipped_content);
     });
+    set_panel_title(siv, a_name, new_path);
 }
 fn fill_table_with_archive_content(a_table: &mut tableViewType, zipped_content: Vec<String>) {
     let mut items = Vec::new();
